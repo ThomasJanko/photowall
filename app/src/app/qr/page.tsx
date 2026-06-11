@@ -39,7 +39,7 @@ export default function QrPage() {
   }, []);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 flex flex-col items-center justify-center gap-8 p-6 text-center">
+    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center gap-8 p-6 text-center">
       <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
         📱 Scanne pour participer au mur de souvenirs !
       </h1>

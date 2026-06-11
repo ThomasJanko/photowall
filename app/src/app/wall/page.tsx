@@ -2,24 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { eventConfig } from "@/config/event";
 import { getPhotoService } from "@/lib/photoService";
 import { REACTION_EMOJIS, type Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
-import { DEFAULT_THEME, getTimeTheme, type TimeTheme } from "@/lib/timeTheme";
+import { useEventTheme } from "@/components/EventThemeProvider";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
-/** Durée d'affichage plein écran d'une nouvelle photo (ms). */
-const SPOTLIGHT_DURATION_MS = 10_000;
-/** Délai avant de pouvoir re-cliquer sur le même emoji (anti-spam). */
-const REACTION_COOLDOWN_MS = 1500;
+const { spotlightDurationMs, reactionCooldownMs, features } = eventConfig;
+
 /** Clé localStorage mémorisant les réactions posées par CET appareil. */
 const MY_REACTIONS_KEY = "wall:my-reactions";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
-/** Fréquence de recalcul du thème horaire. */
-const THEME_REFRESH_MS = 5 * 60_000;
 
 /** Préfixe les URLs relatives (mode local: /uploads/xxx.jpg) avec le serveur. */
 function resolveUrl(url: string): string {
@@ -38,7 +35,6 @@ function loadMyReactions(): Set<string> {
     const raw = localStorage.getItem(MY_REACTIONS_KEY);
     return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
   } catch {
-    // localStorage corrompu ou indisponible : on repart de zéro
     return new Set();
   }
 }
@@ -47,12 +43,10 @@ interface Floater {
   id: number;
   photoId: string;
   emoji: string;
-  /** Position horizontale aléatoire (%) pour que les emojis ne se superposent pas. */
   left: number;
 }
 
-/** Emojis flottants à afficher par-dessus une photo. */
-function FloatersOverlay({ floaters }: { floaters: Floater[] }) {
+function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
   return (
     <>
       {floaters.map((f) => (
@@ -69,28 +63,19 @@ function FloatersOverlay({ floaters }: { floaters: Floater[] }) {
 }
 
 export default function WallPage() {
-  // Photos déjà installées dans la grille
+  const { accent } = useEventTheme();
   const [photos, setPhotos] = useState<Photo[]>([]);
-  // Nouvelles photos en attente : la première de la file est affichée en plein écran
   const [queue, setQueue] = useState<Photo[]>([]);
-  // Emojis flottants en cours d'animation
   const [floaters, setFloaters] = useState<Floater[]>([]);
-  // Boutons emoji temporairement désactivés (clé: "photoId:emoji")
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
-  // Réactions posées par cet appareil (clé: "photoId:emoji"), persistées en localStorage
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
-  // Thème horaire. Défaut = palette violette pour un SSR stable ;
-  // la vraie valeur est calculée après mount (pas de mismatch d'hydratation).
-  const [theme, setTheme] = useState<TimeTheme>(DEFAULT_THEME);
-  // Connexion temps réel (socket.io en local). Défaut true = pas de badge au chargement.
   const [connected, setConnected] = useState(true);
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
 
-  const spotlight = queue[0] ?? null;
+  const spotlight = features.spotlight ? (queue[0] ?? null) : null;
 
-  /** Met à jour les compteurs d'une photo, où qu'elle soit (grille ou file). */
   function applyReactions(photoId: string, reactions: Record<string, number>) {
     const update = (list: Photo[]) =>
       list.map((p) => (p.id === photoId ? { ...p, reactions } : p));
@@ -98,7 +83,6 @@ export default function WallPage() {
     setQueue(update);
   }
 
-  /** Fait apparaître un emoji flottant sur la photo, retiré du DOM à la fin. */
   function spawnFloater(photoId: string, emoji: string) {
     const id = ++floaterSeq.current;
     const left = 15 + Math.random() * 70;
@@ -113,17 +97,9 @@ export default function WallPage() {
     try {
       localStorage.setItem(MY_REACTIONS_KEY, JSON.stringify([...next]));
     } catch {
-      // Stockage plein/indisponible : le toggle reste valable pour la session
+      // Stockage plein/indisponible
     }
   }
-
-  // Recalcule la palette selon l'heure, toutes les 5 minutes
-  useEffect(() => {
-    const update = () => setTheme(getTimeTheme());
-    update();
-    const interval = setInterval(update, THEME_REFRESH_MS);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const service = getPhotoService();
@@ -139,7 +115,13 @@ export default function WallPage() {
     const unsubNew = service.onNewPhoto((photo) => {
       if (knownIds.current.has(photo.id)) return;
       knownIds.current.add(photo.id);
-      setQueue((prev) => [...prev, photo]);
+      if (features.spotlight) {
+        setQueue((prev) => [...prev, photo]);
+      } else {
+        setPhotos((prev) =>
+          prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]
+        );
+      }
     });
 
     const unsubRemoved = service.onPhotoRemoved((id) => {
@@ -148,27 +130,23 @@ export default function WallPage() {
       setQueue((prev) => prev.filter((p) => p.id !== id));
     });
 
-    const unsubReaction = service.onReaction(
-      ({ photoId, emoji, reactions, action }) => {
-        // Compteurs : on prend la valeur serveur (autoritaire), ce qui corrige
-        // aussi les éventuels écarts de l'optimistic update local.
-        applyReactions(photoId, reactions);
-        // Pas d'animation pour un retrait de réaction
-        if (action === "add") spawnFloater(photoId, emoji);
-      }
-    );
+    const unsubReaction = features.reactions
+      ? service.onReaction(({ photoId, emoji, reactions, action }) => {
+          applyReactions(photoId, reactions);
+          if (action === "add") spawnFloater(photoId, emoji);
+        })
+      : undefined;
 
     const unsubConnection = service.onConnectionChange?.(setConnected);
 
     return () => {
       unsubNew();
       unsubRemoved();
-      unsubReaction();
+      unsubReaction?.();
       unsubConnection?.();
     };
   }, []);
 
-  // Après 10s en plein écran, la photo en tête de file rejoint la grille
   useEffect(() => {
     if (!spotlight) return;
     const timer = setTimeout(() => {
@@ -176,15 +154,10 @@ export default function WallPage() {
         prev.some((p) => p.id === spotlight.id) ? prev : [...prev, spotlight]
       );
       setQueue((prev) => prev.filter((p) => p.id !== spotlight.id));
-    }, SPOTLIGHT_DURATION_MS);
+    }, spotlightDurationMs);
     return () => clearTimeout(timer);
   }, [spotlight]);
 
-  /**
-   * Clic invité sur un emoji : toggle par appareil.
-   * 1er clic = ajoute la réaction, 2e clic = la retire (1 max de chaque emoji
-   * par photo et par appareil). Optimistic update + cooldown anti-spam.
-   */
   async function handleReact(photoId: string, emoji: string) {
     const key = `${photoId}:${emoji}`;
     if (cooldowns.has(key)) return;
@@ -196,18 +169,14 @@ export default function WallPage() {
         next.delete(key);
         return next;
       });
-    }, REACTION_COOLDOWN_MS);
+    }, reactionCooldownMs);
 
     const isRemoval = myReactions.has(key);
     const next = new Set(myReactions);
-    if (isRemoval) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
+    if (isRemoval) next.delete(key);
+    else next.add(key);
     persistMyReactions(next);
 
-    // Feedback immédiat : ±1 local avant confirmation serveur
     const delta = isRemoval ? -1 : 1;
     const bump = (list: Photo[]) =>
       list.map((p) =>
@@ -225,8 +194,6 @@ export default function WallPage() {
     setQueue(bump);
 
     try {
-      // L'event socket "photo:reaction" resynchronisera les compteurs
-      // et déclenchera l'emoji flottant sur tous les écrans.
       if (isRemoval) {
         await getPhotoService().unreact(photoId, emoji);
       } else {
@@ -238,10 +205,8 @@ export default function WallPage() {
   }
 
   return (
-    <main
-      className={`min-h-screen ${theme.gradient} transition-all duration-2000 ease-in-out p-4 overflow-hidden`}
-    >
-      <ConfettiBackground accent={theme.accent} />
+    <main className="event-gradient-bg min-h-screen transition-all duration-2000 ease-in-out p-4 overflow-hidden">
+      {features.confetti && <ConfettiBackground accent={accent} />}
 
       {!connected && (
         <div
@@ -254,57 +219,62 @@ export default function WallPage() {
 
       <div className="relative z-10">
         <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
-          🎉 Joyeux 25 ans ! 🎉
+          {eventConfig.eventName}
         </h1>
 
         {photos.length === 0 && !spotlight ? (
-        <p className="text-center text-purple-200 text-xl mt-20">
-          En attente des premières photos... scanne le QR code pour
-          participer 📱
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-          {photos.map((photo) => (
-            <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
-              <div className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20">
-                <img
-                  src={resolveUrl(photo.url)}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-                <FloatersOverlay
-                  floaters={floaters.filter((f) => f.photoId === photo.id)}
-                />
+          <p className="text-center text-purple-200 text-xl mt-20">
+            {eventConfig.welcomeMessage}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {photos.map((photo) => (
+              <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
+                <div className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20">
+                  <img
+                    src={resolveUrl(photo.url)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                  {features.reactions && (
+                    <FloatersOverlay
+                      floaters={floaters.filter((f) => f.photoId === photo.id)}
+                    />
+                  )}
+                </div>
+                {features.reactions && (
+                  <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
+                    {REACTION_EMOJIS.map((emoji) => {
+                      const mine = myReactions.has(`${photo.id}:${emoji}`);
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => handleReact(photo.id, emoji)}
+                          disabled={cooldowns.has(`${photo.id}:${emoji}`)}
+                          title={mine ? "Retirer ma réaction" : "Réagir"}
+                          className={`flex shrink-0 items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+                            mine
+                              ? "bg-pink-500/40 ring-pink-300/60"
+                              : "bg-white/10 ring-white/15"
+                          }`}
+                        >
+                          <span className="text-xs sm:text-sm">{emoji}</span>
+                          <span
+                            className={`text-[10px] sm:text-xs tabular-nums ${
+                              mine
+                                ? "text-white font-semibold"
+                                : "text-purple-200"
+                            }`}
+                          >
+                            {photo.reactions?.[emoji] ?? 0}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
-                {REACTION_EMOJIS.map((emoji) => {
-                  const mine = myReactions.has(`${photo.id}:${emoji}`);
-                  return (
-                    <button
-                      key={emoji}
-                      onClick={() => handleReact(photo.id, emoji)}
-                      disabled={cooldowns.has(`${photo.id}:${emoji}`)}
-                      title={mine ? "Retirer ma réaction" : "Réagir"}
-                      className={`flex shrink-0 items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
-                        mine
-                          ? "bg-pink-500/40 ring-pink-300/60"
-                          : "bg-white/10 ring-white/15"
-                      }`}
-                    >
-                      <span className="text-xs sm:text-sm">{emoji}</span>
-                      <span
-                        className={`text-[10px] sm:text-xs tabular-nums ${
-                          mine ? "text-white font-semibold" : "text-purple-200"
-                        }`}
-                      >
-                        {photo.reactions?.[emoji] ?? 0}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
       </div>
@@ -327,22 +297,26 @@ export default function WallPage() {
               alt=""
               className="max-w-full max-h-[82vh] rounded-2xl shadow-2xl ring-4 ring-white/30 object-contain"
             />
-            <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
-              {REACTION_EMOJIS.map((emoji) => (
-                <span
-                  key={emoji}
-                  className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
-                >
-                  <span className="text-base md:text-xl">{emoji}</span>
-                  <span className="text-xs md:text-base tabular-nums">
-                    {spotlight.reactions?.[emoji] ?? 0}
+            {features.reactions && (
+              <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
+                {REACTION_EMOJIS.map((emoji) => (
+                  <span
+                    key={emoji}
+                    className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
+                  >
+                    <span className="text-base md:text-xl">{emoji}</span>
+                    <span className="text-xs md:text-base tabular-nums">
+                      {spotlight.reactions?.[emoji] ?? 0}
+                    </span>
                   </span>
-                </span>
-              ))}
-            </div>
-            <FloatersOverlay
-              floaters={floaters.filter((f) => f.photoId === spotlight.id)}
-            />
+                ))}
+              </div>
+            )}
+            {features.reactions && (
+              <FloatersOverlay
+                floaters={floaters.filter((f) => f.photoId === spotlight.id)}
+              />
+            )}
           </div>
         </div>
       )}

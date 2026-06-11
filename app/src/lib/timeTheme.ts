@@ -1,38 +1,52 @@
 /**
  * Palette du mur selon l'heure réelle : la fête évolue, le fond aussi.
- * Les classes Tailwind sont des chaînes COMPLÈTES (jamais concaténées)
- * pour être détectées par le JIT.
+ * Les couleurs sont appliquées via CSS variables (voir applyEventTheme.ts).
  */
 
+import { eventConfig } from "@/config/event";
+
 export interface TimeTheme {
-  /** Classes Tailwind du dégradé de fond. */
-  gradient: string;
-  /** Couleur d'accent (hex), ex: confettis. */
+  gradientFrom: string;
+  gradientVia: string;
+  gradientTo: string;
   accent: string;
+  primary: string;
+  secondary: string;
 }
 
-/** Après-midi / début de soirée — palette vive actuelle. Sert aussi de valeur SSR. */
+/** Après-midi / début de soirée — palette vive actuelle. */
 export const DEFAULT_THEME: TimeTheme = {
-  gradient: "bg-linear-to-br from-purple-950 via-purple-900 to-pink-900",
-  accent: "#f472b6",
+  ...eventConfig.theme,
 };
 
 /** Soirée (20h-23h) — doré/orangé plus chaleureux. */
 const EVENING_THEME: TimeTheme = {
-  gradient: "bg-linear-to-br from-purple-950 via-rose-900 to-amber-900",
+  primary: "#3b0764",
+  secondary: "#881337",
   accent: "#fbbf24",
+  gradientFrom: "#3b0764",
+  gradientVia: "#881337",
+  gradientTo: "#78350f",
 };
 
 /** Nuit (23h-2h) — bleu nuit / indigo profond. */
 const NIGHT_THEME: TimeTheme = {
-  gradient: "bg-linear-to-br from-slate-950 via-indigo-950 to-purple-950",
+  primary: "#020617",
+  secondary: "#1e1b4b",
   accent: "#818cf8",
+  gradientFrom: "#020617",
+  gradientVia: "#1e1b4b",
+  gradientTo: "#3b0764",
 };
 
 /** Très tard (2h-6h) — encore plus sombre et calme. */
 const LATE_NIGHT_THEME: TimeTheme = {
-  gradient: "bg-linear-to-br from-black via-slate-950 to-indigo-950",
+  primary: "#000000",
+  secondary: "#020617",
   accent: "#6366f1",
+  gradientFrom: "#000000",
+  gradientVia: "#020617",
+  gradientTo: "#1e1b4b",
 };
 
 export function getTimeTheme(date: Date = new Date()): TimeTheme {

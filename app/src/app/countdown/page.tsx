@@ -2,20 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { eventConfig } from "@/config/event";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 
-// ============================================================================
-// CONFIGURATION — à adapter avant le jour J :
-//
-// Heure cible du compte à rebours, au format "AAAA-MM-JJTHH:MM:SS"
-// (heure locale de la machine qui affiche la page).
-// Ex: minuit dans la nuit du 17 au 18 juillet -> "2026-07-18T00:00:00"
-console.log(process.env.TARGET_DATE);
-const TARGET_DATE = new Date(process.env.TARGET_DATE ?? "2026-07-18T00:00:00");
-
-// Texte affiché en grand quand le compte à rebours atteint zéro.
-const CELEBRATION_TEXT = "🎉 Joyeux 25 ans 🎉";
-// ============================================================================
+const TARGET_DATE = new Date(
+  process.env.NEXT_PUBLIC_TARGET_DATE ??
+    eventConfig.countdownTarget ??
+    "2026-07-18T00:00:00"
+);
+const CELEBRATION_TEXT = eventConfig.celebrationText;
 
 interface Remaining {
   days: number;
@@ -126,8 +121,12 @@ export default function CountdownPage() {
         ];
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 flex flex-col items-center justify-center p-6">
-      {isOver ? <CelebrationConfetti /> : <ConfettiBackground />}
+    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center p-6">
+      {isOver ? (
+        eventConfig.features.confetti && <CelebrationConfetti />
+      ) : (
+        eventConfig.features.confetti && <ConfettiBackground />
+      )}
 
       {isOver ? (
         /* ------ Célébration ------ */

@@ -11,6 +11,7 @@ import {
   AdminUnauthorizedError,
 } from "@/lib/adminAuth";
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
+import { eventConfig } from "@/config/event";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -35,7 +36,7 @@ function downloadBlob(blob: Blob, filename: string) {
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 p-4 pb-28">
+    <main className="relative min-h-dvh overflow-hidden event-gradient-bg p-4 pb-28">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-pink-500/15 blur-3xl"
@@ -322,38 +323,42 @@ export default function AdminPage() {
         >
           Photos du mur
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("messages")}
-          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
-            activeTab === "messages"
-              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
-              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
-          }`}
-        >
-          Messages privés
-        </button>
+        {eventConfig.features.privateMessages && (
+          <button
+            type="button"
+            onClick={() => setActiveTab("messages")}
+            className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
+              activeTab === "messages"
+                ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+                : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+            }`}
+          >
+            Messages privés
+          </button>
+        )}
       </div>
 
       {activeTab === "messages" ? (
         <AdminMessagesTab onUnauthorized={handleUnauthorized} />
       ) : (
         <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={toggleSelectAll}
-          disabled={displayedPhotos.length === 0 || busy}
-          className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow ring-1 ring-white/20 backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
-        >
-          {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
-        </button>
-        {hasSelection && (
-          <p className="text-sm text-purple-200">
-            {selectedCount} photo(s) sélectionnée(s)
-          </p>
-        )}
-      </div>
+      {eventConfig.features.adminBulkActions && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            disabled={displayedPhotos.length === 0 || busy}
+            className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow ring-1 ring-white/20 backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
+          </button>
+          {hasSelection && (
+            <p className="text-sm text-purple-200">
+              {selectedCount} photo(s) sélectionnée(s)
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {displayedPhotos.map((photo) => {
@@ -365,15 +370,17 @@ export default function AdminPage() {
                 isSelected ? "ring-pink-400" : "ring-white/10"
               }`}
             >
-              <label className="absolute top-1 left-1 z-10 flex cursor-pointer items-center rounded-md bg-black/50 p-1.5 backdrop-blur-sm">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelect(photo.id)}
-                  className="h-4 w-4 cursor-pointer accent-purple-600"
-                  aria-label={`Sélectionner la photo ${photo.id}`}
-                />
-              </label>
+              {eventConfig.features.adminBulkActions && (
+                <label className="absolute top-1 left-1 z-10 flex cursor-pointer items-center rounded-md bg-black/50 p-1.5 backdrop-blur-sm">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelect(photo.id)}
+                    className="h-4 w-4 cursor-pointer accent-purple-600"
+                    aria-label={`Sélectionner la photo ${photo.id}`}
+                  />
+                </label>
+              )}
               <button
                 type="button"
                 onClick={() => setZoomedPhoto(photo)}
@@ -399,31 +406,39 @@ export default function AdminPage() {
         })}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 bg-purple-950/90 px-4 py-3 shadow-lg backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3">
-          {hasSelection && (
-            <span className="text-sm text-purple-200">
-              {selectedCount} photo(s) sélectionnée(s)
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleBulkExport}
-            disabled={!hasSelection || busy}
-            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
-          >
-            📥 Télécharger la sélection
-          </button>
-          <button
-            type="button"
-            onClick={handleBulkDelete}
-            disabled={!hasSelection || busy}
-            className="cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
-          >
-            🗑️ Supprimer la sélection
-          </button>
+      {eventConfig.features.adminBulkActions && (
+        <div
+          className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 px-4 py-3 shadow-lg backdrop-blur-md"
+          style={{
+            background:
+              "color-mix(in srgb, var(--event-gradient-from) 90%, transparent)",
+          }}
+        >
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3">
+            {hasSelection && (
+              <span className="text-sm text-purple-200">
+                {selectedCount} photo(s) sélectionnée(s)
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleBulkExport}
+              disabled={!hasSelection || busy}
+              className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
+            >
+              📥 Télécharger la sélection
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={!hasSelection || busy}
+              className="cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
+            >
+              🗑️ Supprimer la sélection
+            </button>
+          </div>
         </div>
-      </div>
+      )}
         </>
       )}
 

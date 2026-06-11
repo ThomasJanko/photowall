@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { eventConfig } from "@/config/event";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
@@ -107,7 +108,7 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 flex flex-col items-center px-5 py-8 sm:py-12">
+    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center px-5 py-8 sm:py-12">
       {/* Halos décoratifs en arrière-plan */}
       <div
         aria-hidden
@@ -118,7 +119,7 @@ export default function UploadPage() {
         className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl"
       />
 
-      <ConfettiBackground />
+      {eventConfig.features.confetti && <ConfettiBackground />}
 
       <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6">
         <header className="text-center space-y-2">
@@ -203,12 +204,14 @@ export default function UploadPage() {
         🖼️ Voir le mur de photos
       </Link>
 
-      <Link
-        href="/message"
-        className="relative mt-3 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"
-      >
-        💌 Laisser un message privé
-      </Link>
+      {eventConfig.features.privateMessages && (
+        <Link
+          href="/message"
+          className="relative mt-3 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"
+        >
+          💌 Laisser un message privé
+        </Link>
+      )}
     </main>
   );
 }

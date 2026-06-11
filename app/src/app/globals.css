@@ -3,6 +3,23 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Thème événement (défaut = violet/rose actuel, surchargé par EventThemeProvider) */
+  --event-gradient-from: #3b0764;
+  --event-gradient-via: #581c87;
+  --event-gradient-to: #831843;
+  --event-accent: #f472b6;
+  --event-primary: #3b0764;
+  --event-secondary: #581c87;
+}
+
+/** Dégradé de fond réutilisable sur toutes les pages événement. */
+.event-gradient-bg {
+  background: linear-gradient(
+    to bottom right,
+    var(--event-gradient-from),
+    var(--event-gradient-via),
+    var(--event-gradient-to)
+  );
 }
 
 @theme inline {

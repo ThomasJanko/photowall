@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { DEFAULT_REACTION_EMOJIS } from "../src/config/event";
 
 /**
  * Stockage simple en fichier JSON (pas de dépendance native).
@@ -12,7 +13,8 @@ const DB_FILE = path.join(DATA_DIR, "photos.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-export const REACTION_EMOJIS = ["❤️", "🔥", "😂", "🎉"] as const;
+/** Aligné sur src/config/event.ts (DEFAULT_REACTION_EMOJIS). */
+export const REACTION_EMOJIS = DEFAULT_REACTION_EMOJIS;
 
 export interface PhotoRow {
   id: string;

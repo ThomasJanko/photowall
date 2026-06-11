@@ -107,7 +107,7 @@ export default function MessagePage() {
     (text.trim().length > 0 || media !== null);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 flex flex-col items-center px-5 py-8 sm:py-12">
+    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center px-5 py-8 sm:py-12">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl"

@@ -1,6 +1,8 @@
-/** Emojis de réaction autorisés (doit rester aligné avec server/db.ts). */
-export const REACTION_EMOJIS = ["❤️", "🔥", "😂", "🎉"] as const;
-export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+import { DEFAULT_REACTION_EMOJIS } from "@/config/event";
+
+/** Réexport depuis la config événement (aligné avec server/db.ts). */
+export const REACTION_EMOJIS = DEFAULT_REACTION_EMOJIS;
+export type ReactionEmoji = (typeof DEFAULT_REACTION_EMOJIS)[number];
 
 export interface Photo {
   id: string;
