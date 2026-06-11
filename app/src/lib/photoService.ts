@@ -28,6 +28,12 @@ export interface PhotoService {
   /** S'abonne aux réactions (pour les compteurs + animations du mur). */
   onReaction(callback: (event: ReactionEvent) => void): () => void;
 
+  /**
+   * S'abonne aux changements de connexion temps réel (optionnel).
+   * `true` = connecté, `false` = déconnecté ou reconnexion en cours.
+   */
+  onConnectionChange?(callback: (connected: boolean) => void): () => void;
+
   /** Masque une photo (admin). */
   hidePhoto(id: string): Promise<void>;
 }

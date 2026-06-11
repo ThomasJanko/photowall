@@ -190,6 +190,15 @@ export class SupabasePhotoService implements PhotoService {
     return () => this.client.removeChannel(channel);
   }
 
+  /**
+   * No-op : le suivi Realtime Supabase nécessiterait un refactor des canaux.
+   * On considère toujours connecté en mode online pour ne pas alarmer à tort.
+   */
+  onConnectionChange(callback: (connected: boolean) => void): () => void {
+    callback(true);
+    return () => {};
+  }
+
   async hidePhoto(id: string): Promise<void> {
     const { error } = await this.client
       .from(TABLE)

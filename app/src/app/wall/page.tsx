@@ -82,6 +82,8 @@ export default function WallPage() {
   // Thème horaire. Défaut = palette violette pour un SSR stable ;
   // la vraie valeur est calculée après mount (pas de mismatch d'hydratation).
   const [theme, setTheme] = useState<TimeTheme>(DEFAULT_THEME);
+  // Connexion temps réel (socket.io en local). Défaut true = pas de badge au chargement.
+  const [connected, setConnected] = useState(true);
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
@@ -156,10 +158,13 @@ export default function WallPage() {
       }
     );
 
+    const unsubConnection = service.onConnectionChange?.(setConnected);
+
     return () => {
       unsubNew();
       unsubRemoved();
       unsubReaction();
+      unsubConnection?.();
     };
   }, []);
 
@@ -237,6 +242,15 @@ export default function WallPage() {
       className={`min-h-screen ${theme.gradient} transition-all duration-2000 ease-in-out p-4 overflow-hidden`}
     >
       <ConfettiBackground accent={theme.accent} />
+
+      {!connected && (
+        <div
+          role="status"
+          className="pulse-soft fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm text-orange-200 ring-1 ring-orange-400/30 backdrop-blur-sm"
+        >
+          🔌 Reconnexion en cours...
+        </div>
+      )}
 
       <div className="relative z-10">
         <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">

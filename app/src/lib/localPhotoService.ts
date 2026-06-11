@@ -77,6 +77,25 @@ export class LocalPhotoService implements PhotoService {
     return () => this.socket.off("photo:reaction", callback);
   }
 
+  onConnectionChange(callback: (connected: boolean) => void): () => void {
+    const onConnect = () => callback(true);
+    const onDisconnect = () => callback(false);
+    const onReconnectAttempt = () => callback(false);
+
+    this.socket.on("connect", onConnect);
+    this.socket.on("disconnect", onDisconnect);
+    this.socket.on("reconnect_attempt", onReconnectAttempt);
+
+    // État initial au moment de l'abonnement
+    callback(this.socket.connected);
+
+    return () => {
+      this.socket.off("connect", onConnect);
+      this.socket.off("disconnect", onDisconnect);
+      this.socket.off("reconnect_attempt", onReconnectAttempt);
+    };
+  }
+
   async hidePhoto(id: string): Promise<void> {
     const res = await fetch(`${SERVER_URL}/api/photos/${id}`, {
       method: "DELETE",
