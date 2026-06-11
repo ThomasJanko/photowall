@@ -1,0 +1,29 @@
+node_modules
+.next
+out
+build
+coverage
+
+# Données locales : montées en volume à l'exécution, pas copiées dans l'image
+data
+
+# Secrets et config locale
+.env*
+!.env.docker.example
+
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+*.md
+!DOCKER.md
+
+# Logs et artefacts
+npm-debug.log*
+*.tsbuildinfo
+.DS_Store
+qrcode-acces.png
+
+# Dev only
+terminals

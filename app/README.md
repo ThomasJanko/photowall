@@ -23,7 +23,7 @@ npm run dev:all
 
 - Front : http://localhost:3000
 - API/serveur photos : http://localhost:4000
-- Photos stockées dans `data/uploads/`, métadonnées dans `data/photos.db` (SQLite)
+- Photos stockées dans `data/uploads/`, métadonnées dans `data/photos.json`
 
 ### Pages
 
@@ -61,3 +61,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
 Dans ce mode, pas besoin de lancer `npm run server` (pas de backend local) —
 juste `npm run dev` et déploiement sur Vercel.
+
+## Déploiement Docker (VPS)
+
+Pour un déploiement sur VPS avec persistance des photos (volume Docker) :
+
+```bash
+cp .env.docker.example .env
+# Éditer .env avec l'IP/domaine public du VPS
+docker compose up -d --build
+```
+
+Guide complet : [DOCKER.md](./DOCKER.md)

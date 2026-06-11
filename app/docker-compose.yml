@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* : lues depuis .env au moment du BUILD (obligatoire)
+        NEXT_PUBLIC_BACKEND: ${NEXT_PUBLIC_BACKEND:-local}
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:-http://localhost:4000}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        TARGET_DATE: ${TARGET_DATE:-}
+    ports:
+      - "${PORT:-3000}:3000"
+      - "${SERVER_PORT:-4000}:4000"
+    volumes:
+      # Persistance : photos.json + fichiers uploadés survivent aux rebuilds
+      - app-data:/app/data
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SERVER_PORT: ${SERVER_PORT:-4000}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  app-data:
