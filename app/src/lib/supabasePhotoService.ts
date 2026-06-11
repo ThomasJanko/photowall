@@ -1,0 +1,126 @@
+import type { Photo } from "./types";
+import type { PhotoService } from "./photoService";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const BUCKET = "photos";
+const TABLE = "photos";
+
+/**
+ * Implémentation "en ligne" : Supabase Storage (photos) + Postgres (métadonnées)
+ * + Realtime (notifications de nouvelles photos).
+ *
+ * SETUP REQUIS (à faire une fois dans le dashboard Supabase) :
+ * 1. Créer un bucket Storage public nommé "photos"
+ * 2. Créer une table "photos" :
+ *    id uuid primary key default gen_random_uuid(),
+ *    url text not null,
+ *    created_at timestamptz default now(),
+ *    hidden boolean default false
+ * 3. Activer Realtime sur la table "photos" (Replication > photos)
+ * 4. Renseigner NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local
+ * 5. npm install @supabase/supabase-js
+ */
+export class SupabasePhotoService implements PhotoService {
+  private client: any;
+
+  constructor() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error(
+        "Supabase non configuré : renseigne NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local"
+      );
+    }
+    // Import paresseux : @supabase/supabase-js doit être installé
+    // (npm install @supabase/supabase-js) si ce backend est utilisé.
+    const { createClient } = require("@supabase/supabase-js");
+    this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
+  async upload(blob: Blob, filename: string): Promise<Photo> {
+    const path = `${Date.now()}-${filename}`;
+
+    const { error: uploadError } = await this.client.storage
+      .from(BUCKET)
+      .upload(path, blob, { contentType: blob.type });
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = this.client.storage
+      .from(BUCKET)
+      .getPublicUrl(path);
+
+    const { data, error } = await this.client
+      .from(TABLE)
+      .insert({ url: publicUrlData.publicUrl })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      url: data.url,
+      createdAt: new Date(data.created_at).getTime(),
+    };
+  }
+
+  async listPhotos(): Promise<Photo[]> {
+    const { data, error } = await this.client
+      .from(TABLE)
+      .select("*")
+      .eq("hidden", false)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      url: row.url,
+      createdAt: new Date(row.created_at).getTime(),
+    }));
+  }
+
+  onNewPhoto(callback: (photo: Photo) => void): () => void {
+    const channel = this.client
+      .channel("photos-insert")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: TABLE },
+        (payload: any) => {
+          if (payload.new.hidden) return;
+          callback({
+            id: payload.new.id,
+            url: payload.new.url,
+            createdAt: new Date(payload.new.created_at).getTime(),
+          });
+        }
+      )
+      .subscribe();
+
+    return () => this.client.removeChannel(channel);
+  }
+
+  onPhotoRemoved(callback: (photoId: string) => void): () => void {
+    const channel = this.client
+      .channel("photos-update")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: TABLE },
+        (payload: any) => {
+          if (payload.new.hidden) callback(payload.new.id);
+        }
+      )
+      .subscribe();
+
+    return () => this.client.removeChannel(channel);
+  }
+
+  async hidePhoto(id: string): Promise<void> {
+    const { error } = await this.client
+      .from(TABLE)
+      .update({ hidden: true })
+      .eq("id", id);
+
+    if (error) throw error;
+  }
+}
