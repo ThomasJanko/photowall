@@ -3,6 +3,7 @@ import http from "http";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { config as loadEnv } from "dotenv";
 import multer from "multer";
 import { ZipArchive } from "archiver";
 import { Server as SocketIOServer } from "socket.io";
@@ -15,6 +16,16 @@ import {
   REACTION_EMOJIS,
   type PhotoRow,
 } from "./db";
+import {
+  createAdminToken,
+  verifyAdminToken,
+  getAdminCode,
+  extractBearerToken,
+} from "../src/lib/adminToken";
+
+// Charge .env.local / .env en dev local (tsx ne le fait pas automatiquement)
+loadEnv({ path: path.join(__dirname, "..", ".env.local") });
+loadEnv({ path: path.join(__dirname, "..", ".env") });
 
 const PORT = Number(process.env.SERVER_PORT ?? 4000);
 const UPLOAD_DIR = path.join(__dirname, "..", "data", "uploads");
@@ -28,7 +39,10 @@ const server = http.createServer(app);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Admin-Token"
+  );
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
@@ -131,8 +145,50 @@ app.post("/api/photos/:id/react", (req, res) => {
   res.json(toPublicPhoto(updated));
 });
 
+/** Middleware : routes admin protégées par token dérivé de ADMIN_CODE. */
+function requireAdmin(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
+  const adminCode = getAdminCode();
+  if (!adminCode) {
+    return res.status(503).json({ error: "Admin non configuré" });
+  }
+
+  const token = extractBearerToken(
+    req.headers.authorization,
+    req.headers["x-admin-token"]
+  );
+
+  if (!verifyAdminToken(token ?? "", adminCode)) {
+    return res.status(401).json({ error: "Non autorisé" });
+  }
+
+  next();
+}
+
+// Connexion admin (mode local)
+app.post("/api/admin/login", (req, res) => {
+  const adminCode = getAdminCode();
+  if (!adminCode) {
+    return res.status(503).json({ error: "Admin non configuré" });
+  }
+
+  const code: unknown = req.body?.code;
+  if (typeof code !== "string" || code !== adminCode) {
+    return res.status(401).json({ error: "Code incorrect" });
+  }
+
+  res.json({ token: createAdminToken(adminCode) });
+});
+
+app.get("/api/admin/verify", requireAdmin, (_req, res) => {
+  res.json({ ok: true });
+});
+
 // Export ZIP de photos (admin). ids vide → toutes les photos visibles.
-app.post("/api/photos/export", (req, res) => {
+app.post("/api/photos/export", requireAdmin, (req, res) => {
   const ids: unknown = req.body?.ids;
   let rows: PhotoRow[];
 
@@ -173,7 +229,7 @@ app.post("/api/photos/export", (req, res) => {
 });
 
 // Masquer plusieurs photos (admin)
-app.delete("/api/photos/bulk", (req, res) => {
+app.delete("/api/photos/bulk", requireAdmin, (req, res) => {
   const ids: unknown = req.body?.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ error: "Liste d'IDs requise" });
@@ -193,7 +249,7 @@ app.delete("/api/photos/bulk", (req, res) => {
 });
 
 // Masquer une photo (admin)
-app.delete("/api/photos/:id", (req, res) => {
+app.delete("/api/photos/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   const existing = getPhoto(id);
 

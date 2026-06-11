@@ -200,6 +200,9 @@ export class SupabasePhotoService implements PhotoService {
   }
 
   async hidePhoto(id: string): Promise<void> {
+    // Mode Supabase : pas de middleware serveur Express. La page /admin
+    // exige une connexion côté front ; pour une vraie sécurité, ajouter
+    // des RLS policies Postgres + Supabase Auth.
     const { error } = await this.client
       .from(TABLE)
       .update({ hidden: true })

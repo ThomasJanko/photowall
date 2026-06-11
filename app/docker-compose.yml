@@ -23,6 +23,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       SERVER_PORT: ${SERVER_PORT:-4000}
+      ADMIN_CODE: ${ADMIN_CODE:-change-moi}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/"]

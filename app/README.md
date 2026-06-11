@@ -29,7 +29,22 @@ npm run dev:all
 
 - `/` — page invité (mobile) : prendre/choisir une photo, compression auto, envoi
 - `/wall` — mur projeté en temps réel (plein écran sur le PC branché au projecteur)
-- `/admin` — modération (masquer une photo)
+- `/admin` — modération (masquer, export ZIP, suppression en masse) — **protégé par code admin**
+
+### Code admin
+
+Définir `ADMIN_CODE` dans `.env.local` (côté serveur, **pas** de préfixe `NEXT_PUBLIC_`) :
+
+```
+ADMIN_CODE=mon-code-secret
+```
+
+Redémarrer le serveur Express (`npm run server` ou `npm run dev:all`) après modification.
+En mode Supabase, la variable est lue par Next.js (routes `/api/admin/*`).
+
+Sans le bon code, `/admin` affiche uniquement l'écran de connexion — aucune photo n'est chargée.
+
+Les routes sensibles côté Express (`DELETE /api/photos/*`, `POST /api/photos/export`) renvoient **401** sans token valide.
 
 ## Accès depuis les téléphones (réseau local, jour J)
 

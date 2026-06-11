@@ -1,6 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 import type { Photo, ReactionEvent } from "./types";
 import type { PhotoService } from "./photoService";
+import { adminFetch } from "./adminAuth";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -97,7 +98,7 @@ export class LocalPhotoService implements PhotoService {
   }
 
   async hidePhoto(id: string): Promise<void> {
-    const res = await fetch(`${SERVER_URL}/api/photos/${id}`, {
+    const res = await adminFetch(`${SERVER_URL}/api/photos/${id}`, {
       method: "DELETE",
     });
     if (!res.ok) throw new Error(`Suppression échouée (${res.status})`);
@@ -105,18 +106,16 @@ export class LocalPhotoService implements PhotoService {
 
   async hidePhotos(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
-    const res = await fetch(`${SERVER_URL}/api/photos/bulk`, {
+    const res = await adminFetch(`${SERVER_URL}/api/photos/bulk`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
     if (!res.ok) throw new Error(`Suppression en masse échouée (${res.status})`);
   }
 
   async exportPhotos(ids: string[]): Promise<Blob> {
-    const res = await fetch(`${SERVER_URL}/api/photos/export`, {
+    const res = await adminFetch(`${SERVER_URL}/api/photos/export`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
     if (!res.ok) throw new Error(`Export échoué (${res.status})`);

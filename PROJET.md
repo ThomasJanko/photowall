@@ -1,110 +1,187 @@
 # Mur de Photos Live — Anniversaire 25 ans
 
+> Dernière mise à jour : 11/06/2026 — état du projet pour reprise future (par toi ou par une IA).
+
 ## 1. Contexte
 
 - Activité : mur de photos en temps réel projeté sur écran/projecteur pendant la fête.
 - Les invités prennent/uploadent des photos depuis leur smartphone → elles s'affichent en direct sur le mur.
 - Surprise totale pour la copine — découverte le jour J.
 - ~80+ invités.
-- Salle **sans wifi** → réseau local possible (option par défaut), mais on garde l'option cloud en fallback.
+- Salle **sans wifi** → mode réseau local retenu par défaut, option Supabase (en ligne) gardée en fallback/abstraction.
 
 ## 2. Contraintes
 
-- Deadline : > 1 mois → marge confortable, mais on vise un **vertical slice fonctionnel rapidement**, puis polish.
-- Doit être **mobile-first** (les invités utilisent leur téléphone).
-- Doit être **robuste en conditions réelles** : mauvais réseau, 80+ utilisateurs, photos lourdes (smartphones modernes = 3-12MB/photo).
+- Mobile-first (les invités utilisent leur téléphone).
+- Robuste en conditions réelles : mauvais réseau, 80+ utilisateurs, photos lourdes.
 - Pas de vrais fonds, pas de blockchain pour ce projet.
 - Code propre, typé (TypeScript), choix d'archi justifiés.
+- **Règle de dev** : toute nouvelle fonctionnalité passe par l'interface `PhotoService`
+  (`src/lib/photoService.ts`) et doit être implémentée dans **les deux** backends
+  (`localPhotoService.ts` ET `supabasePhotoService.ts`), même si l'un des deux
+  reste minimal/no-op. Ne jamais coder une feature qui ne marche que dans un mode
+  sans le documenter clairement.
 
-## 3. Deux modes de déploiement (à choisir plus tard)
+## 3. Statut global
 
-L'app est conçue pour fonctionner dans les deux cas, via une interface commune `PhotoService`. Le switch se fait par variable d'environnement `BACKEND=local|supabase`.
+✅ = fait et fonctionnel · 🟡 = prompt fourni à une IA (Cursor), à vérifier/tester · ⬜ = pas commencé
 
-### Mode LOCAL (recommandé si pas de wifi salle)
-- Routeur wifi portable (~25-30€, type GL.iNet) crée un réseau local "Anniv 25 ans" — supporte 80+ connexions.
-- Laptop branché au projecteur fait tourner le serveur (Next.js + API Express + Socket.io).
-- Photos stockées sur disque local (dossier `uploads/`), métadonnées en SQLite.
-- Invités scannent un QR code → connexion wifi auto + ouverture de l'URL locale (`http://192.168.x.x:3000`).
-- Aucune dépendance internet. Fonctionne même en sous-sol.
-- Plan B : hotspot du laptop si le routeur portable tombe en panne.
+| Fonctionnalité | Statut |
+|---|---|
+| Setup projet (Next.js + TS + Tailwind + Express/Socket.io) | ✅ |
+| Upload + compression côté client + queue retry | ✅ |
+| `/wall` : grille temps réel + spotlight 10s + confettis | ✅ |
+| Réactions emoji (❤️🔥😂🎉) avec animation flottante + compteurs | ✅ |
+| `/admin` : liste + masquage individuel | ✅ |
+| QR code (script CLI `scripts/generate-qr.ts`) | ✅ |
+| Thème de couleurs selon l'heure | 🟡 |
+| Page `/countdown` (compte à rebours + animation finale) | 🟡 |
+| Page `/retrospective` (diaporama + musique fin de soirée) | 🟡 |
+| Indicateur de reconnexion sur `/wall` | 🟡 |
+| Page `/qr` dédiée (affichage grand écran) | 🟡 |
+| `/admin` : sélection multiple + export ZIP + suppression en masse | 🟡 |
+| Dockerisation (Dockerfile + docker-compose) | 🟡 |
+| Protection `/admin` par code (ADMIN_CODE) | 🟡 |
 
-### Mode ONLINE (si wifi salle dispo ou fallback)
-- Hébergement : Vercel (gratuit) pour le front/API.
-- Backend : Supabase (gratuit) — Storage pour les photos, Realtime (websocket) pour le push live, Postgres pour les métadonnées.
-- Limites free tier largement suffisantes pour 80 invités (~200 connexions realtime concurrentes, 1GB storage si compression respectée).
+Les items 🟡 ont été spécifiés via des prompts détaillés donnés à une IA de code
+(Cursor) le 11/06/2026. **Vérifier avant la fête s'ils ont bien été implémentés et
+testés** — sinon, redonner les prompts (conservés dans l'historique de conversation
+Claude, ou à régénérer à partir de ce fichier).
 
-### Ce qui ne change PAS entre les deux modes
-- Frontend Next.js, pages, composants, compression d'image côté client.
-- Interface `PhotoService` (upload, listPhotos, onNewPhoto) — seule l'implémentation change.
+## 4. Architecture
 
-## 4. Stack technique
+### 4.1 Vue d'ensemble
 
-- **Framework** : Next.js (App Router) + TypeScript
-- **Style** : TailwindCSS
-- **Local** : Express + Socket.io + SQLite (better-sqlite3) + stockage fichiers sur disque
-- **Online** : Supabase (Storage + Realtime + Postgres)
-- **Compression image** : côté client via canvas (resize + JPEG quality) avant upload — obligatoire dans les deux modes
+- **Frontend** : Next.js (App Router) + TypeScript + TailwindCSS, dans `app/`.
+- **Backend local** : serveur Express + Socket.io (`server/index.ts`), port `4000`.
+  Stockage **fichiers JSON** (pas de SQLite/base de données — choix fait pour
+  éviter les problèmes de compilation native sous Windows).
+- **Backend online (optionnel)** : Supabase (Storage + Postgres + Realtime).
+- **Switch de backend** : variable d'env `NEXT_PUBLIC_BACKEND` (`local` par défaut
+  ou `supabase`), lu dans `src/lib/photoService.ts`.
 
-## 5. Fonctionnalités
+### 4.2 Interface commune — `src/lib/photoService.ts`
 
-### MVP
-- Page `/` (mobile, invités) :
-  - Accès caméra ou galerie
-  - Compression automatique de l'image avant envoi
-  - Preview + bouton "Envoyer"
-  - Feedback d'envoi (succès / erreur / retry si réseau coupé)
-  - Queue d'upload persistée (IndexedDB/localStorage) en cas de coupure réseau
-- Page `/wall` (écran/projecteur) :
-  - Affichage temps réel des nouvelles photos (mosaïque ou diaporama animé)
-  - Mode plein écran / kiosk
-  - Animation d'arrivée de chaque nouvelle photo (le "wow effect")
-- Page `/admin` (organisateur) :
-  - Liste des photos, possibilité de masquer/supprimer
-  - Reset de la session
+Toute l'app (pages, composants) ne dépend QUE de l'interface `PhotoService` :
+`upload`, `listPhotos`, `onNewPhoto`, `onPhotoRemoved`, `react`, `unreact`,
+`onReaction`, `hidePhoto` (+ futurs ajouts : `exportPhotos`, `hidePhotos`,
+`onConnectionChange`, voir section 6). `getPhotoService()` retourne
+`LocalPhotoService` ou `SupabasePhotoService` selon `NEXT_PUBLIC_BACKEND`.
 
-### Nice-to-have (si le temps le permet)
-- Thème visuel personnalisé (couleurs, prénom, décor anniversaire)
-- Filtres/cadres photo amusants avant envoi
-- Compteur de photos / nombre de participants
-- Export de toutes les photos en zip après la soirée
-- QR code généré automatiquement (page dédiée à imprimer/afficher)
+### 4.3 Mode LOCAL (par défaut)
 
-## 6. Parcours utilisateurs
+- `src/lib/localPhotoService.ts` : parle au serveur Express via `fetch` (REST)
+  + `socket.io-client` (temps réel).
+- `src/lib/serverUrl.ts` : `getServerUrl()` dérive automatiquement l'URL du
+  serveur (`window.location.hostname` + port `4000`), avec override possible via
+  `NEXT_PUBLIC_SERVER_URL`. Indispensable pour l'accès depuis les téléphones via
+  IP locale (`http://192.168.x.x`).
+- `server/db.ts` : stockage JSON (`data/photos.json`), lecture/écriture
+  synchrones (volumes faibles). Contient `PhotoRow`, `REACTION_EMOJIS`,
+  `insertPhoto`, `listVisiblePhotos`, `hidePhoto`, `getPhoto`, `addReaction`
+  (avec migration douce pour les anciennes lignes sans `reactions`).
+- `server/index.ts` : routes `GET/POST /api/photos`, `DELETE /api/photos/:id`,
+  `POST /api/photos/:id/react`, fichiers statiques sur `/uploads`. Émet les
+  events Socket.io `photo:new`, `photo:removed`, `photo:reaction`.
+- Photos stockées dans `data/uploads/`.
 
-### Invité
-1. Scanne le QR code (affiché sur table/entrée)
-2. Arrive sur `/` (page mobile)
-3. Prend une photo ou choisit dans sa galerie
-4. Preview → envoie
-5. Voit sa photo apparaître sur le mur projeté quelques secondes après
+### 4.4 Mode ONLINE (Supabase, optionnel)
 
-### Organisateur (toi)
-1. Avant la fête : setup serveur (local ou online), génère le QR code, teste le flow complet
-2. Pendant la fête : laptop branché au projecteur sur `/wall` en plein écran, surveillance via `/admin` sur ton téléphone
-3. Après la fête : export des photos (nice-to-have) ou récupération directe du dossier `uploads/`
+- `src/lib/supabasePhotoService.ts` : Storage (bucket `photos`) + table
+  Postgres `photos` (`id, url, created_at, hidden, reactions jsonb`) + Realtime
+  (`postgres_changes` sur INSERT/UPDATE).
+- ⚠️ Nécessite `REPLICA IDENTITY FULL` sur la table pour recevoir `payload.old`
+  (utilisé pour diffuser les réactions). Setup détaillé en commentaire en tête
+  du fichier.
+- `@supabase/supabase-js` est une dépendance **permanente** du projet (même en
+  mode local) car `photoService.ts` utilise `require()` pour le lazy-load, et
+  webpack résout les `require()` statiquement au build.
 
-## 7. Plan de développement (séquencé)
+### 4.5 Pages existantes
 
-1. Setup Next.js + TypeScript + Tailwind, structure dossiers, interface `PhotoService`
-2. `LocalPhotoService` (Express + Socket.io + stockage fichiers) — premier vertical slice
-3. Page `/` : upload + compression côté client (mock puis branché au service)
-4. Page `/wall` : affichage temps réel + animations d'arrivée
-5. Page `/admin` : modération basique
-6. `SupabasePhotoService` (même interface) pour le mode online
-7. Polish UI : thème anniversaire, transitions, QR code auto-généré
-8. Robustesse : queue d'upload avec retry, gestion offline, mode kiosk
+- `/` : upload (caméra/galerie), compression canvas (`compressImage.ts`,
+  maxDimension 1600px, qualité 0.75), preview, queue retry persistée en
+  localStorage (`uploadQueue.ts`, IDs générés via `generateId()` — pas
+  `crypto.randomUUID()` car indisponible en HTTP non-sécurisé sur IP locale).
+- `/wall` : fond dégradé violet/rose + confettis CSS continus, grille de
+  photos avec animation `photo-pop-in`, spotlight plein écran 10s pour chaque
+  nouvelle photo (`spotlight-pop-in`), réactions emoji avec toggle par appareil
+  (localStorage `wall:my-reactions`), animation `reaction-float`, anti-spam par
+  cooldown (1.5s).
+- `/admin` : liste des photos visibles, bouton masquer par photo.
 
-## 8. Checklist Jour J (à compléter en Phase 4)
+### 4.6 Animations CSS (`src/app/globals.css`)
 
-- [ ] Routeur wifi portable chargé/testé
-- [ ] Laptop + câble HDMI/projecteur testés ensemble
-- [ ] QR codes imprimés (accès wifi + URL app)
-- [ ] Test de charge réaliste avant la fête (plusieurs appareils en simultané)
-- [ ] Plan B réseau (hotspot 4G)
-- [ ] Mode kiosk activé sur le laptop (pas de veille, pas de notifications)
+`photo-pop-in`, `spotlight-pop-in`, `reaction-float`, `confetti-fall` /
+`.confetti-piece`. **Ne pas modifier ces keyframes existantes** — toute nouvelle
+animation doit être ajoutée à la fin du fichier sous un nom différent.
 
-## 9. Décisions en attente
+## 5. Setup & lancement
 
-- [ ] Choix final mode local vs online (à trancher après tests)
-- [ ] Thème visuel / nom de l'événement à afficher sur le mur
-- [ ] Budget routeur wifi portable si mode local retenu
+```bash
+cd app
+npm install
+npm run dev:all   # lance Next.js (3000) + serveur Express/Socket.io (4000)
+```
+
+- Config via `app/.env.local` (voir `.env.local.example`) :
+  `NEXT_PUBLIC_BACKEND` (`local`/`supabase`), `NEXT_PUBLIC_SERVER_URL`
+  (override optionnel), variables Supabase si mode online.
+- QR code d'accès : `scripts/generate-qr.ts` (génère un QR vers l'IP locale du
+  serveur).
+
+## 6. Fonctionnalités spécifiées (🟡 prompts donnés, à vérifier)
+
+Détails complets des specs dans l'historique de conversation Claude du
+11/06/2026. Résumé pour reprise rapide :
+
+1. **Thème horaire** (`src/lib/timeTheme.ts`, `getTimeTheme()`) : palette de
+   `/wall` qui change selon l'heure (vif l'après-midi → doré le soir → bleu nuit
+   tard). Calcul après mount uniquement (évite mismatch hydratation).
+
+2. **`/countdown`** : compte à rebours vers une date cible (constante
+   `TARGET_DATE` à éditer), gros affichage, animation de célébration finale +
+   lien vers `/wall`.
+
+3. **`/retrospective`** : diaporama plein écran de toutes les photos
+   (`listPhotos()`), fondu enchaîné, musique de fond (`<audio>` avec fichier à
+   placer dans `public/music/`), écran de démarrage requis (autoplay bloqué),
+   bouton retour `/wall`.
+
+4. **Indicateur de reconnexion sur `/wall`** : `onConnectionChange` ajouté
+   (optionnellement) à `PhotoService`, badge "🔌 Reconnexion en cours..." si
+   le socket local est déconnecté. No-op acceptable côté Supabase.
+
+5. **`/qr`** : page dédiée affichant en grand le QR vers l'URL publique
+   (`NEXT_PUBLIC_APP_URL`, à définir une fois déployé).
+
+6. **`/admin` avancé** : checkboxes + "tout sélectionner", export ZIP
+   (`POST /api/photos/export`, lib `archiver`), suppression en masse
+   (`DELETE /api/photos/bulk`). Réutilise `hidePhoto` existant.
+
+7. **Docker** : Dockerfile multi-stage + docker-compose, volume persistant pour
+   `data/` (photos.json + uploads), variables `NEXT_PUBLIC_*` injectées au
+   build. Scripts `dev`/`dev:all` non touchés.
+
+8. **Protection admin** : variable `ADMIN_CODE` (serveur uniquement, jamais
+   `NEXT_PUBLIC_*`), écran de connexion sur `/admin`, middleware
+   `requireAdmin` sur les routes de modération (`DELETE /api/photos/:id`,
+   `/bulk`, `/export`), token stocké en localStorage côté client.
+
+## 7. Jour J — points de vigilance (rappel)
+
+- Routeur wifi portable / 4G dédié, positionné central, IP fixe pour le laptop.
+- Projecteur + drap blanc tendu ou écran, câble HDMI + adaptateur.
+- Laptop : pas de veille, branché secteur, terminal dédié pour `npm run dev:all`.
+- QR codes imprimés + affichés (page `/qr` une fois prête).
+- Backup régulier de `data/photos.json` + `data/uploads/` (clé USB).
+- Plan B : hotspot 4G si routeur en panne ; tablette/TV si projecteur en panne.
+
+## 8. Décisions en attente
+
+- [ ] Hébergement final : VPS (Docker) vs Netlify — impacte le mode
+      (`local` impossible sur Netlify, nécessite `supabase` ou un VPS pour le
+      serveur Express).
+- [ ] Vérifier/tester les 8 fonctionnalités 🟡 avant la fête.
+- [ ] Définir `ADMIN_CODE` et `NEXT_PUBLIC_APP_URL` une fois l'hébergement choisi.
+- [ ] Choisir la musique pour `/retrospective` (fichier dans `public/music/`).
