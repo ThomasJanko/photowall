@@ -36,6 +36,12 @@ export interface PhotoService {
 
   /** Masque une photo (admin). */
   hidePhoto(id: string): Promise<void>;
+
+  /** Masque plusieurs photos (admin). */
+  hidePhotos(ids: string[]): Promise<void>;
+
+  /** Exporte des photos en ZIP. Liste vide = toutes les photos visibles. */
+  exportPhotos(ids: string[]): Promise<Blob>;
 }
 
 let instance: PhotoService | null = null;

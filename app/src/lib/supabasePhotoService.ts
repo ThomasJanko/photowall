@@ -207,4 +207,40 @@ export class SupabasePhotoService implements PhotoService {
 
     if (error) throw error;
   }
+
+  async hidePhotos(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    const { error } = await this.client
+      .from(TABLE)
+      .update({ hidden: true })
+      .in("id", ids);
+
+    if (error) throw error;
+  }
+
+  /** Zip côté client : télécharge chaque URL publique puis assemble avec JSZip. */
+  async exportPhotos(ids: string[]): Promise<Blob> {
+    const { default: JSZip } = await import("jszip");
+    const photos = await this.listPhotos();
+    const toExport =
+      ids.length > 0 ? photos.filter((p) => ids.includes(p.id)) : photos;
+
+    if (toExport.length === 0) {
+      throw new Error("Aucune photo à exporter");
+    }
+
+    const zip = new JSZip();
+    await Promise.all(
+      toExport.map(async (photo) => {
+        const res = await fetch(photo.url);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const ext =
+          photo.url.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+        zip.file(`${photo.id}.${ext}`, blob);
+      })
+    );
+
+    return zip.generateAsync({ type: "blob" });
+  }
 }

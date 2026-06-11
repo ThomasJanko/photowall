@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import multer from "multer";
+import { ZipArchive } from "archiver";
 import { Server as SocketIOServer } from "socket.io";
 import {
   insertPhoto,
@@ -12,6 +13,7 @@ import {
   getPhoto,
   addReaction,
   REACTION_EMOJIS,
+  type PhotoRow,
 } from "./db";
 
 const PORT = Number(process.env.SERVER_PORT ?? 4000);
@@ -127,6 +129,67 @@ app.post("/api/photos/:id/react", (req, res) => {
   });
 
   res.json(toPublicPhoto(updated));
+});
+
+// Export ZIP de photos (admin). ids vide → toutes les photos visibles.
+app.post("/api/photos/export", (req, res) => {
+  const ids: unknown = req.body?.ids;
+  let rows: PhotoRow[];
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    rows = listVisiblePhotos();
+  } else {
+    rows = ids
+      .filter((id): id is string => typeof id === "string")
+      .map((id) => getPhoto(id))
+      .filter((row): row is PhotoRow => row !== undefined && row.hidden === 0);
+  }
+
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "Aucune photo à exporter" });
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="photos.zip"'
+  );
+
+  const archive = new ZipArchive({ zlib: { level: 5 } });
+  archive.on("error", (err: Error) => {
+    console.error("[export]", err);
+    if (!res.headersSent) res.status(500).end();
+  });
+  archive.pipe(res);
+
+  for (const row of rows) {
+    const filePath = path.join(UPLOAD_DIR, row.filename);
+    if (fs.existsSync(filePath)) {
+      archive.file(filePath, { name: row.filename });
+    }
+  }
+
+  void archive.finalize();
+});
+
+// Masquer plusieurs photos (admin)
+app.delete("/api/photos/bulk", (req, res) => {
+  const ids: unknown = req.body?.ids;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: "Liste d'IDs requise" });
+  }
+
+  let removed = 0;
+  for (const id of ids) {
+    if (typeof id !== "string") continue;
+    const existing = getPhoto(id);
+    if (!existing || existing.hidden) continue;
+    hidePhoto(id);
+    io.emit("photo:removed", id);
+    removed++;
+  }
+
+  res.json({ removed });
 });
 
 // Masquer une photo (admin)

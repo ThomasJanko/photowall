@@ -102,4 +102,24 @@ export class LocalPhotoService implements PhotoService {
     });
     if (!res.ok) throw new Error(`Suppression échouée (${res.status})`);
   }
+
+  async hidePhotos(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    const res = await fetch(`${SERVER_URL}/api/photos/bulk`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) throw new Error(`Suppression en masse échouée (${res.status})`);
+  }
+
+  async exportPhotos(ids: string[]): Promise<Blob> {
+    const res = await fetch(`${SERVER_URL}/api/photos/export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) throw new Error(`Export échoué (${res.status})`);
+    return res.blob();
+  }
 }
