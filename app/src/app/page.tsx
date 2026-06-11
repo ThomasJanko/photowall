@@ -202,6 +202,13 @@ export default function UploadPage() {
       >
         🖼️ Voir le mur de photos
       </Link>
+
+      <Link
+        href="/message"
+        className="relative mt-3 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"
+      >
+        💌 Laisser un message privé
+      </Link>
     </main>
   );
 }

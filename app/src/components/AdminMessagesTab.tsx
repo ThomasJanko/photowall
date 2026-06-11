@@ -1,0 +1,196 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { PrivateMessage } from "@/lib/types/privateMessage";
+import {
+  deletePrivateMessage,
+  fetchPrivateMessageMedia,
+  listPrivateMessages,
+} from "@/lib/privateMessages";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+interface MessageMediaProps {
+  filename: string;
+  mediaType: "image" | "video";
+  onUnauthorized: (err: unknown) => boolean;
+}
+
+function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let revoked = false;
+    setLoading(true);
+    setError(null);
+
+    fetchPrivateMessageMedia(filename)
+      .then((blob) => {
+        if (revoked) return;
+        setBlobUrl(URL.createObjectURL(blob));
+      })
+      .catch((err) => {
+        if (revoked) return;
+        if (onUnauthorized(err)) return;
+        setError("Impossible de charger le média");
+      })
+      .finally(() => {
+        if (!revoked) setLoading(false);
+      });
+
+    return () => {
+      revoked = true;
+      setBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    };
+  }, [filename, onUnauthorized]);
+
+  async function handleDownload() {
+    try {
+      const blob = await fetchPrivateMessageMedia(filename);
+      downloadBlob(blob, filename);
+    } catch (err) {
+      if (onUnauthorized(err)) return;
+      alert("Téléchargement impossible");
+    }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-purple-300">Chargement du média…</p>;
+  }
+  if (error) {
+    return <p className="text-sm text-orange-300">{error}</p>;
+  }
+  if (!blobUrl) return null;
+
+  return (
+    <div className="space-y-2">
+      {mediaType === "image" ? (
+        <img
+          src={blobUrl}
+          alt=""
+          className="max-h-64 w-full rounded-xl object-contain bg-black/20"
+        />
+      ) : (
+        <video
+          src={blobUrl}
+          controls
+          className="max-h-64 w-full rounded-xl bg-black/20"
+        />
+      )}
+      <button
+        type="button"
+        onClick={handleDownload}
+        className="cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
+      >
+        📥 Télécharger
+      </button>
+    </div>
+  );
+}
+
+interface AdminMessagesTabProps {
+  onUnauthorized: (err: unknown) => boolean;
+}
+
+export function AdminMessagesTab({ onUnauthorized }: AdminMessagesTabProps) {
+  const [messages, setMessages] = useState<PrivateMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    listPrivateMessages()
+      .then(setMessages)
+      .catch((err) => {
+        if (onUnauthorized(err)) return;
+        console.error(err);
+      })
+      .finally(() => setLoading(false));
+  }, [onUnauthorized]);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer ce message privé ?")) return;
+    setBusyId(id);
+    try {
+      await deletePrivateMessage(id);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      if (onUnauthorized(err)) return;
+      alert("Erreur lors de la suppression");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) {
+    return <p className="text-center text-purple-200 mt-10">Chargement…</p>;
+  }
+
+  if (messages.length === 0) {
+    return (
+      <p className="text-center text-purple-300 mt-10">
+        Aucun message privé pour le moment 💌
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4 pb-8">
+      {messages.map((msg) => (
+        <article
+          key={msg.id}
+          className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 backdrop-blur-sm"
+        >
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <time className="text-xs text-purple-300">
+              {formatDate(msg.createdAt)}
+            </time>
+            <button
+              type="button"
+              onClick={() => handleDelete(msg.id)}
+              disabled={busyId === msg.id}
+              className="cursor-pointer rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              Supprimer
+            </button>
+          </div>
+
+          {msg.text && (
+            <p className="mb-3 whitespace-pre-wrap text-white leading-relaxed">
+              {msg.text}
+            </p>
+          )}
+
+          {msg.mediaFilename && msg.mediaType && (
+            <MessageMedia
+              filename={msg.mediaFilename}
+              mediaType={msg.mediaType}
+              onUnauthorized={onUnauthorized}
+            />
+          )}
+        </article>
+      ))}
+    </div>
+  );
+}

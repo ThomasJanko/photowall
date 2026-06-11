@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import {
@@ -10,11 +10,13 @@ import {
   verifyAdminSession,
   AdminUnauthorizedError,
 } from "@/lib/adminAuth";
+import { AdminMessagesTab } from "@/components/AdminMessagesTab";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
+type AdminTab = "photos" | "messages";
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -58,6 +60,7 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [failCount, setFailCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<AdminTab>("photos");
 
   const displayedPhotos = useMemo(
     () => photos.slice().reverse(),
@@ -160,6 +163,12 @@ export default function AdminPage() {
     }
     return handleAdminError(err);
   }
+
+  const handleUnauthorized = useCallback(
+    (err: unknown): boolean => onAdminError(err),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -287,7 +296,9 @@ export default function AdminPage() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Administration</h1>
           <p className="text-purple-200">
-            {photos.length} photo(s) actuellement sur le mur
+            {activeTab === "photos"
+              ? `${photos.length} photo(s) actuellement sur le mur`
+              : "Messages privés des invités"}
           </p>
         </div>
         <button
@@ -299,6 +310,35 @@ export default function AdminPage() {
         </button>
       </div>
 
+      <div className="mb-6 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("photos")}
+          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
+            activeTab === "photos"
+              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+          }`}
+        >
+          Photos du mur
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("messages")}
+          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
+            activeTab === "messages"
+              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+          }`}
+        >
+          Messages privés
+        </button>
+      </div>
+
+      {activeTab === "messages" ? (
+        <AdminMessagesTab onUnauthorized={handleUnauthorized} />
+      ) : (
+        <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -384,8 +424,10 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
+        </>
+      )}
 
-      {zoomedPhoto && (
+      {activeTab === "photos" && zoomedPhoto && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
           onClick={() => setZoomedPhoto(null)}
