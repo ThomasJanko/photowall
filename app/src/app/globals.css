@@ -101,3 +101,36 @@ body {
   animation: confetti-fall linear infinite;
   will-change: transform;
 }
+
+/* Page /countdown : explosion du texte de célébration à la fin du décompte */
+@keyframes celebration-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-6deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Pulsation continue une fois le texte apparu */
+@keyframes celebration-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.celebration-pop {
+  animation:
+    celebration-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    celebration-pulse 2.4s ease-in-out 1.2s infinite;
+}
