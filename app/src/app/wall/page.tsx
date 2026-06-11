@@ -23,6 +23,22 @@ function resolveUrl(url: string): string {
   return `${SERVER_URL}${url}`;
 }
 
+/**
+ * Réactions déjà posées par cet appareil, lues depuis localStorage.
+ * Sans risque pour l'hydratation : la grille n'est rendue qu'après le
+ * chargement des photos, donc jamais dans le HTML serveur.
+ */
+function loadMyReactions(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(MY_REACTIONS_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    // localStorage corrompu ou indisponible : on repart de zéro
+    return new Set();
+  }
+}
+
 interface Floater {
   id: number;
   photoId: string;
@@ -58,7 +74,7 @@ export default function WallPage() {
   // Boutons emoji temporairement désactivés (clé: "photoId:emoji")
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   // Réactions posées par cet appareil (clé: "photoId:emoji"), persistées en localStorage
-  const [myReactions, setMyReactions] = useState<Set<string>>(new Set());
+  const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
@@ -82,17 +98,6 @@ export default function WallPage() {
       setFloaters((prev) => prev.filter((f) => f.id !== id));
     }, FLOATER_LIFETIME_MS);
   }
-
-  // Restaure les réactions de cet appareil (après hydratation, localStorage
-  // n'existe pas côté serveur).
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(MY_REACTIONS_KEY);
-      if (raw) setMyReactions(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      // localStorage corrompu ou indisponible : on repart de zéro
-    }
-  }, []);
 
   function persistMyReactions(next: Set<string>) {
     setMyReactions(next);
@@ -141,7 +146,6 @@ export default function WallPage() {
       unsubRemoved();
       unsubReaction();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Après 10s en plein écran, la photo en tête de file rejoint la grille
@@ -225,7 +229,7 @@ export default function WallPage() {
           participer 📱
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {photos.map((photo) => (
             <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
               <div className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20">
@@ -238,7 +242,7 @@ export default function WallPage() {
                   floaters={floaters.filter((f) => f.photoId === photo.id)}
                 />
               </div>
-              <div className="flex justify-center gap-1">
+              <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
                 {REACTION_EMOJIS.map((emoji) => {
                   const mine = myReactions.has(`${photo.id}:${emoji}`);
                   return (
@@ -247,15 +251,15 @@ export default function WallPage() {
                       onClick={() => handleReact(photo.id, emoji)}
                       disabled={cooldowns.has(`${photo.id}:${emoji}`)}
                       title={mine ? "Retirer ma réaction" : "Réagir"}
-                      className={`flex items-center gap-1 rounded-full px-2 py-1 ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+                      className={`flex shrink-0 items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
                         mine
                           ? "bg-pink-500/40 ring-pink-300/60"
                           : "bg-white/10 ring-white/15"
                       }`}
                     >
-                      <span className="text-sm">{emoji}</span>
+                      <span className="text-xs sm:text-sm">{emoji}</span>
                       <span
-                        className={`text-xs tabular-nums ${
+                        className={`text-[10px] sm:text-xs tabular-nums ${
                           mine ? "text-white font-semibold" : "text-purple-200"
                         }`}
                       >
@@ -288,14 +292,14 @@ export default function WallPage() {
               alt=""
               className="max-w-full max-h-[82vh] rounded-2xl shadow-2xl ring-4 ring-white/30 object-contain"
             />
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+            <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
               {REACTION_EMOJIS.map((emoji) => (
                 <span
                   key={emoji}
-                  className="flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
+                  className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
                 >
-                  <span className="text-lg md:text-xl">{emoji}</span>
-                  <span className="text-sm md:text-base tabular-nums">
+                  <span className="text-base md:text-xl">{emoji}</span>
+                  <span className="text-xs md:text-base tabular-nums">
                     {spotlight.reactions?.[emoji] ?? 0}
                   </span>
                 </span>
