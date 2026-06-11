@@ -21,8 +21,15 @@ const CONFETTI_PIECES = Array.from({ length: 18 }, (_, i) => ({
   round: i % 3 === 0,
 }));
 
-/** Pluie de confettis CSS en continu, purement décorative. */
-export function ConfettiBackground() {
+/**
+ * Pluie de confettis CSS en continu, purement décorative.
+ * `accent` teinte 1 confetti sur 3 pour suivre la palette du moment.
+ */
+export function ConfettiBackground({
+  accent,
+}: {
+  readonly accent?: string;
+}) {
   return (
     <div
       aria-hidden
@@ -38,7 +45,7 @@ export function ConfettiBackground() {
             left: `${p.left}%`,
             width: p.size,
             height: p.round ? p.size : p.size * 1.6,
-            backgroundColor: p.color,
+            backgroundColor: accent && i % 3 === 0 ? accent : p.color,
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
           }}

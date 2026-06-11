@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { REACTION_EMOJIS, type Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
+import { DEFAULT_THEME, getTimeTheme, type TimeTheme } from "@/lib/timeTheme";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -17,6 +18,8 @@ const REACTION_COOLDOWN_MS = 1500;
 const MY_REACTIONS_KEY = "wall:my-reactions";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
+/** Fréquence de recalcul du thème horaire. */
+const THEME_REFRESH_MS = 5 * 60_000;
 
 /** Préfixe les URLs relatives (mode local: /uploads/xxx.jpg) avec le serveur. */
 function resolveUrl(url: string): string {
@@ -76,6 +79,9 @@ export default function WallPage() {
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   // Réactions posées par cet appareil (clé: "photoId:emoji"), persistées en localStorage
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
+  // Thème horaire. Défaut = palette violette pour un SSR stable ;
+  // la vraie valeur est calculée après mount (pas de mismatch d'hydratation).
+  const [theme, setTheme] = useState<TimeTheme>(DEFAULT_THEME);
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
@@ -108,6 +114,14 @@ export default function WallPage() {
       // Stockage plein/indisponible : le toggle reste valable pour la session
     }
   }
+
+  // Recalcule la palette selon l'heure, toutes les 5 minutes
+  useEffect(() => {
+    const update = () => setTheme(getTimeTheme());
+    update();
+    const interval = setInterval(update, THEME_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const service = getPhotoService();
@@ -219,8 +233,10 @@ export default function WallPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-pink-900 p-4 overflow-hidden">
-      <ConfettiBackground />
+    <main
+      className={`min-h-screen ${theme.gradient} transition-all duration-2000 ease-in-out p-4 overflow-hidden`}
+    >
+      <ConfettiBackground accent={theme.accent} />
 
       <div className="relative z-10">
         <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
