@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
+import { ConfettiBackground } from "@/components/ConfettiBackground";
 import {
   addToQueue,
   blobToDataUrl,
@@ -116,6 +117,8 @@ export default function UploadPage() {
         aria-hidden
         className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl"
       />
+
+      <ConfettiBackground />
 
       <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6">
         <header className="text-center space-y-2">

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { REACTION_EMOJIS, type Photo } from "@/lib/types";
+import { ConfettiBackground } from "@/components/ConfettiBackground";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -219,11 +220,14 @@ export default function WallPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-pink-900 p-4 overflow-hidden">
-      <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
-        🎉 Joyeux 25 ans ! 🎉
-      </h1>
+      <ConfettiBackground />
 
-      {photos.length === 0 && !spotlight ? (
+      <div className="relative z-10">
+        <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
+          🎉 Joyeux 25 ans ! 🎉
+        </h1>
+
+        {photos.length === 0 && !spotlight ? (
         <p className="text-center text-purple-200 text-xl mt-20">
           En attente des premières photos... scanne le QR code pour
           participer 📱
@@ -271,8 +275,9 @@ export default function WallPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       <Link
         href="/"

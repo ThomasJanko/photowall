@@ -80,3 +80,24 @@ body {
 .reaction-float {
   animation: reaction-float 1.5s ease-out forwards;
 }
+
+/* Confetti qui tombe en continu sur le mur (décoratif) */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-6vh) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(106vh) rotate(660deg);
+    opacity: 0.4;
+  }
+}
+
+.confetti-piece {
+  top: -20px;
+  animation: confetti-fall linear infinite;
+  will-change: transform;
+}
