@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 
@@ -94,6 +95,13 @@ export default function WallPage() {
           ))}
         </div>
       )}
+
+      <Link
+        href="/"
+        className="fixed bottom-6 right-6 z-40 rounded-full bg-white/90 text-purple-900 font-semibold px-6 py-3 shadow-2xl active:scale-95 transition-transform"
+      >
+        📷 Prendre une photo
+      </Link>
 
       {spotlight && (
         <div

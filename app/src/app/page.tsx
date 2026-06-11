@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
 import {
@@ -105,74 +106,99 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="flex-1 flex flex-col items-center justify-center gap-6 p-6 bg-gradient-to-b from-pink-50 to-purple-100 min-h-screen">
-      <h1 className="text-2xl font-bold text-center text-purple-900">
-        🎉 Partage tes photos de la soirée !
-      </h1>
-      <p className="text-center text-purple-700 max-w-sm">
-        Prends une photo (ou choisis-en une) et elle apparaîtra sur le grand
-        écran 📸
-      </p>
-
-      {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="Aperçu"
-          className="w-64 h-64 object-cover rounded-2xl shadow-lg"
-        />
-      )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileChange}
-        className="hidden"
-        id="photo-input"
+    <main className="relative min-h-dvh overflow-hidden bg-linear-to-br from-purple-950 via-purple-900 to-pink-900 flex flex-col items-center px-5 py-8 sm:py-12">
+      {/* Halos décoratifs en arrière-plan */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl"
       />
 
-      {!previewUrl && (
-        <label
-          htmlFor="photo-input"
-          className="cursor-pointer rounded-full bg-purple-600 text-white font-semibold px-8 py-4 text-lg shadow-lg active:scale-95 transition-transform"
-        >
-          {status === "compressing" ? "Préparation..." : "📷 Prendre une photo"}
-        </label>
-      )}
+      <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6">
+        <header className="text-center space-y-2">
+          <p className="text-5xl sm:text-6xl">🎉</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow">
+            Partage tes photos de la soirée !
+          </h1>
+          <p className="text-purple-200 text-sm sm:text-base">
+            Prends une photo (ou choisis-en une) et elle apparaîtra sur le
+            grand écran 📸
+          </p>
+        </header>
 
-      {previewUrl && (
-        <div className="flex gap-3">
-          <button
-            onClick={reset}
-            className="rounded-full bg-gray-200 text-gray-800 font-semibold px-6 py-3"
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+          id="photo-input"
+        />
+
+        {previewUrl ? (
+          <div className="w-full space-y-4">
+            <img
+              src={previewUrl}
+              alt="Aperçu"
+              className="w-full aspect-square object-cover rounded-3xl shadow-2xl ring-4 ring-white/20"
+            />
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
+              <button
+                onClick={reset}
+                className="flex-1 rounded-full bg-white/10 text-white font-semibold px-6 py-4 backdrop-blur-sm ring-1 ring-white/20 active:scale-95 transition-transform"
+              >
+                ↩️ Recommencer
+              </button>
+              <button
+                onClick={handleSend}
+                disabled={status === "uploading"}
+                className="flex-1 rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-6 py-4 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
+              >
+                {status === "uploading" ? "Envoi... ⏳" : "Envoyer ✨"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label
+            htmlFor="photo-input"
+            className="w-full max-w-xs cursor-pointer text-center rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-8 py-5 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
           >
-            Recommencer
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={status === "uploading"}
-            className="rounded-full bg-purple-600 text-white font-semibold px-8 py-3 shadow-lg disabled:opacity-50"
-          >
-            {status === "uploading" ? "Envoi..." : "Envoyer ✨"}
-          </button>
+            {status === "compressing"
+              ? "Préparation... ⏳"
+              : "📷 Prendre une photo"}
+          </label>
+        )}
+
+        <div className="min-h-6 w-full space-y-2 text-center" aria-live="polite">
+          {status === "success" && (
+            <p className="inline-block rounded-full bg-green-400/15 text-green-300 font-medium px-4 py-2 ring-1 ring-green-400/30">
+              Photo envoyée 🎊
+            </p>
+          )}
+          {status === "error" && (
+            <p className="rounded-2xl bg-orange-400/15 text-orange-200 font-medium px-4 py-3 ring-1 ring-orange-400/30">
+              Pas de réseau pour le moment, ta photo est en attente et sera
+              envoyée automatiquement dès que possible.
+            </p>
+          )}
+          {pendingCount > 0 && (
+            <p className="text-sm text-purple-300">
+              {pendingCount} photo(s) en attente d&apos;envoi...
+            </p>
+          )}
         </div>
-      )}
+      </div>
 
-      {status === "success" && (
-        <p className="text-green-700 font-medium">Photo envoyée 🎊</p>
-      )}
-      {status === "error" && (
-        <p className="text-orange-700 font-medium text-center max-w-sm">
-          Pas de réseau pour le moment, ta photo est en attente et sera
-          envoyée automatiquement dès que possible.
-        </p>
-      )}
-      {pendingCount > 0 && (
-        <p className="text-sm text-purple-500">
-          {pendingCount} photo(s) en attente d&apos;envoi...
-        </p>
-      )}
+      <Link
+        href="/wall"
+        className="relative mt-6 rounded-full text-purple-200 font-semibold px-6 py-3 ring-1 ring-white/20 bg-white/5 backdrop-blur-sm active:scale-95 transition-transform"
+      >
+        🖼️ Voir le mur de photos
+      </Link>
     </main>
   );
 }
