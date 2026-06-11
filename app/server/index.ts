@@ -10,6 +10,8 @@ import {
   listVisiblePhotos,
   hidePhoto,
   getPhoto,
+  addReaction,
+  REACTION_EMOJIS,
 } from "./db";
 
 const PORT = Number(process.env.SERVER_PORT ?? 4000);
@@ -28,6 +30,9 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
+
+// Parse les body JSON (utilisé par la route de réaction)
+app.use(express.json());
 
 const io = new SocketIOServer(server, {
   cors: { origin: "*" },
@@ -50,11 +55,17 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max (sécurité, la compression côté client vise ~300KB)
 });
 
-function toPublicPhoto(row: { id: string; filename: string; created_at: number }) {
+function toPublicPhoto(row: {
+  id: string;
+  filename: string;
+  created_at: number;
+  reactions: Record<string, number>;
+}) {
   return {
     id: row.id,
     url: `/uploads/${row.filename}`,
     createdAt: row.created_at,
+    reactions: row.reactions,
   };
 }
 
@@ -79,11 +90,43 @@ app.post("/api/photos", upload.single("photo"), (req, res) => {
     id,
     filename: req.file.filename,
     created_at: createdAt,
+    reactions: Object.fromEntries(REACTION_EMOJIS.map((e) => [e, 0])),
   });
 
   io.emit("photo:new", photo);
 
   res.status(201).json(photo);
+});
+
+// Réagir (ou retirer sa réaction) à une photo avec un emoji
+app.post("/api/photos/:id/react", (req, res) => {
+  const { id } = req.params;
+  const emoji: unknown = req.body?.emoji;
+  const action: "add" | "remove" =
+    req.body?.action === "remove" ? "remove" : "add";
+
+  if (
+    typeof emoji !== "string" ||
+    !(REACTION_EMOJIS as readonly string[]).includes(emoji)
+  ) {
+    return res.status(400).json({ error: "Emoji non autorisé" });
+  }
+
+  const existing = getPhoto(id);
+  if (!existing || existing.hidden) {
+    return res.status(404).json({ error: "Photo introuvable" });
+  }
+
+  const updated = addReaction(id, emoji, action === "remove" ? -1 : 1)!;
+
+  io.emit("photo:reaction", {
+    photoId: id,
+    emoji,
+    reactions: updated.reactions,
+    action,
+  });
+
+  res.json(toPublicPhoto(updated));
 });
 
 // Masquer une photo (admin)

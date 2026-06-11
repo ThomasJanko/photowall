@@ -1,4 +1,4 @@
-import type { Photo } from "./types";
+import type { Photo, ReactionEvent } from "./types";
 
 /**
  * Interface commune aux deux backends (local et online).
@@ -18,6 +18,15 @@ export interface PhotoService {
 
   /** S'abonne aux suppressions/masquages (pour la page /wall). */
   onPhotoRemoved(callback: (photoId: string) => void): () => void;
+
+  /** Ajoute une réaction emoji à une photo. */
+  react(photoId: string, emoji: string): Promise<void>;
+
+  /** Retire une réaction emoji (toggle au 2e clic côté client). */
+  unreact(photoId: string, emoji: string): Promise<void>;
+
+  /** S'abonne aux réactions (pour les compteurs + animations du mur). */
+  onReaction(callback: (event: ReactionEvent) => void): () => void;
 
   /** Masque une photo (admin). */
   hidePhoto(id: string): Promise<void>;

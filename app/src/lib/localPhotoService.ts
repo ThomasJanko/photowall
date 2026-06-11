@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo } from "./types";
+import type { Photo, ReactionEvent } from "./types";
 import type { PhotoService } from "./photoService";
 
 const SERVER_URL =
@@ -49,6 +49,32 @@ export class LocalPhotoService implements PhotoService {
   onPhotoRemoved(callback: (photoId: string) => void): () => void {
     this.socket.on("photo:removed", callback);
     return () => this.socket.off("photo:removed", callback);
+  }
+
+  private async sendReaction(
+    photoId: string,
+    emoji: string,
+    action: "add" | "remove"
+  ): Promise<void> {
+    const res = await fetch(`${SERVER_URL}/api/photos/${photoId}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji, action }),
+    });
+    if (!res.ok) throw new Error(`Réaction échouée (${res.status})`);
+  }
+
+  async react(photoId: string, emoji: string): Promise<void> {
+    return this.sendReaction(photoId, emoji, "add");
+  }
+
+  async unreact(photoId: string, emoji: string): Promise<void> {
+    return this.sendReaction(photoId, emoji, "remove");
+  }
+
+  onReaction(callback: (event: ReactionEvent) => void): () => void {
+    this.socket.on("photo:reaction", callback);
+    return () => this.socket.off("photo:reaction", callback);
   }
 
   async hidePhoto(id: string): Promise<void> {
