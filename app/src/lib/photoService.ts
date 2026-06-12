@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent } from "./types";
 
 /**
  * Interface commune aux deux backends (local et online).
@@ -33,6 +33,9 @@ export interface PhotoService {
    * `true` = connecté, `false` = déconnecté ou reconnexion en cours.
    */
   onConnectionChange?(callback: (connected: boolean) => void): () => void;
+
+  /** Annonces live sur /wall (optionnel, mode local). */
+  onAnnouncement?(callback: (event: AnnouncementEvent) => void): () => void;
 
   /** Masque une photo (admin). */
   hidePhoto(id: string): Promise<void>;

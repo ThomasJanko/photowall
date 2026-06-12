@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -95,6 +95,11 @@ export class LocalPhotoService implements PhotoService {
       this.socket.off("disconnect", onDisconnect);
       this.socket.off("reconnect_attempt", onReconnectAttempt);
     };
+  }
+
+  onAnnouncement(callback: (event: AnnouncementEvent) => void): () => void {
+    this.socket.on("announcement:new", callback);
+    return () => this.socket.off("announcement:new", callback);
   }
 
   async hidePhoto(id: string): Promise<void> {

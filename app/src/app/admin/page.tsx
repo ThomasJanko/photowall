@@ -12,6 +12,7 @@ import {
 } from "@/lib/adminAuth";
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
 import { AdminConfigTab } from "@/components/AdminConfigTab";
+import { AdminAnnounceTab } from "@/components/AdminAnnounceTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
 
@@ -19,7 +20,7 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "messages" | "config";
+type AdminTab = "photos" | "messages" | "config" | "announce";
 
 const ADMIN_NAV_LINKS = [
   { href: "/", label: "Accueil", icon: "🏠" },
@@ -309,7 +310,9 @@ export default function AdminPage() {
               ? `${photos.length} photo(s) actuellement sur le mur`
               : activeTab === "messages"
                 ? "Messages privés des invités"
-                : "Configuration de l'événement"}
+                : activeTab === "announce"
+                  ? "Annonce live sur le mur"
+                  : "Configuration de l'événement"}
           </p>
         </div>
         <button
@@ -348,6 +351,17 @@ export default function AdminPage() {
         )}
         <button
           type="button"
+          onClick={() => setActiveTab("announce")}
+          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
+            activeTab === "announce"
+              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+          }`}
+        >
+          📣 Annonce
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("config")}
           className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
             activeTab === "config"
@@ -363,6 +377,8 @@ export default function AdminPage() {
         <AdminMessagesTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "config" ? (
         <AdminConfigTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "announce" ? (
+        <AdminAnnounceTab onUnauthorized={handleUnauthorized} />
       ) : (
         <>
       {config.features.adminBulkActions && (

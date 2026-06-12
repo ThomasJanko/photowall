@@ -20,3 +20,10 @@ export interface ReactionEvent {
   reactions: Record<string, number>;
   action: "add" | "remove";
 }
+
+/** Annonce éphémère diffusée sur /wall (organisateur → invités). */
+export interface AnnouncementEvent {
+  text: string;
+  emoji?: string;
+  durationMs: number;
+}

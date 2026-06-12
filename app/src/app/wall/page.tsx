@@ -5,9 +5,11 @@ import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
 import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
+import type { AnnouncementEvent } from "@/lib/types";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -16,6 +18,8 @@ const SERVER_URL =
 const MY_REACTIONS_KEY = "wall:my-reactions";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
+/** Durée de l'animation de sortie du bandeau d'annonce (ms). */
+const ANNOUNCEMENT_EXIT_MS = 400;
 
 /** Préfixe les URLs relatives (mode local: /uploads/xxx.jpg) avec le serveur. */
 function resolveUrl(url: string): string {
@@ -78,9 +82,15 @@ export default function WallPage() {
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
   const [connected, setConnected] = useState(true);
+  const [announcement, setAnnouncement] = useState<AnnouncementEvent | null>(
+    null
+  );
+  const [announcementLeaving, setAnnouncementLeaving] = useState(false);
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
+  const announcementHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
 
@@ -105,6 +115,31 @@ export default function WallPage() {
       ),
     [features, isAdmin]
   );
+
+  function clearAnnouncementTimers() {
+    if (announcementHideRef.current) {
+      clearTimeout(announcementHideRef.current);
+      announcementHideRef.current = null;
+    }
+    if (announcementExitRef.current) {
+      clearTimeout(announcementExitRef.current);
+      announcementExitRef.current = null;
+    }
+  }
+
+  function showAnnouncement(payload: AnnouncementEvent) {
+    clearAnnouncementTimers();
+    setAnnouncementLeaving(false);
+    setAnnouncement(payload);
+
+    announcementHideRef.current = setTimeout(() => {
+      setAnnouncementLeaving(true);
+      announcementExitRef.current = setTimeout(() => {
+        setAnnouncement(null);
+        setAnnouncementLeaving(false);
+      }, ANNOUNCEMENT_EXIT_MS);
+    }, payload.durationMs);
+  }
 
   function applyReactions(photoId: string, reactions: Record<string, number>) {
     const update = (list: Photo[]) =>
@@ -169,11 +204,15 @@ export default function WallPage() {
 
     const unsubConnection = service.onConnectionChange?.(setConnected);
 
+    const unsubAnnouncement = service.onAnnouncement?.(showAnnouncement);
+
     return () => {
       unsubNew();
       unsubRemoved();
       unsubReaction?.();
       unsubConnection?.();
+      unsubAnnouncement?.();
+      clearAnnouncementTimers();
     };
   }, []);
 
@@ -237,6 +276,13 @@ export default function WallPage() {
   return (
     <main className="event-gradient-bg min-h-screen transition-all duration-2000 ease-in-out p-4 overflow-hidden">
       {features.confetti && <ConfettiBackground accent={accent} />}
+
+      {announcement && (
+        <AnnouncementBanner
+          announcement={announcement}
+          leaving={announcementLeaving}
+        />
+      )}
 
       {!connected && (
         <div
