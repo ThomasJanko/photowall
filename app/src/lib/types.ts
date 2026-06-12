@@ -9,8 +9,17 @@ export interface Photo {
   url: string;
   createdAt: number;
   hidden?: boolean;
-  /** Compteurs de réactions par emoji, ex: { "❤️": 3, "🔥": 1 } */
   reactions: Record<string, number>;
+  challengeId?: string;
+  authorPseudo?: string;
+  challengeVotes?: { success: number; fail: number };
+}
+
+export interface ChallengeVoteEvent {
+  photoId: string;
+  challengeVotes: { success: number; fail: number };
+  vote: "success" | "fail";
+  action: "add" | "remove";
 }
 
 /** Payload émis par le serveur quand quelqu'un réagit (ou retire sa réaction). */

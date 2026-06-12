@@ -15,6 +15,7 @@ import { AdminConfigTab } from "@/components/AdminConfigTab";
 import { AdminAnnounceTab } from "@/components/AdminAnnounceTab";
 import { AdminPollTab } from "@/components/AdminPollTab";
 import { AdminPendingTab } from "@/components/AdminPendingTab";
+import { AdminChallengesTab } from "@/components/AdminChallengesTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import {
@@ -27,7 +28,7 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "pending" | "messages" | "poll" | "config" | "announce";
+type AdminTab = "photos" | "pending" | "messages" | "poll" | "challenges" | "config" | "announce";
 
 const ADMIN_NAV_LINKS = [
   { href: "/", label: "Accueil", icon: "🏠" },
@@ -413,7 +414,9 @@ export default function AdminPage() {
                   ? "Messages privés des invités"
                   : activeTab === "poll"
                     ? "Sondage live invités"
-                    : activeTab === "announce"
+                    : activeTab === "challenges"
+                      ? "Défis photo invités"
+                      : activeTab === "announce"
                     ? "Annonce live sur le mur"
                     : "Configuration de l'événement"}
           </p>
@@ -466,6 +469,12 @@ export default function AdminPage() {
           📊 Sondage
         </AdminTabButton>
         <AdminTabButton
+          active={activeTab === "challenges"}
+          onClick={() => setActiveTab("challenges")}
+        >
+          🎯 Défis
+        </AdminTabButton>
+        <AdminTabButton
           active={activeTab === "config"}
           onClick={() => setActiveTab("config")}
         >
@@ -485,6 +494,8 @@ export default function AdminPage() {
         <AdminAnnounceTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "poll" ? (
         <AdminPollTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "challenges" ? (
+        <AdminChallengesTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}

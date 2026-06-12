@@ -11,6 +11,10 @@ import {
   Top3Scene,
   FirstLastScene,
   RhythmScene,
+  ChallengeMostAttemptedScene,
+  ChallengeMostSuccessfulScene,
+  ChallengeMostFailedScene,
+  ChallengeLeaderboardScene,
   SlideshowScene,
   ClosingScene,
 } from "./RetrospectiveScenes";
@@ -63,6 +67,14 @@ export function RetrospectiveShow({
         return <FirstLastScene {...sceneProps} />;
       case "rhythm":
         return <RhythmScene {...sceneProps} />;
+      case "challengeMostAttempted":
+        return <ChallengeMostAttemptedScene {...sceneProps} />;
+      case "challengeMostSuccessful":
+        return <ChallengeMostSuccessfulScene {...sceneProps} />;
+      case "challengeMostFailed":
+        return <ChallengeMostFailedScene {...sceneProps} />;
+      case "challengeLeaderboard":
+        return <ChallengeLeaderboardScene {...sceneProps} />;
       case "slideshow":
         return <SlideshowScene {...sceneProps} />;
       case "closing":

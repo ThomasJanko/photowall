@@ -22,6 +22,9 @@ export function buildGuestNavLinks(
     ...(features.retrospective
       ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
       : []),
+    ...(features.leaderboard
+      ? [{ href: "/classement", label: "Classement", icon: "🏆" }]
+      : []),
   ];
 
   for (const item of optional) {

@@ -15,8 +15,19 @@ import {
   approvePhoto,
   getPhoto,
   addReaction,
+  voteChallenge,
+  computeLeaderboard,
   type PhotoRow,
 } from "./db";
+import {
+  listChallenges,
+  listActiveChallenges,
+  createChallenge,
+  updateChallenge,
+  deleteChallenge,
+  isActiveChallengeId,
+  toPublicChallenge,
+} from "./challengesDb";
 import {
   getConfig,
   updateConfig,
@@ -123,18 +134,29 @@ const privateUpload = multer({
   },
 });
 
-function toPublicPhoto(row: {
-  id: string;
-  filename: string;
-  created_at: number;
-  reactions: Record<string, number>;
-}) {
+function toPublicPhoto(row: PhotoRow) {
   return {
     id: row.id,
     url: `/uploads/${row.filename}`,
     createdAt: row.created_at,
     reactions: row.reactions,
+    ...(row.challenge_id ? { challengeId: row.challenge_id } : {}),
+    ...(row.author_pseudo ? { authorPseudo: row.author_pseudo } : {}),
+    ...(row.challenge_votes ? { challengeVotes: row.challenge_votes } : {}),
   };
+}
+
+/** Valide un challengeId contre les défis actifs (challengesDb). */
+function parseChallengeId(raw: unknown): string | undefined {
+  if (typeof raw !== "string" || !raw.trim()) return undefined;
+  const id = raw.trim();
+  return isActiveChallengeId(id) ? id : undefined;
+}
+
+function parseAuthorPseudo(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim().slice(0, 20);
+  return trimmed.length >= 2 ? trimmed : undefined;
 }
 
 // Liste des photos visibles
@@ -152,8 +174,17 @@ app.post("/api/photos", upload.single("photo"), (req, res) => {
   const id = path.parse(req.file.filename).name;
   const createdAt = Date.now();
   const moderationRequired = getConfig().features.moderationRequired === true;
+  const challengeId = parseChallengeId(req.body?.challengeId);
+  const authorPseudo = parseAuthorPseudo(req.body?.authorPseudo);
 
-  const row = insertPhoto(id, req.file.filename, createdAt, moderationRequired);
+  const row = insertPhoto(
+    id,
+    req.file.filename,
+    createdAt,
+    moderationRequired,
+    challengeId,
+    authorPseudo
+  );
   const photo = toPublicPhoto(row);
 
   if (row.status === "approved") {
@@ -196,6 +227,51 @@ app.post("/api/photos/:id/react", (req, res) => {
   res.json(toPublicPhoto(updated));
 });
 
+// Vote réussi/échec sur une photo de défi
+app.post("/api/photos/:id/challenge-vote", (req, res) => {
+  const { id } = req.params;
+  const vote: unknown = req.body?.vote;
+  const action: "add" | "remove" =
+    req.body?.action === "remove" ? "remove" : "add";
+
+  if (vote !== "success" && vote !== "fail") {
+    return res.status(400).json({ error: "Vote invalide" });
+  }
+
+  const existing = getPhoto(id);
+  if (!existing || existing.hidden || existing.status !== "approved") {
+    return res.status(404).json({ error: "Photo introuvable" });
+  }
+  if (!existing.challenge_id) {
+    return res.status(400).json({ error: "Cette photo n'est pas liée à un défi" });
+  }
+
+  const updated = voteChallenge(id, vote, action);
+  if (!updated) {
+    return res.status(400).json({ error: "Vote impossible" });
+  }
+
+  io.emit("photo:challengeVote", {
+    photoId: id,
+    challengeVotes: updated.challenge_votes!,
+    vote,
+    action,
+  });
+
+  res.json(toPublicPhoto(updated));
+});
+
+// Classement des défis (calcul à la volée)
+app.get("/api/leaderboard", (_req, res) => {
+  res.json(computeLeaderboard());
+});
+
+// --- Défis photo (CRUD admin + liste publique) ---
+
+app.get("/api/challenges", (_req, res) => {
+  res.json(listActiveChallenges().map(toPublicChallenge));
+});
+
 function toPublicPrivateMessage(row: PrivateMessageRow) {
   return {
     id: row.id,
@@ -228,6 +304,63 @@ function requireAdmin(
 
   next();
 }
+
+// --- Défis photo (admin) ---
+
+app.get("/api/challenges/all", requireAdmin, (_req, res) => {
+  res.json(listChallenges().map(toPublicChallenge));
+});
+
+app.post("/api/challenges", requireAdmin, (req, res) => {
+  const label: unknown = req.body?.label;
+  if (typeof label !== "string" || !label.trim()) {
+    return res.status(400).json({ error: "Label requis" });
+  }
+  const emoji =
+    typeof req.body?.emoji === "string" && req.body.emoji.trim()
+      ? req.body.emoji.trim().slice(0, 8)
+      : undefined;
+
+  const row = createChallenge(label, emoji);
+  res.status(201).json(toPublicChallenge(row));
+});
+
+app.put("/api/challenges/:id", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const patch: {
+    label?: string;
+    emoji?: string;
+    active?: boolean;
+  } = {};
+
+  if (req.body?.label !== undefined) {
+    if (typeof req.body.label !== "string" || !req.body.label.trim()) {
+      return res.status(400).json({ error: "Label invalide" });
+    }
+    patch.label = req.body.label;
+  }
+  if (req.body?.emoji !== undefined) {
+    patch.emoji =
+      typeof req.body.emoji === "string" ? req.body.emoji : "";
+  }
+  if (req.body?.active !== undefined) {
+    patch.active = req.body.active === true;
+  }
+
+  const updated = updateChallenge(id, patch);
+  if (!updated) {
+    return res.status(404).json({ error: "Défi introuvable" });
+  }
+  res.json(toPublicChallenge(updated));
+});
+
+app.delete("/api/challenges/:id", requireAdmin, (req, res) => {
+  const ok = deleteChallenge(req.params.id);
+  if (!ok) {
+    return res.status(404).json({ error: "Défi introuvable" });
+  }
+  res.status(204).send();
+});
 
 // Connexion admin (mode local)
 app.post("/api/admin/login", (req, res) => {

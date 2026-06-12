@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent, AnnouncementEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -20,9 +20,16 @@ export class LocalPhotoService implements PhotoService {
     });
   }
 
-  async upload(blob: Blob, filename: string): Promise<Photo> {
+  async upload(
+    blob: Blob,
+    filename: string,
+    challengeId?: string,
+    authorPseudo?: string
+  ): Promise<Photo> {
     const form = new FormData();
     form.append("photo", blob, filename);
+    if (challengeId) form.append("challengeId", challengeId);
+    if (authorPseudo) form.append("authorPseudo", authorPseudo);
 
     const res = await fetch(`${SERVER_URL}/api/photos`, {
       method: "POST",
@@ -76,6 +83,32 @@ export class LocalPhotoService implements PhotoService {
   onReaction(callback: (event: ReactionEvent) => void): () => void {
     this.socket.on("photo:reaction", callback);
     return () => this.socket.off("photo:reaction", callback);
+  }
+
+  private async sendChallengeVote(
+    photoId: string,
+    vote: "success" | "fail",
+    action: "add" | "remove"
+  ): Promise<void> {
+    const res = await fetch(`${SERVER_URL}/api/photos/${photoId}/challenge-vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vote, action }),
+    });
+    if (!res.ok) throw new Error(`Vote défi échoué (${res.status})`);
+  }
+
+  async voteChallenge(
+    photoId: string,
+    vote: "success" | "fail",
+    action: "add" | "remove"
+  ): Promise<void> {
+    return this.sendChallengeVote(photoId, vote, action);
+  }
+
+  onChallengeVote(callback: (event: ChallengeVoteEvent) => void): () => void {
+    this.socket.on("photo:challengeVote", callback);
+    return () => this.socket.off("photo:challengeVote", callback);
   }
 
   onConnectionChange(callback: (connected: boolean) => void): () => void {

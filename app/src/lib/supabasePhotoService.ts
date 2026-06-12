@@ -39,7 +39,12 @@ export class SupabasePhotoService implements PhotoService {
     this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
-  async upload(blob: Blob, filename: string): Promise<Photo> {
+  async upload(
+    blob: Blob,
+    filename: string,
+    challengeId?: string,
+    _authorPseudo?: string
+  ): Promise<Photo> {
     const path = `${Date.now()}-${filename}`;
 
     const { error: uploadError } = await this.client.storage
@@ -52,9 +57,12 @@ export class SupabasePhotoService implements PhotoService {
       .from(BUCKET)
       .getPublicUrl(path);
 
+    const insertRow: Record<string, unknown> = { url: publicUrlData.publicUrl };
+    if (challengeId) insertRow.challenge_id = challengeId;
+
     const { data, error } = await this.client
       .from(TABLE)
-      .insert({ url: publicUrlData.publicUrl })
+      .insert(insertRow)
       .select()
       .single();
 
@@ -65,6 +73,7 @@ export class SupabasePhotoService implements PhotoService {
       url: data.url,
       createdAt: new Date(data.created_at).getTime(),
       reactions: data.reactions ?? {},
+      ...(data.challenge_id ? { challengeId: data.challenge_id } : {}),
     };
   }
 
@@ -82,6 +91,7 @@ export class SupabasePhotoService implements PhotoService {
       url: row.url,
       createdAt: new Date(row.created_at).getTime(),
       reactions: row.reactions ?? {},
+      ...(row.challenge_id ? { challengeId: row.challenge_id } : {}),
     }));
   }
 
@@ -98,6 +108,9 @@ export class SupabasePhotoService implements PhotoService {
             url: payload.new.url,
             createdAt: new Date(payload.new.created_at).getTime(),
             reactions: payload.new.reactions ?? {},
+            ...(payload.new.challenge_id
+              ? { challengeId: payload.new.challenge_id }
+              : {}),
           });
         }
       )

@@ -256,6 +256,156 @@ export function RhythmScene({ stats }: SceneProps) {
   );
 }
 
+export function ChallengeMostAttemptedScene({ stats }: SceneProps) {
+  const item = stats.challengeStats.mostAttempted;
+  if (!item) return null;
+
+  return (
+    <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <p className="text-2xl sm:text-4xl font-bold text-white">
+        🎯 Défi le plus relevé
+      </p>
+      <p className="text-4xl sm:text-6xl">{item.emoji ?? "🎯"}</p>
+      <p className="text-xl sm:text-3xl font-semibold text-pink-200 max-w-2xl">
+        {item.label}
+      </p>
+      <p className="text-5xl sm:text-7xl font-black text-amber-300 tabular-nums">
+        <CountUp target={item.count} durationMs={1200} />
+        <span className="ml-2 text-2xl sm:text-3xl text-purple-200">
+          photo{item.count !== 1 ? "s" : ""}
+        </span>
+      </p>
+    </div>
+  );
+}
+
+export function ChallengeMostSuccessfulScene({ stats }: SceneProps) {
+  const item = stats.challengeStats.mostSuccessful;
+  if (!item) return null;
+
+  return (
+    <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6">
+      <p className="text-2xl sm:text-4xl font-bold text-white text-center">
+        🏆 Défi le plus réussi
+      </p>
+      <p className="text-sm sm:text-lg text-purple-200 text-center">
+        {item.emoji && <span className="mr-1">{item.emoji}</span>}
+        {item.label}
+      </p>
+      <div className="podium-reveal-flash max-h-[50vh] max-w-xl overflow-hidden rounded-3xl ring-4 ring-green-400/50 shadow-2xl">
+        <img
+          src={item.photo.url}
+          alt=""
+          className="max-h-[50vh] w-full object-contain"
+        />
+      </div>
+      <p className="text-2xl sm:text-4xl font-black text-green-300">
+        ✅ {item.success} · ❌ {item.fail}
+      </p>
+    </div>
+  );
+}
+
+export function ChallengeMostFailedScene({ stats }: SceneProps) {
+  const item = stats.challengeStats.mostFailed;
+  if (!item) return null;
+
+  return (
+    <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6">
+      <p className="text-2xl sm:text-4xl font-bold text-white text-center">
+        😅 Défi le plus raté
+      </p>
+      <p className="text-sm sm:text-lg text-purple-200 text-center max-w-lg">
+        On rigole bien — bravo pour le courage !
+      </p>
+      <div className="max-h-[45vh] max-w-md overflow-hidden rounded-3xl ring-4 ring-orange-400/40 shadow-2xl">
+        <img
+          src={item.photo.url}
+          alt=""
+          className="max-h-[45vh] w-full object-contain"
+        />
+      </div>
+      <p className="text-xl sm:text-2xl text-orange-200">
+        {item.emoji && <span className="mr-1">{item.emoji}</span>}
+        {item.label}
+      </p>
+      <p className="text-3xl font-black text-orange-300 tabular-nums">
+        ❌ {item.failCount} vote{item.failCount !== 1 ? "s" : ""} échec
+      </p>
+    </div>
+  );
+}
+
+function AwardsPodiumSlot({
+  entry,
+  rank,
+  size,
+}: {
+  entry: { pseudo: string; points: number } | undefined;
+  rank: 1 | 2 | 3;
+  size: "lg" | "sm";
+}) {
+  const medals = { 1: "🥇", 2: "🥈", 3: "🥉" } as const;
+  const heights = { lg: "h-32 sm:h-40", sm: "h-24 sm:h-32" };
+  const widths = { lg: "w-40 sm:w-48", sm: "w-32 sm:w-40" };
+
+  if (!entry) {
+    return <div className={`${widths[size]} opacity-0`} aria-hidden />;
+  }
+
+  return (
+    <div
+      className={`podium-reveal flex flex-col items-center gap-2 ${widths[size]}`}
+      style={{
+        animationDelay: rank === 1 ? "0.25s" : rank === 2 ? "0.5s" : "0.65s",
+      }}
+    >
+      <span className="text-4xl sm:text-5xl">{medals[rank]}</span>
+      <div
+        className={`flex w-full flex-col items-center justify-end rounded-t-2xl bg-linear-to-t from-amber-600/90 to-yellow-400/70 ring-2 ring-white/30 shadow-2xl ${heights[size]} px-2 pb-3`}
+      >
+        <p className="truncate w-full text-center text-sm sm:text-base font-bold text-white">
+          {entry.pseudo}
+        </p>
+        <p className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+          {entry.points}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function ChallengeLeaderboardScene({ stats }: SceneProps) {
+  const top = stats.challengeStats.leaderboardTop3;
+  if (top.length === 0) return null;
+
+  const [first, second, third] = top;
+
+  if (top.length === 1 && first) {
+    return (
+      <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-6">
+        <p className="text-2xl sm:text-5xl font-extrabold text-white text-center">
+          🏅 Champion des défis
+        </p>
+        <AwardsPodiumSlot entry={first} rank={1} size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-4">
+      <p className="text-2xl sm:text-5xl font-extrabold text-white text-center retrospective-glow-text">
+        🏅 Podium des joueurs
+      </p>
+      <div className="flex items-end justify-center gap-4 sm:gap-8 w-full max-w-3xl">
+        <AwardsPodiumSlot entry={second} rank={2} size="sm" />
+        <AwardsPodiumSlot entry={first} rank={1} size="lg" />
+        <AwardsPodiumSlot entry={third} rank={3} size="sm" />
+      </div>
+    </div>
+  );
+}
+
 export function SlideshowScene({ photos, paused }: SceneProps) {
   const [index, setIndex] = useState(0);
   const count = photos.length;

@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent, AnnouncementEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent } from "./types";
 
 /**
  * Interface commune aux deux backends (local et online).
@@ -8,7 +8,12 @@ import type { Photo, ReactionEvent, AnnouncementEvent } from "./types";
  */
 export interface PhotoService {
   /** Upload une image (déjà compressée côté client) et retourne la photo créée. */
-  upload(blob: Blob, filename: string): Promise<Photo>;
+  upload(
+    blob: Blob,
+    filename: string,
+    challengeId?: string,
+    authorPseudo?: string
+  ): Promise<Photo>;
 
   /** Liste les photos visibles (non masquées), triées par date croissante. */
   listPhotos(): Promise<Photo[]>;
@@ -27,6 +32,16 @@ export interface PhotoService {
 
   /** S'abonne aux réactions (pour les compteurs + animations du mur). */
   onReaction(callback: (event: ReactionEvent) => void): () => void;
+
+  /** Vote réussi/échec sur une photo de défi. */
+  voteChallenge?(
+    photoId: string,
+    vote: "success" | "fail",
+    action: "add" | "remove"
+  ): Promise<void>;
+
+  /** S'abonne aux votes défi (compteurs /wall). */
+  onChallengeVote?(callback: (event: ChallengeVoteEvent) => void): () => void;
 
   /**
    * S'abonne aux changements de connexion temps réel (optionnel).

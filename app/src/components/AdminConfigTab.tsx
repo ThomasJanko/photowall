@@ -29,6 +29,7 @@ const FEATURE_LABELS: Record<keyof FeatureFlags, string> = {
   adminBulkActions: "Actions groupées admin (photos)",
   moderationRequired: "Modération des uploads (file d'attente admin)",
   livePolls: "Sondages live (modal configurable)",
+  leaderboard: "Classement des défis photo (/classement)",
 };
 
 type FormState = Omit<EventConfig, "reactionEmojis"> & {

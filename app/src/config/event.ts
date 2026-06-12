@@ -23,12 +23,21 @@ export interface FeatureFlags {
   moderationRequired: boolean;
   /** Affiche les sondages live (modal sur les écrans configurés). */
   livePolls: boolean;
+  /** Affiche la page classement des défis photo. */
+  leaderboard: boolean;
 }
 
 /** Écrans où la modal sondage peut apparaître. */
 export interface PollScreens {
   home: boolean;
   wall: boolean;
+}
+
+/** Défi photo proposé aux invités sur /. */
+export interface Challenge {
+  id: string;
+  label: string;
+  emoji?: string;
 }
 
 export interface EventTheme {
@@ -53,6 +62,7 @@ export interface EventConfig {
   pollScreens: PollScreens;
   /** Durée d'affichage des résultats après clôture (ms). */
   pollResultsDurationMs: number;
+  photoChallenges: readonly Challenge[];
 }
 
 /** Valeurs par défaut = comportement actuel (25 ans, violet/rose). */
@@ -86,10 +96,38 @@ export const eventConfig: EventConfig = {
     adminBulkActions: true,
     moderationRequired: false,
     livePolls: true,
+    leaderboard: true,
   },
   pollScreens: {
     home: true,
     wall: true,
   },
   pollResultsDurationMs: 60_000,
+  photoChallenges: [
+    {
+      id: "stranger",
+      emoji: "🤝",
+      label: "Photo avec quelqu'un que tu ne connais pas",
+    },
+    {
+      id: "jump",
+      emoji: "🦘",
+      label: "Saute en l'air sur la photo",
+    },
+    {
+      id: "funny",
+      emoji: "🤪",
+      label: "Grimace la plus drôle",
+    },
+    {
+      id: "group",
+      emoji: "👯",
+      label: "Photo de groupe (3 personnes minimum)",
+    },
+    {
+      id: "toast",
+      emoji: "🥂",
+      label: "Trinquer avec la star de la soirée",
+    },
+  ],
 };

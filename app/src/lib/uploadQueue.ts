@@ -11,6 +11,10 @@ export interface QueueItem {
   dataUrl: string;
   filename: string;
   createdAt: number;
+  /** Défi associé (optionnel, rétrocompat items sans ce champ). */
+  challengeId?: string;
+  /** Pseudo invité (optionnel). */
+  authorPseudo?: string;
 }
 
 export function loadQueue(): QueueItem[] {

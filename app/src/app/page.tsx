@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
@@ -8,8 +8,16 @@ import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
 import { PollModal } from "@/components/PollModal";
+import { ChallengePicker } from "@/components/ChallengePicker";
+import { PseudoGate } from "@/components/PseudoGate";
 import { buildGuestNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
+import { getGuestPseudo } from "@/lib/guestPseudo";
+import {
+  getCompletedChallengeIds,
+  markChallengeCompleted,
+} from "@/lib/challengesCompleted";
 import {
   addToQueue,
   blobToDataUrl,
@@ -33,10 +41,22 @@ export default function UploadPage() {
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [pendingCount, setPendingCount] = useState(0);
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(
+    null
+  );
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Au chargement de la page, on tente de renvoyer les photos en attente
-  // (en cas de coupure réseau précédente).
+  useEffect(() => {
+    setCompletedIds(getCompletedChallengeIds());
+    fetchActiveChallenges().then(setChallenges).catch(() => setChallenges([]));
+  }, []);
+
+  const refreshCompleted = useCallback(() => {
+    setCompletedIds(getCompletedChallengeIds());
+  }, []);
+
   useEffect(() => {
     flushQueue();
     const interval = setInterval(flushQueue, 15000);
@@ -50,17 +70,24 @@ export default function UploadPage() {
     if (queue.length === 0) return;
 
     const service = getPhotoService();
+    const pseudo = getGuestPseudo() ?? undefined;
     for (const item of queue) {
       try {
         const blob = dataUrlToBlob(item.dataUrl);
-        await service.upload(blob, item.filename);
+        await service.upload(
+          blob,
+          item.filename,
+          item.challengeId,
+          item.authorPseudo ?? pseudo
+        );
+        if (item.challengeId) markChallengeCompleted(item.challengeId);
         removeFromQueue(item.id);
       } catch {
-        // Toujours pas de réseau : on réessaiera au prochain tick
         break;
       }
     }
     setPendingCount(loadQueue().length);
+    refreshCompleted();
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -87,21 +114,26 @@ export default function UploadPage() {
     setStatus("uploading");
 
     const filename = `photo-${Date.now()}.jpg`;
+    const challengeId = selectedChallengeId ?? undefined;
+    const authorPseudo = getGuestPseudo() ?? undefined;
     const service = getPhotoService();
 
     try {
-      await service.upload(pendingBlob, filename);
+      await service.upload(pendingBlob, filename, challengeId, authorPseudo);
+      if (challengeId) markChallengeCompleted(challengeId);
+      refreshCompleted();
       setStatus("success");
       reset();
     } catch (err) {
       console.error(err);
-      // Pas de réseau : on garde la photo en file d'attente locale
       const dataUrl = await blobToDataUrl(pendingBlob);
       const item: QueueItem = {
         id: generateId(),
         dataUrl,
         filename,
         createdAt: Date.now(),
+        ...(challengeId ? { challengeId } : {}),
+        ...(authorPseudo ? { authorPseudo } : {}),
       };
       addToQueue(item);
       setPendingCount(loadQueue().length);
@@ -117,9 +149,11 @@ export default function UploadPage() {
     setTimeout(() => setStatus("idle"), 2000);
   }
 
+  const hasChallenges = challenges.length > 0;
+
   return (
+    <PseudoGate>
     <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center px-5 py-8 sm:py-12">
-      {/* Halos décoratifs en arrière-plan */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl"
@@ -143,6 +177,15 @@ export default function UploadPage() {
           </p>
         </header>
 
+        {hasChallenges && (
+          <ChallengePicker
+            challenges={challenges}
+            selectedId={selectedChallengeId}
+            onSelect={setSelectedChallengeId}
+            completedIds={completedIds}
+          />
+        )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -155,6 +198,13 @@ export default function UploadPage() {
 
         {previewUrl ? (
           <div className="w-full space-y-4">
+            {selectedChallengeId && (
+              <p className="text-center text-sm text-pink-200">
+                Défi :{" "}
+                {challenges.find((c) => c.id === selectedChallengeId)?.emoji}{" "}
+                {challenges.find((c) => c.id === selectedChallengeId)?.label}
+              </p>
+            )}
             <img
               src={previewUrl}
               alt="Aperçu"
@@ -162,12 +212,14 @@ export default function UploadPage() {
             />
             <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button
+                type="button"
                 onClick={reset}
                 className="flex-1 rounded-full bg-white/10 text-white font-semibold px-6 py-4 backdrop-blur-sm ring-1 ring-white/20 active:scale-95 transition-transform"
               >
                 ↩️ Recommencer
               </button>
               <button
+                type="button"
                 onClick={handleSend}
                 disabled={status === "uploading"}
                 className="flex-1 rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-6 py-4 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
@@ -226,5 +278,6 @@ export default function UploadPage() {
       <QuickNav links={navLinks} position="bottom-left" />
       <PollModal screen="home" />
     </main>
+    </PseudoGate>
   );
 }

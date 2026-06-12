@@ -41,6 +41,10 @@ function mergeConfig(
       partial.reactionEmojis && partial.reactionEmojis.length > 0
         ? partial.reactionEmojis
         : base.reactionEmojis,
+    photoChallenges:
+      partial.photoChallenges && partial.photoChallenges.length > 0
+        ? partial.photoChallenges
+        : base.photoChallenges,
   };
 }
 

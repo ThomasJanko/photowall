@@ -11,6 +11,7 @@ import { useEventConfig } from "@/components/EventThemeProvider";
 import { computeRetrospectiveStats } from "@/lib/retrospectiveStats";
 import { buildRetrospectiveScenes } from "@/lib/retrospectiveScenes";
 import { RetrospectiveShow } from "@/components/retrospective/RetrospectiveShow";
+import { fetchActiveChallenges } from "@/lib/challengesApi";
 
 // ============================================================================
 const MUSIC_SRC = "/music/retrospective.mp3";
@@ -75,6 +76,9 @@ export default function RetrospectivePage() {
   const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
 
   const [photos, setPhotos] = useState<Photo[] | null>(null);
+  const [challengeMap, setChallengeMap] = useState(
+    () => new Map<string, { label: string; emoji?: string }>()
+  );
   const [started, setStarted] = useState(false);
   const [volume, setVolume] = useState(MUSIC_VOLUME);
   const [muted, setMuted] = useState(false);
@@ -97,12 +101,24 @@ export default function RetrospectivePage() {
         console.error(err);
         setPhotos([]);
       });
+
+    fetchActiveChallenges()
+      .then((list) => {
+        const map = new Map<string, { label: string; emoji?: string }>();
+        for (const c of list) map.set(c.id, { label: c.label, emoji: c.emoji });
+        setChallengeMap(map);
+      })
+      .catch(() => {});
   }, []);
 
   const stats = useMemo(() => {
     if (!photos) return null;
-    return computeRetrospectiveStats(photos, config.reactionEmojis);
-  }, [photos, config.reactionEmojis]);
+    return computeRetrospectiveStats(
+      photos,
+      config.reactionEmojis,
+      challengeMap
+    );
+  }, [photos, config.reactionEmojis, challengeMap]);
 
   const scenes = useMemo(() => {
     if (!stats || !photos) return [];

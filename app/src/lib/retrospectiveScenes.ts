@@ -7,6 +7,10 @@ export type SceneType =
   | "top3"
   | "firstLast"
   | "rhythm"
+  | "challengeMostAttempted"
+  | "challengeMostSuccessful"
+  | "challengeMostFailed"
+  | "challengeLeaderboard"
   | "slideshow"
   | "closing";
 
@@ -40,6 +44,20 @@ export function buildRetrospectiveScenes(
 
   if (stats.hourlyBuckets.length >= 2) {
     scenes.push({ type: "rhythm", durationMs: 6500 });
+  }
+
+  const cs = stats.challengeStats;
+  if (cs.mostAttempted && cs.mostAttempted.count > 0) {
+    scenes.push({ type: "challengeMostAttempted", durationMs: 7000 });
+  }
+  if (cs.mostSuccessful) {
+    scenes.push({ type: "challengeMostSuccessful", durationMs: 8000 });
+  }
+  if (cs.mostFailed) {
+    scenes.push({ type: "challengeMostFailed", durationMs: 7000 });
+  }
+  if (cs.leaderboardTop3.length > 0) {
+    scenes.push({ type: "challengeLeaderboard", durationMs: 9000 });
   }
 
   if (photos.length > 0) {

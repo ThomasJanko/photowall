@@ -7,7 +7,9 @@ import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { PollModal } from "@/components/PollModal";
+import { ChallengeBadge } from "@/components/ChallengeBadge";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
 import { QuickNav } from "@/components/QuickNav";
 import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
 import type { AnnouncementEvent } from "@/lib/types";
@@ -17,6 +19,8 @@ const SERVER_URL =
 
 /** Clé localStorage mémorisant les réactions posées par CET appareil. */
 const MY_REACTIONS_KEY = "wall:my-reactions";
+/** Votes réussi/échec par appareil (format photoId:success|fail). */
+const MY_CHALLENGE_VOTES_KEY = "wall:my-challenge-votes";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
 /** Durée de l'animation de sortie du bandeau d'annonce (ms). */
@@ -37,6 +41,16 @@ function loadMyReactions(): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
     const raw = localStorage.getItem(MY_REACTIONS_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function loadMyChallengeVotes(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(MY_CHALLENGE_VOTES_KEY);
     return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
   } catch {
     return new Set();
@@ -78,10 +92,14 @@ export default function WallPage() {
     welcomeMessage,
   } = config;
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
   const [queue, setQueue] = useState<Photo[]>([]);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
+  const [myChallengeVotes, setMyChallengeVotes] = useState<Set<string>>(
+    loadMyChallengeVotes
+  );
   const [connected, setConnected] = useState(true);
   const [announcement, setAnnouncement] = useState<AnnouncementEvent | null>(
     null
@@ -95,6 +113,19 @@ export default function WallPage() {
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
 
+  const challengeById = useMemo(() => {
+    const map = new Map<string, PublicChallenge>();
+    for (const c of challenges) map.set(c.id, c);
+    return map;
+  }, [challenges]);
+
+  function resolveChallengeLabel(challengeId: string) {
+    const c = challengeById.get(challengeId);
+    return c
+      ? { label: c.label, emoji: c.emoji }
+      : { label: "Défi supprimé", emoji: undefined };
+  }
+
   const navLinks = useMemo(
     () =>
       withAdminLink(
@@ -104,6 +135,9 @@ export default function WallPage() {
             : []),
           ...(features.retrospective
             ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
+            : []),
+          ...(features.leaderboard
+            ? [{ href: "/classement", label: "Classement", icon: "🏆" }]
             : []),
           ...(features.qrPage
             ? [{ href: "/qr", label: "QR code", icon: "📱" }]
@@ -167,6 +201,34 @@ export default function WallPage() {
     }
   }
 
+  function applyChallengeVotes(
+    photoId: string,
+    challengeVotes: { success: number; fail: number }
+  ) {
+    const update = (list: Photo[]) =>
+      list.map((p) =>
+        p.id === photoId ? { ...p, challengeVotes } : p
+      );
+    setPhotos(update);
+    setQueue(update);
+  }
+
+  function persistMyChallengeVotes(next: Set<string>) {
+    setMyChallengeVotes(next);
+    try {
+      localStorage.setItem(
+        MY_CHALLENGE_VOTES_KEY,
+        JSON.stringify([...next])
+      );
+    } catch {
+      // Stockage plein/indisponible
+    }
+  }
+
+  useEffect(() => {
+    fetchActiveChallenges().then(setChallenges).catch(() => setChallenges([]));
+  }, []);
+
   useEffect(() => {
     const service = getPhotoService();
 
@@ -203,6 +265,12 @@ export default function WallPage() {
         })
       : undefined;
 
+    const unsubChallengeVote = service.onChallengeVote?.(
+      ({ photoId, challengeVotes }) => {
+        applyChallengeVotes(photoId, challengeVotes);
+      }
+    );
+
     const unsubConnection = service.onConnectionChange?.(setConnected);
 
     const unsubAnnouncement = service.onAnnouncement?.(showAnnouncement);
@@ -211,6 +279,7 @@ export default function WallPage() {
       unsubNew();
       unsubRemoved();
       unsubReaction?.();
+      unsubChallengeVote?.();
       unsubConnection?.();
       unsubAnnouncement?.();
       clearAnnouncementTimers();
@@ -274,6 +343,113 @@ export default function WallPage() {
     }
   }
 
+  async function handleChallengeVote(
+    photoId: string,
+    vote: "success" | "fail"
+  ) {
+    const key = `${photoId}:${vote}`;
+    const oppositeKey = `${photoId}:${vote === "success" ? "fail" : "success"}`;
+    if (cooldowns.has(key)) return;
+
+    setCooldowns((prev) => new Set(prev).add(key));
+    setTimeout(() => {
+      setCooldowns((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }, reactionCooldownMs);
+
+    const hadThis = myChallengeVotes.has(key);
+    const hadOpposite = myChallengeVotes.has(oppositeKey);
+    const nextVotes = new Set(myChallengeVotes);
+
+    const bump = (list: Photo[]) =>
+      list.map((p) => {
+        if (p.id !== photoId) return p;
+        const cv = {
+          success: p.challengeVotes?.success ?? 0,
+          fail: p.challengeVotes?.fail ?? 0,
+        };
+        if (hadThis) cv[vote] = Math.max(0, cv[vote] - 1);
+        else {
+          if (hadOpposite) cv[vote === "success" ? "fail" : "success"] = Math.max(
+            0,
+            cv[vote === "success" ? "fail" : "success"] - 1
+          );
+          cv[vote] += 1;
+        }
+        return { ...p, challengeVotes: cv };
+      });
+
+    if (hadThis) {
+      nextVotes.delete(key);
+    } else {
+      nextVotes.delete(oppositeKey);
+      nextVotes.add(key);
+    }
+    persistMyChallengeVotes(nextVotes);
+    setPhotos(bump);
+    setQueue(bump);
+
+    const service = getPhotoService();
+    if (!service.voteChallenge) return;
+
+    try {
+      if (hadThis) {
+        await service.voteChallenge(photoId, vote, "remove");
+      } else {
+        if (hadOpposite) {
+          await service.voteChallenge(
+            photoId,
+            vote === "success" ? "fail" : "success",
+            "remove"
+          );
+        }
+        await service.voteChallenge(photoId, vote, "add");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function ChallengeVoteButtons({ photo }: { photo: Photo }) {
+    if (!photo.challengeId) return null;
+    const success = photo.challengeVotes?.success ?? 0;
+    const fail = photo.challengeVotes?.fail ?? 0;
+    const mineSuccess = myChallengeVotes.has(`${photo.id}:success`);
+    const mineFail = myChallengeVotes.has(`${photo.id}:fail`);
+
+    return (
+      <div className="flex flex-wrap justify-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleChallengeVote(photo.id, "success")}
+          disabled={cooldowns.has(`${photo.id}:success`)}
+          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+            mineSuccess
+              ? "bg-green-500/40 ring-green-300/60 text-white"
+              : "bg-white/10 ring-white/15 text-purple-100"
+          }`}
+        >
+          ✅ {success}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleChallengeVote(photo.id, "fail")}
+          disabled={cooldowns.has(`${photo.id}:fail`)}
+          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+            mineFail
+              ? "bg-red-500/40 ring-red-300/60 text-white"
+              : "bg-white/10 ring-white/15 text-purple-100"
+          }`}
+        >
+          ❌ {fail}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <main className="event-gradient-bg min-h-screen transition-all duration-2000 ease-in-out p-4 overflow-hidden">
       {features.confetti && <ConfettiBackground accent={accent} />}
@@ -307,7 +483,11 @@ export default function WallPage() {
           </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {photos.map((photo) => (
+            {photos.map((photo) => {
+              const challengeInfo = photo.challengeId
+                ? resolveChallengeLabel(photo.challengeId)
+                : null;
+              return (
               <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
                 <div className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20">
                   <img
@@ -315,6 +495,12 @@ export default function WallPage() {
                     alt=""
                     className="w-full h-full object-cover"
                   />
+                  {challengeInfo && (
+                    <ChallengeBadge
+                      label={challengeInfo.label}
+                      emoji={challengeInfo.emoji}
+                    />
+                  )}
                   {features.reactions && (
                     <FloatersOverlay
                       floaters={floaters.filter((f) => f.photoId === photo.id)}
@@ -352,8 +538,10 @@ export default function WallPage() {
                     })}
                   </div>
                 )}
+                {photo.challengeId && <ChallengeVoteButtons photo={photo} />}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
@@ -373,6 +561,13 @@ export default function WallPage() {
           className="spotlight-pop-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 md:p-12"
         >
           <div className="relative flex max-h-full max-w-full items-center justify-center">
+            {spotlight.challengeId && (
+              <div className="absolute top-4 left-4 z-10 sm:top-6 sm:left-6">
+                <ChallengeBadge
+                  {...resolveChallengeLabel(spotlight.challengeId)}
+                />
+              </div>
+            )}
             <img
               src={resolveUrl(spotlight.url)}
               alt=""
