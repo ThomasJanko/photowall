@@ -7,6 +7,7 @@ import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
+import { PollModal } from "@/components/PollModal";
 import { buildGuestNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import {
@@ -223,6 +224,7 @@ export default function UploadPage() {
       )}
 
       <QuickNav links={navLinks} position="bottom-left" />
+      <PollModal screen="home" />
     </main>
   );
 }

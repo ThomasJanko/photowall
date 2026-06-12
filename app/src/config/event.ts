@@ -21,6 +21,14 @@ export interface FeatureFlags {
   adminBulkActions: boolean;
   /** Si true, les uploads passent par /admin avant d'apparaître sur /wall. */
   moderationRequired: boolean;
+  /** Affiche les sondages live (modal sur les écrans configurés). */
+  livePolls: boolean;
+}
+
+/** Écrans où la modal sondage peut apparaître. */
+export interface PollScreens {
+  home: boolean;
+  wall: boolean;
 }
 
 export interface EventTheme {
@@ -42,6 +50,9 @@ export interface EventConfig {
   reactionCooldownMs: number;
   theme: EventTheme;
   features: FeatureFlags;
+  pollScreens: PollScreens;
+  /** Durée d'affichage des résultats après clôture (ms). */
+  pollResultsDurationMs: number;
 }
 
 /** Valeurs par défaut = comportement actuel (25 ans, violet/rose). */
@@ -74,5 +85,11 @@ export const eventConfig: EventConfig = {
     timeBasedTheme: true,
     adminBulkActions: true,
     moderationRequired: false,
+    livePolls: true,
   },
+  pollScreens: {
+    home: true,
+    wall: true,
+  },
+  pollResultsDurationMs: 60_000,
 };

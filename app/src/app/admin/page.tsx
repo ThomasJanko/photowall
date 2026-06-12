@@ -13,6 +13,7 @@ import {
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
 import { AdminConfigTab } from "@/components/AdminConfigTab";
 import { AdminAnnounceTab } from "@/components/AdminAnnounceTab";
+import { AdminPollTab } from "@/components/AdminPollTab";
 import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
@@ -26,7 +27,7 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "pending" | "messages" | "config" | "announce";
+type AdminTab = "photos" | "pending" | "messages" | "poll" | "config" | "announce";
 
 const ADMIN_NAV_LINKS = [
   { href: "/", label: "Accueil", icon: "🏠" },
@@ -410,7 +411,9 @@ export default function AdminPage() {
                 ? `${pendingCount} photo(s) en attente de validation`
                 : activeTab === "messages"
                   ? "Messages privés des invités"
-                  : activeTab === "announce"
+                  : activeTab === "poll"
+                    ? "Sondage live invités"
+                    : activeTab === "announce"
                     ? "Annonce live sur le mur"
                     : "Configuration de l'événement"}
           </p>
@@ -457,6 +460,12 @@ export default function AdminPage() {
           📣 Annonce
         </AdminTabButton>
         <AdminTabButton
+          active={activeTab === "poll"}
+          onClick={() => setActiveTab("poll")}
+        >
+          📊 Sondage
+        </AdminTabButton>
+        <AdminTabButton
           active={activeTab === "config"}
           onClick={() => setActiveTab("config")}
         >
@@ -474,6 +483,8 @@ export default function AdminPage() {
         <AdminConfigTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "announce" ? (
         <AdminAnnounceTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "poll" ? (
+        <AdminPollTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}

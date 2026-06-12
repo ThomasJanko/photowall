@@ -31,6 +31,14 @@ import {
   type PrivateMessageRow,
 } from "./messagesDb";
 import {
+  createPoll,
+  getActivePoll,
+  getDisplayPoll,
+  votePoll,
+  closePoll,
+  type PollRow,
+} from "./pollDb";
+import {
   createAdminToken,
   verifyAdminToken,
   getAdminCode,
@@ -468,6 +476,86 @@ app.post("/api/announcement", requireAdmin, (req, res) => {
 
   io.emit("announcement:new", payload);
   res.json({ ok: true, ...payload });
+});
+
+// --- Sondages live ---
+
+function toPublicPoll(row: PollRow) {
+  return {
+    id: row.id,
+    question: row.question,
+    options: row.options,
+    status: row.status,
+    createdAt: row.createdAt,
+    closedAt: row.closedAt,
+  };
+}
+
+app.get("/api/polls/active", (_req, res) => {
+  const poll = getActivePoll();
+  res.json(poll ? toPublicPoll(poll) : null);
+});
+
+/** Sondage visible invités : actif ou dernier clôturé (résultats finaux). */
+app.get("/api/polls/current", (_req, res) => {
+  const duration = getConfig().pollResultsDurationMs ?? 60_000;
+  const poll = getDisplayPoll(duration);
+  res.json(poll ? toPublicPoll(poll) : null);
+});
+
+app.post("/api/polls", requireAdmin, (req, res) => {
+  const question: unknown = req.body?.question;
+  const options: unknown = req.body?.options;
+
+  if (typeof question !== "string" || !question.trim()) {
+    return res.status(400).json({ error: "Question requise" });
+  }
+
+  if (
+    !Array.isArray(options) ||
+    options.length < 2 ||
+    !options.every((o) => typeof o === "string" && o.trim().length > 0)
+  ) {
+    return res.status(400).json({ error: "Minimum 2 options requises" });
+  }
+
+  const poll = createPoll(
+    question,
+    options.map((o) => (o as string).trim())
+  );
+  const publicPoll = toPublicPoll(poll);
+  io.emit("poll:new", publicPoll);
+  res.status(201).json(publicPoll);
+});
+
+app.post("/api/polls/:id/vote", (req, res) => {
+  const { id } = req.params;
+  const optionId: unknown = req.body?.optionId;
+
+  if (typeof optionId !== "string" || !optionId) {
+    return res.status(400).json({ error: "optionId requis" });
+  }
+
+  const updated = votePoll(id, optionId);
+  if (!updated) {
+    return res.status(404).json({ error: "Sondage ou option introuvable" });
+  }
+
+  const publicPoll = toPublicPoll(updated);
+  io.emit("poll:update", publicPoll);
+  res.json(publicPoll);
+});
+
+app.post("/api/polls/:id/close", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const closed = closePoll(id);
+  if (!closed) {
+    return res.status(404).json({ error: "Sondage actif introuvable" });
+  }
+
+  const publicPoll = toPublicPoll(closed);
+  io.emit("poll:closed", publicPoll);
+  res.json(publicPoll);
 });
 
 io.on("connection", (socket) => {

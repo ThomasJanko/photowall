@@ -28,6 +28,7 @@ const FEATURE_LABELS: Record<keyof FeatureFlags, string> = {
   timeBasedTheme: "Thème selon l'heure",
   adminBulkActions: "Actions groupées admin (photos)",
   moderationRequired: "Modération des uploads (file d'attente admin)",
+  livePolls: "Sondages live (modal configurable)",
 };
 
 type FormState = Omit<EventConfig, "reactionEmojis"> & {

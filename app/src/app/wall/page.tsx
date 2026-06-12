@@ -6,6 +6,7 @@ import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { PollModal } from "@/components/PollModal";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
 import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
@@ -283,6 +284,8 @@ export default function WallPage() {
           leaving={announcementLeaving}
         />
       )}
+
+      <PollModal screen="wall" />
 
       {!connected && (
         <div
