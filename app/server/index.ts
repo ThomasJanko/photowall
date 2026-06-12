@@ -13,9 +13,14 @@ import {
   hidePhoto,
   getPhoto,
   addReaction,
-  REACTION_EMOJIS,
   type PhotoRow,
 } from "./db";
+import {
+  getConfig,
+  updateConfig,
+  resetConfig,
+  getReactionEmojis,
+} from "./configDb";
 import {
   insertPrivateMessage,
   listPrivateMessages,
@@ -49,7 +54,7 @@ const server = http.createServer(app);
 // CORS ouvert : on est sur un réseau local fermé, pas besoin de restreindre.
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, X-Admin-Token"
@@ -143,7 +148,7 @@ app.post("/api/photos", upload.single("photo"), (req, res) => {
     id,
     filename: req.file.filename,
     created_at: createdAt,
-    reactions: Object.fromEntries(REACTION_EMOJIS.map((e) => [e, 0])),
+    reactions: Object.fromEntries(getReactionEmojis().map((e) => [e, 0])),
   });
 
   io.emit("photo:new", photo);
@@ -160,7 +165,7 @@ app.post("/api/photos/:id/react", (req, res) => {
 
   if (
     typeof emoji !== "string" ||
-    !(REACTION_EMOJIS as readonly string[]).includes(emoji)
+    !(getReactionEmojis() as readonly string[]).includes(emoji)
   ) {
     return res.status(400).json({ error: "Emoji non autorisé" });
   }
@@ -386,6 +391,33 @@ app.delete("/api/messages/:id", requireAdmin, (req, res) => {
   }
 
   res.status(204).send();
+});
+
+// --- Config événement ---
+
+app.get("/api/config", (_req, res) => {
+  res.json(getConfig());
+});
+
+app.put("/api/config", requireAdmin, (req, res) => {
+  const body = req.body;
+  if (!body || typeof body !== "object") {
+    return res.status(400).json({ error: "Corps JSON invalide" });
+  }
+
+  // Réinitialisation explicite aux défauts du code
+  if (body.reset === true) {
+    return res.json(resetConfig());
+  }
+
+  try {
+    const { reset: _reset, ...partial } = body as Record<string, unknown>;
+    const saved = updateConfig(partial as Parameters<typeof updateConfig>[0]);
+    res.json(saved);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Config invalide";
+    res.status(400).json({ error: message });
+  }
 });
 
 io.on("connection", (socket) => {

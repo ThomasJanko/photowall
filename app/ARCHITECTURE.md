@@ -92,7 +92,7 @@ document.documentElement.style.setProperty("--event-gradient-from", "#…");
 |---------|----------|
 | `src/app/globals.css` | Keyframes existants : `photo-pop-in`, `spotlight-pop-in`, `reaction-float`, `confetti-fall`, `celebration-pop`, `celebration-pulse`, `pulse-soft` — **ne pas modifier**, seulement ajouter |
 | `server/db.ts` | `REACTION_EMOJIS` importé depuis `src/config/event.ts` ; migration `reactions` sur anciennes lignes JSON |
-| `src/config/event.ts` | Source de vérité front ; `DEFAULT_REACTION_EMOJIS` importé par le serveur |
+| `data/event-config.json` | Config événement (surcharge `src/config/event.ts`) via `GET/PUT /api/config` |
 | `NEXT_PUBLIC_SERVER_URL` | URL du laptop Express ; les téléphones doivent joindre cette IP en soirée (pas `localhost`) |
 | `data/photos.json` + `data/uploads/` | Mur public uniquement |
 | `data/private-messages.json` + `data/private-uploads/` | Jamais exposés via `/uploads` ni `GET /api/photos` |

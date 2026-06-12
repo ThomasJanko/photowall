@@ -11,13 +11,14 @@ import {
   AdminUnauthorizedError,
 } from "@/lib/adminAuth";
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
-import { eventConfig } from "@/config/event";
+import { AdminConfigTab } from "@/components/AdminConfigTab";
+import { useEventConfig } from "@/components/EventThemeProvider";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "messages";
+type AdminTab = "photos" | "messages" | "config";
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -51,6 +52,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function AdminPage() {
+  const { config } = useEventConfig();
   const [auth, setAuth] = useState<AuthState>("checking");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -299,7 +301,9 @@ export default function AdminPage() {
           <p className="text-purple-200">
             {activeTab === "photos"
               ? `${photos.length} photo(s) actuellement sur le mur`
-              : "Messages privés des invités"}
+              : activeTab === "messages"
+                ? "Messages privés des invités"
+                : "Configuration de l'événement"}
           </p>
         </div>
         <button
@@ -323,7 +327,7 @@ export default function AdminPage() {
         >
           Photos du mur
         </button>
-        {eventConfig.features.privateMessages && (
+        {config.features.privateMessages && (
           <button
             type="button"
             onClick={() => setActiveTab("messages")}
@@ -336,13 +340,26 @@ export default function AdminPage() {
             Messages privés
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setActiveTab("config")}
+          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
+            activeTab === "config"
+              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+          }`}
+        >
+          ⚙️ Configuration
+        </button>
       </div>
 
       {activeTab === "messages" ? (
         <AdminMessagesTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "config" ? (
+        <AdminConfigTab onUnauthorized={handleUnauthorized} />
       ) : (
         <>
-      {eventConfig.features.adminBulkActions && (
+      {config.features.adminBulkActions && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -370,7 +387,7 @@ export default function AdminPage() {
                 isSelected ? "ring-pink-400" : "ring-white/10"
               }`}
             >
-              {eventConfig.features.adminBulkActions && (
+              {config.features.adminBulkActions && (
                 <label className="absolute top-1 left-1 z-10 flex cursor-pointer items-center rounded-md bg-black/50 p-1.5 backdrop-blur-sm">
                   <input
                     type="checkbox"
@@ -406,7 +423,7 @@ export default function AdminPage() {
         })}
       </div>
 
-      {eventConfig.features.adminBulkActions && (
+      {config.features.adminBulkActions && (
         <div
           className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 px-4 py-3 shadow-lg backdrop-blur-md"
           style={{

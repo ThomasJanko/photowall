@@ -2,7 +2,8 @@
  * Configuration centralisée de l'événement.
  * Modifier ce fichier pour adapter l'app à un autre anniversaire, mariage, etc.
  *
- * ⚠️ reactionEmojis doit rester aligné avec server/db.ts (importe DEFAULT_REACTION_EMOJIS).
+ * ⚠️ reactionEmojis : valeurs par défaut au 1er lancement ; ensuite lues depuis
+ * data/event-config.json via server/configDb.ts (getReactionEmojis).
  */
 
 /** Source de vérité des emojis de réaction (front + serveur). */

@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { eventConfig } from "@/config/event";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
+import { useEventConfig } from "@/components/EventThemeProvider";
 import {
   addToQueue,
   blobToDataUrl,
@@ -19,6 +19,7 @@ import {
 type Status = "idle" | "compressing" | "uploading" | "success" | "error";
 
 export default function UploadPage() {
+  const { config } = useEventConfig();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -119,7 +120,7 @@ export default function UploadPage() {
         className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl"
       />
 
-      {eventConfig.features.confetti && <ConfettiBackground />}
+      {config.features.confetti && <ConfettiBackground />}
 
       <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6">
         <header className="text-center space-y-2">
@@ -204,7 +205,7 @@ export default function UploadPage() {
         🖼️ Voir le mur de photos
       </Link>
 
-      {eventConfig.features.privateMessages && (
+      {config.features.privateMessages && (
         <Link
           href="/message"
           className="relative mt-3 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"

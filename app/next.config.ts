@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Autorise les appareils du réseau local (téléphones) à accéder aux
   // ressources du serveur de dev Next (HMR, etc.).
-  allowedDevOrigins: ["10.0.0.70", "10.0.0.*"],
+  allowedDevOrigins: process.env.ALLOWED_ORIGINS?.split(",") ?? [],
   env: {
     TARGET_DATE: process.env.TARGET_DATE,
   }

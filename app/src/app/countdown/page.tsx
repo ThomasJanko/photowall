@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { eventConfig } from "@/config/event";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
+import { useEventConfig } from "@/components/EventThemeProvider";
 
-const TARGET_DATE = new Date(
-  process.env.NEXT_PUBLIC_TARGET_DATE ??
-    eventConfig.countdownTarget ??
-    "2026-07-18T00:00:00"
-);
-const CELEBRATION_TEXT = eventConfig.celebrationText;
+const TARGET_FALLBACK = "2026-07-18T00:00:00";
 
 interface Remaining {
   days: number;
@@ -87,8 +82,12 @@ function CelebrationConfetti() {
 }
 
 export default function CountdownPage() {
-  // null tant que le client n'a pas pris la main : le serveur et le premier
-  // rendu client affichent les mêmes placeholders (pas de mismatch d'hydratation).
+  const { config } = useEventConfig();
+  const targetDate = new Date(
+    process.env.NEXT_PUBLIC_TARGET_DATE ??
+      config.countdownTarget ??
+      TARGET_FALLBACK
+  );
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -98,7 +97,7 @@ export default function CountdownPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const remaining = now === null ? null : getRemaining(TARGET_DATE, now);
+  const remaining = now === null ? null : getRemaining(targetDate, now);
   const isOver = remaining !== null && remaining.total <= 0;
 
   // Unités affichées : on masque jours/heures quand elles sont à zéro
@@ -123,16 +122,16 @@ export default function CountdownPage() {
   return (
     <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center p-6">
       {isOver ? (
-        eventConfig.features.confetti && <CelebrationConfetti />
+        config.features.confetti && <CelebrationConfetti />
       ) : (
-        eventConfig.features.confetti && <ConfettiBackground />
+        config.features.confetti && <ConfettiBackground />
       )}
 
       {isOver ? (
         /* ------ Célébration ------ */
         <div className="relative z-10 flex flex-col items-center gap-10 text-center">
           <h1 className="celebration-pop text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold text-white drop-shadow-[0_4px_24px_rgba(244,114,182,0.6)]">
-            {CELEBRATION_TEXT}
+            {config.celebrationText}
           </h1>
           <Link
             href="/wall"

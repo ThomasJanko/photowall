@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { DEFAULT_REACTION_EMOJIS } from "../src/config/event";
+import { getReactionEmojis } from "./configDb";
 
 /**
  * Stockage simple en fichier JSON (pas de dépendance native).
@@ -13,9 +13,6 @@ const DB_FILE = path.join(DATA_DIR, "photos.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-/** Aligné sur src/config/event.ts (DEFAULT_REACTION_EMOJIS). */
-export const REACTION_EMOJIS = DEFAULT_REACTION_EMOJIS;
-
 export interface PhotoRow {
   id: string;
   filename: string;
@@ -24,8 +21,9 @@ export interface PhotoRow {
   reactions: Record<string, number>;
 }
 
+/** Compteurs vides selon les emojis courants (configDb.getReactionEmojis). */
 function emptyReactions(): Record<string, number> {
-  return Object.fromEntries(REACTION_EMOJIS.map((e) => [e, 0]));
+  return Object.fromEntries(getReactionEmojis().map((e) => [e, 0]));
 }
 
 function readAll(): PhotoRow[] {

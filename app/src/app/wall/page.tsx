@@ -2,16 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { eventConfig } from "@/config/event";
 import { getPhotoService } from "@/lib/photoService";
-import { REACTION_EMOJIS, type Photo } from "@/lib/types";
+import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
-import { useEventTheme } from "@/components/EventThemeProvider";
+import { useEventConfig } from "@/components/EventThemeProvider";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
-
-const { spotlightDurationMs, reactionCooldownMs, features } = eventConfig;
 
 /** Clé localStorage mémorisant les réactions posées par CET appareil. */
 const MY_REACTIONS_KEY = "wall:my-reactions";
@@ -63,7 +60,15 @@ function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
 }
 
 export default function WallPage() {
-  const { accent } = useEventTheme();
+  const { config, accent } = useEventConfig();
+  const {
+    spotlightDurationMs,
+    reactionCooldownMs,
+    features,
+    reactionEmojis,
+    eventName,
+    welcomeMessage,
+  } = config;
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [queue, setQueue] = useState<Photo[]>([]);
   const [floaters, setFloaters] = useState<Floater[]>([]);
@@ -219,12 +224,12 @@ export default function WallPage() {
 
       <div className="relative z-10">
         <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
-          {eventConfig.eventName}
+          {eventName}
         </h1>
 
         {photos.length === 0 && !spotlight ? (
           <p className="text-center text-purple-200 text-xl mt-20">
-            {eventConfig.welcomeMessage}
+            {welcomeMessage}
           </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
@@ -244,7 +249,7 @@ export default function WallPage() {
                 </div>
                 {features.reactions && (
                   <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
-                    {REACTION_EMOJIS.map((emoji) => {
+                    {reactionEmojis.map((emoji) => {
                       const mine = myReactions.has(`${photo.id}:${emoji}`);
                       return (
                         <button
@@ -299,7 +304,7 @@ export default function WallPage() {
             />
             {features.reactions && (
               <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
-                {REACTION_EMOJIS.map((emoji) => (
+                {reactionEmojis.map((emoji) => (
                   <span
                     key={emoji}
                     className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"

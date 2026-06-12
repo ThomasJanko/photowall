@@ -2,55 +2,94 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
-import { eventConfig } from "@/config/event";
+import {
+  eventConfig as defaultEventConfig,
+  type EventConfig,
+} from "@/config/event";
 import { applyThemeToDocument } from "@/lib/applyEventTheme";
+import { fetchEventConfig } from "@/lib/eventConfigApi";
 import { getTimeTheme } from "@/lib/timeTheme";
 
 const THEME_REFRESH_MS = 5 * 60_000;
 
-interface EventThemeContextValue {
+interface EventConfigContextValue {
+  config: EventConfig;
+  loaded: boolean;
+  refreshConfig: () => Promise<void>;
   accent: string;
 }
 
-const EventThemeContext = createContext<EventThemeContextValue>({
-  accent: eventConfig.theme.accent,
+const EventConfigContext = createContext<EventConfigContextValue>({
+  config: defaultEventConfig,
+  loaded: false,
+  refreshConfig: async () => {},
+  accent: defaultEventConfig.theme.accent,
 });
 
-/** Expose l'accent courant (ex: confettis sur /wall). */
-export function useEventTheme(): EventThemeContextValue {
-  return useContext(EventThemeContext);
+/** Config événement courante (API ou défauts). */
+export function useEventConfig(): EventConfigContextValue {
+  return useContext(EventConfigContext);
+}
+
+/** Alias rétrocompatible pour l'accent confettis. */
+export function useEventTheme(): { accent: string } {
+  const { accent } = useEventConfig();
+  return { accent };
 }
 
 /**
- * Initialise les CSS variables depuis eventConfig et, si activé,
- * les met à jour selon l'heure (timeBasedTheme).
+ * Charge GET /api/config au montage (fallback offline sur event.ts),
+ * applique les CSS variables du thème.
  */
 export function EventThemeProvider({ children }: { readonly children: ReactNode }) {
-  const [accent, setAccent] = useState(eventConfig.theme.accent);
+  const [config, setConfig] = useState<EventConfig>(defaultEventConfig);
+  const [loaded, setLoaded] = useState(false);
+  const [accent, setAccent] = useState(defaultEventConfig.theme.accent);
 
-  useEffect(() => {
-    const apply = () => {
-      const colors = eventConfig.features.timeBasedTheme
-        ? getTimeTheme()
-        : eventConfig.theme;
-      applyThemeToDocument(colors);
-      setAccent(colors.accent);
-    };
-
-    apply();
-    if (!eventConfig.features.timeBasedTheme) return;
-    const interval = setInterval(apply, THEME_REFRESH_MS);
-    return () => clearInterval(interval);
+  const applyTheme = useCallback((cfg: EventConfig) => {
+    const colors = cfg.features.timeBasedTheme ? getTimeTheme() : cfg.theme;
+    applyThemeToDocument(colors);
+    setAccent(colors.accent);
   }, []);
 
+  const refreshConfig = useCallback(async () => {
+    const next = await fetchEventConfig();
+    setConfig(next);
+    applyTheme(next);
+  }, [applyTheme]);
+
+  useEffect(() => {
+    fetchEventConfig()
+      .then((cfg) => {
+        setConfig(cfg);
+        applyTheme(cfg);
+      })
+      .finally(() => setLoaded(true));
+  }, [applyTheme]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (!config.features.timeBasedTheme) {
+      applyTheme(config);
+      return;
+    }
+    const tick = () => applyTheme(config);
+    tick();
+    const interval = setInterval(tick, THEME_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [loaded, config, applyTheme]);
+
   return (
-    <EventThemeContext.Provider value={{ accent }}>
+    <EventConfigContext.Provider
+      value={{ config, loaded, refreshConfig, accent }}
+    >
       {children}
-    </EventThemeContext.Provider>
+    </EventConfigContext.Provider>
   );
 }
