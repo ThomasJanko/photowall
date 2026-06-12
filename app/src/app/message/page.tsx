@@ -287,9 +287,9 @@ export default function MessagePage() {
             </button>
           </form>
         )}
-
-        <QuickNav links={navLinks} position="bottom-left" />
       </div>
+
+      <QuickNav links={navLinks} position="bottom-left" />
     </main>
   );
 }

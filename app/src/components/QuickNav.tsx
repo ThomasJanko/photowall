@@ -18,8 +18,6 @@ interface QuickNavProps {
   readonly variant?: "light" | "dark";
 }
 
-const COLLAPSE_THRESHOLD = 3;
-
 const POSITION: Record<Position, string> = {
   "bottom-left": "bottom-6 left-4 sm:left-6",
   "bottom-right": "bottom-6 right-4 sm:right-6",
@@ -57,7 +55,7 @@ function NavButton({ href, variant, children, className, onClick }: NavButtonPro
   );
 }
 
-/** Navigation flottante compacte — boutons empilés ou menu déroulant si > 3 liens. */
+/** Navigation flottante compacte — menu replié par défaut, ouvert/fermé au clic. */
 export function QuickNav({
   links,
   position = "bottom-right",
@@ -80,21 +78,6 @@ export function QuickNav({
   const pos = POSITION[position];
   const menuAbove =
     position === "bottom-left" || position === "bottom-right";
-
-  if (links.length <= COLLAPSE_THRESHOLD) {
-    return (
-      <nav
-        aria-label="Navigation rapide"
-        className={`fixed z-40 flex flex-col items-start gap-2 ${pos}`}
-      >
-        {links.map((link) => (
-          <NavButton key={link.href} href={link.href} variant={variant}>
-            {displayLabel(link)}
-          </NavButton>
-        ))}
-      </nav>
-    );
-  }
 
   return (
     <nav
@@ -123,7 +106,7 @@ export function QuickNav({
       <button
         type="button"
         aria-expanded={open}
-        aria-label="Ouvrir la navigation"
+        aria-label={open ? "Fermer la navigation" : "Ouvrir la navigation"}
         onClick={() => setOpen((v) => !v)}
         className={buttonClasses(variant, "w-12 px-0 text-lg")}
       >
