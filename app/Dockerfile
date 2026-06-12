@@ -58,6 +58,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/scripts ./src
 COPY --from=builder /app/next.config.ts ./
 
 # data/ est monté en volume à l'exécution (photos.json + uploads/)
