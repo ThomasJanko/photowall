@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import QRCode from "qrcode";
+import { QuickNav } from "@/components/QuickNav";
+import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 
 /** URL de base sans slash final. */
 function resolveAppUrl(): string {
@@ -12,6 +15,8 @@ function resolveAppUrl(): string {
 }
 
 export default function QrPage() {
+  const isAdmin = useIsAdmin();
+  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetUrl, setTargetUrl] = useState("");
@@ -68,6 +73,7 @@ export default function QrPage() {
           {targetUrl}
         </p>
       )}
+      <QuickNav links={navLinks} position="bottom-left" />
     </main>
   );
 }

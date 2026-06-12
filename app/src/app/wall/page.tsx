@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { QuickNav } from "@/components/QuickNav";
+import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -61,6 +63,7 @@ function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
 
 export default function WallPage() {
   const { config, accent } = useEventConfig();
+  const isAdmin = useIsAdmin();
   const {
     spotlightDurationMs,
     reactionCooldownMs,
@@ -80,6 +83,28 @@ export default function WallPage() {
   const floaterSeq = useRef(0);
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
+
+  const navLinks = useMemo(
+    () =>
+      withAdminLink(
+        [
+          ...(features.countdown
+            ? [{ href: "/countdown", label: "Compte à rebours", icon: "⏳" }]
+            : []),
+          ...(features.retrospective
+            ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
+            : []),
+          ...(features.qrPage
+            ? [{ href: "/qr", label: "QR code", icon: "📱" }]
+            : []),
+          ...(features.privateMessages
+            ? [{ href: "/message", label: "Message privé", icon: "💌" }]
+            : []),
+        ],
+        isAdmin
+      ),
+    [features, isAdmin]
+  );
 
   function applyReactions(photoId: string, reactions: Record<string, number>) {
     const update = (list: Photo[]) =>
@@ -290,6 +315,8 @@ export default function WallPage() {
       >
         📷 Prendre une photo
       </Link>
+
+      <QuickNav links={navLinks} position="bottom-left" />
 
       {spotlight && (
         <div

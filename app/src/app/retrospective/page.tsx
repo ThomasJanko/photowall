@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
+import { QuickNav } from "@/components/QuickNav";
+import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 
 // ============================================================================
 // CONFIGURATION
@@ -79,6 +82,8 @@ function VolumeControl({
 }
 
 export default function RetrospectivePage() {
+  const isAdmin = useIsAdmin();
+  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   // null = chargement en cours
   const [photos, setPhotos] = useState<Photo[] | null>(null);
   const [started, setStarted] = useState(false);
@@ -258,6 +263,8 @@ export default function RetrospectivePage() {
           </div>
         </>
       )}
+
+      <QuickNav links={navLinks} position="bottom-left" variant="dark" />
     </main>
   );
 }

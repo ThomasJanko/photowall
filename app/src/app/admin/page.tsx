@@ -12,6 +12,7 @@ import {
 } from "@/lib/adminAuth";
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
 import { AdminConfigTab } from "@/components/AdminConfigTab";
+import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
 
 const SERVER_URL =
@@ -19,6 +20,11 @@ const SERVER_URL =
 
 type AuthState = "checking" | "guest" | "authed";
 type AdminTab = "photos" | "messages" | "config";
+
+const ADMIN_NAV_LINKS = [
+  { href: "/", label: "Accueil", icon: "🏠" },
+  { href: "/wall", label: "Mur", icon: "🖼️" },
+] as const;
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -482,6 +488,8 @@ export default function AdminPage() {
           />
         </div>
       )}
+
+      <QuickNav links={[...ADMIN_NAV_LINKS]} position="bottom-left" variant="dark" />
     </AdminShell>
   );
 }

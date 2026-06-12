@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { QuickNav } from "@/components/QuickNav";
+import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 
 const TARGET_FALLBACK = "2026-07-18T00:00:00";
 
@@ -83,6 +85,8 @@ function CelebrationConfetti() {
 
 export default function CountdownPage() {
   const { config } = useEventConfig();
+  const isAdmin = useIsAdmin();
+  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const targetDate = new Date(
     process.env.NEXT_PUBLIC_TARGET_DATE ??
       config.countdownTarget ??
@@ -133,12 +137,6 @@ export default function CountdownPage() {
           <h1 className="celebration-pop text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold text-white drop-shadow-[0_4px_24px_rgba(244,114,182,0.6)]">
             {config.celebrationText}
           </h1>
-          <Link
-            href="/wall"
-            className="rounded-full bg-white/10 text-purple-100 font-semibold px-8 py-4 text-lg ring-1 ring-white/25 backdrop-blur-sm active:scale-95 transition-transform"
-          >
-            Voir le mur de photos →
-          </Link>
         </div>
       ) : (
         /* ------ Compte à rebours ------ */
@@ -162,15 +160,10 @@ export default function CountdownPage() {
               </div>
             ))}
           </div>
-
-          <Link
-            href="/wall"
-            className="text-sm sm:text-base text-purple-300/80 underline-offset-4 hover:underline"
-          >
-            Voir le mur de photos →
-          </Link>
         </div>
       )}
+
+      <QuickNav links={navLinks} position="bottom-left" />
     </main>
   );
 }

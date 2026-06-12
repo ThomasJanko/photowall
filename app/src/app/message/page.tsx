@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
+import { QuickNav } from "@/components/QuickNav";
+import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 import { submitPrivateMessage } from "@/lib/privateMessages";
 import {
   MAX_PRIVATE_TEXT,
@@ -14,6 +17,8 @@ import {
 type Status = "idle" | "validating" | "sending" | "success" | "error";
 
 export default function MessagePage() {
+  const isAdmin = useIsAdmin();
+  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const [text, setText] = useState("");
   const [media, setMedia] = useState<ValidatedPrivateMedia | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -283,14 +288,7 @@ export default function MessagePage() {
           </form>
         )}
 
-        {status !== "success" && (
-          <Link
-            href="/"
-            className="text-center text-purple-300 text-sm underline underline-offset-2"
-          >
-            ← Retour à l&apos;accueil
-          </Link>
-        )}
+        <QuickNav links={navLinks} position="bottom-left" />
       </div>
     </main>
   );

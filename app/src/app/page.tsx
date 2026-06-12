@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { QuickNav } from "@/components/QuickNav";
+import { buildGuestNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 import {
   addToQueue,
   blobToDataUrl,
@@ -20,6 +23,11 @@ type Status = "idle" | "compressing" | "uploading" | "success" | "error";
 
 export default function UploadPage() {
   const { config } = useEventConfig();
+  const isAdmin = useIsAdmin();
+  const navLinks = useMemo(
+    () => buildGuestNavLinks(config.features, isAdmin),
+    [config.features, isAdmin]
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -213,6 +221,8 @@ export default function UploadPage() {
           💌 Laisser un message privé
         </Link>
       )}
+
+      <QuickNav links={navLinks} position="bottom-left" />
     </main>
   );
 }
