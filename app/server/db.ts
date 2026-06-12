@@ -13,12 +13,15 @@ const DB_FILE = path.join(DATA_DIR, "photos.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
+export type PhotoStatus = "pending" | "approved";
+
 export interface PhotoRow {
   id: string;
   filename: string;
   created_at: number;
   hidden: number;
   reactions: Record<string, number>;
+  status: PhotoStatus;
 }
 
 /** Compteurs vides selon les emojis courants (configDb.getReactionEmojis). */
@@ -31,8 +34,12 @@ function readAll(): PhotoRow[] {
   try {
     const raw = fs.readFileSync(DB_FILE, "utf-8");
     const rows = raw.trim() ? (JSON.parse(raw) as PhotoRow[]) : [];
-    // Migration douce : les photos créées avant la feature n'ont pas de champ reactions
-    return rows.map((r) => ({ ...r, reactions: r.reactions ?? emptyReactions() }));
+    // Migration douce : reactions et status absents sur les anciennes lignes
+    return rows.map((r) => ({
+      ...r,
+      reactions: r.reactions ?? emptyReactions(),
+      status: r.status ?? "approved",
+    }));
   } catch {
     return [];
   }
@@ -42,21 +49,35 @@ function writeAll(rows: PhotoRow[]) {
   fs.writeFileSync(DB_FILE, JSON.stringify(rows, null, 2), "utf-8");
 }
 
-export function insertPhoto(id: string, filename: string, createdAt: number) {
+export function insertPhoto(
+  id: string,
+  filename: string,
+  createdAt: number,
+  moderationRequired: boolean
+): PhotoRow {
   const rows = readAll();
-  rows.push({
+  const row: PhotoRow = {
     id,
     filename,
     created_at: createdAt,
     hidden: 0,
     reactions: emptyReactions(),
-  });
+    status: moderationRequired ? "pending" : "approved",
+  };
+  rows.push(row);
   writeAll(rows);
+  return row;
 }
 
 export function listVisiblePhotos(): PhotoRow[] {
   return readAll()
-    .filter((r) => r.hidden === 0)
+    .filter((r) => r.hidden === 0 && r.status === "approved")
+    .sort((a, b) => a.created_at - b.created_at);
+}
+
+export function listPendingPhotos(): PhotoRow[] {
+  return readAll()
+    .filter((r) => r.hidden === 0 && r.status === "pending")
     .sort((a, b) => a.created_at - b.created_at);
 }
 
@@ -65,6 +86,15 @@ export function hidePhoto(id: string) {
   const row = rows.find((r) => r.id === id);
   if (row) row.hidden = 1;
   writeAll(rows);
+}
+
+export function approvePhoto(id: string): PhotoRow | undefined {
+  const rows = readAll();
+  const row = rows.find((r) => r.id === id);
+  if (!row || row.hidden || row.status !== "pending") return undefined;
+  row.status = "approved";
+  writeAll(rows);
+  return row;
 }
 
 export function getPhoto(id: string): PhotoRow | undefined {

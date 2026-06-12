@@ -126,4 +126,28 @@ export class LocalPhotoService implements PhotoService {
     if (!res.ok) throw new Error(`Export échoué (${res.status})`);
     return res.blob();
   }
+
+  async listPendingPhotos(): Promise<Photo[]> {
+    const res = await adminFetch(`${SERVER_URL}/api/photos/pending`);
+    if (!res.ok) throw new Error(`Chargement des photos en attente échoué (${res.status})`);
+    return res.json();
+  }
+
+  async approvePhoto(id: string): Promise<Photo> {
+    const res = await adminFetch(`${SERVER_URL}/api/photos/${id}/approve`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`Approbation échouée (${res.status})`);
+    return res.json();
+  }
+
+  onPendingPhoto(callback: (photo: Photo) => void): () => void {
+    this.socket.on("photo:pending", callback);
+    return () => this.socket.off("photo:pending", callback);
+  }
+
+  onNewPrivateMessage(callback: () => void): () => void {
+    this.socket.on("message:new", callback);
+    return () => this.socket.off("message:new", callback);
+  }
 }

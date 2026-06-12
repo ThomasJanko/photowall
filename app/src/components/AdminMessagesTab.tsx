@@ -112,29 +112,40 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
 
 interface AdminMessagesTabProps {
   onUnauthorized: (err: unknown) => boolean;
+  onCountChange?: (count: number) => void;
 }
 
-export function AdminMessagesTab({ onUnauthorized }: AdminMessagesTabProps) {
+export function AdminMessagesTab({
+  onUnauthorized,
+  onCountChange,
+}: AdminMessagesTabProps) {
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     listPrivateMessages()
-      .then(setMessages)
+      .then((list) => {
+        setMessages(list);
+        onCountChange?.(0);
+      })
       .catch((err) => {
         if (onUnauthorized(err)) return;
         console.error(err);
       })
       .finally(() => setLoading(false));
-  }, [onUnauthorized]);
+  }, [onUnauthorized, onCountChange]);
 
   async function handleDelete(id: string) {
     if (!confirm("Supprimer ce message privé ?")) return;
     setBusyId(id);
     try {
       await deletePrivateMessage(id);
-      setMessages((prev) => prev.filter((m) => m.id !== id));
+      setMessages((prev) => {
+        const next = prev.filter((m) => m.id !== id);
+        onCountChange?.(0);
+        return next;
+      });
     } catch (err) {
       if (onUnauthorized(err)) return;
       alert("Erreur lors de la suppression");

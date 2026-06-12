@@ -19,6 +19,8 @@ export interface FeatureFlags {
   qrPage: boolean;
   timeBasedTheme: boolean;
   adminBulkActions: boolean;
+  /** Si true, les uploads passent par /admin avant d'apparaître sur /wall. */
+  moderationRequired: boolean;
 }
 
 export interface EventTheme {
@@ -71,5 +73,6 @@ export const eventConfig: EventConfig = {
     qrPage: true,
     timeBasedTheme: true,
     adminBulkActions: true,
+    moderationRequired: false,
   },
 };

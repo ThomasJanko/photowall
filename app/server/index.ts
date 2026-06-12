@@ -10,7 +10,9 @@ import { Server as SocketIOServer } from "socket.io";
 import {
   insertPhoto,
   listVisiblePhotos,
+  listPendingPhotos,
   hidePhoto,
+  approvePhoto,
   getPhoto,
   addReaction,
   type PhotoRow,
@@ -141,17 +143,16 @@ app.post("/api/photos", upload.single("photo"), (req, res) => {
 
   const id = path.parse(req.file.filename).name;
   const createdAt = Date.now();
+  const moderationRequired = getConfig().features.moderationRequired === true;
 
-  insertPhoto(id, req.file.filename, createdAt);
+  const row = insertPhoto(id, req.file.filename, createdAt, moderationRequired);
+  const photo = toPublicPhoto(row);
 
-  const photo = toPublicPhoto({
-    id,
-    filename: req.file.filename,
-    created_at: createdAt,
-    reactions: Object.fromEntries(getReactionEmojis().map((e) => [e, 0])),
-  });
-
-  io.emit("photo:new", photo);
+  if (row.status === "approved") {
+    io.emit("photo:new", photo);
+  } else {
+    io.emit("photo:pending", photo);
+  }
 
   res.status(201).json(photo);
 });
@@ -171,7 +172,7 @@ app.post("/api/photos/:id/react", (req, res) => {
   }
 
   const existing = getPhoto(id);
-  if (!existing || existing.hidden) {
+  if (!existing || existing.hidden || existing.status !== "approved") {
     return res.status(404).json({ error: "Photo introuvable" });
   }
 
@@ -237,6 +238,24 @@ app.post("/api/admin/login", (req, res) => {
 
 app.get("/api/admin/verify", requireAdmin, (_req, res) => {
   res.json({ ok: true });
+});
+
+// Photos en attente de validation (admin)
+app.get("/api/photos/pending", requireAdmin, (_req, res) => {
+  res.json(listPendingPhotos().map(toPublicPhoto));
+});
+
+// Approuver une photo en attente → visible sur /wall
+app.post("/api/photos/:id/approve", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const row = approvePhoto(id);
+  if (!row) {
+    return res.status(404).json({ error: "Photo introuvable ou déjà traitée" });
+  }
+
+  const photo = toPublicPhoto(row);
+  io.emit("photo:new", photo);
+  res.json(photo);
 });
 
 // Export ZIP de photos (admin). ids vide → toutes les photos visibles.
@@ -350,6 +369,7 @@ app.post("/api/messages", (req, res) => {
     }
 
     const row = insertPrivateMessage(text, mediaFilename, mediaType);
+    io.emit("message:new", toPublicPrivateMessage(row));
     res.status(201).json({ ok: true, id: row.id });
   });
 });

@@ -13,14 +13,20 @@ import {
 import { AdminMessagesTab } from "@/components/AdminMessagesTab";
 import { AdminConfigTab } from "@/components/AdminConfigTab";
 import { AdminAnnounceTab } from "@/components/AdminAnnounceTab";
+import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import {
+  getMessagesLastSeen,
+  listPrivateMessages,
+  markMessagesSeen,
+} from "@/lib/privateMessages";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "messages" | "config" | "announce";
+type AdminTab = "photos" | "pending" | "messages" | "config" | "announce";
 
 const ADMIN_NAV_LINKS = [
   { href: "/", label: "Accueil", icon: "🏠" },
@@ -58,6 +64,37 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AdminTabButton({
+  active,
+  onClick,
+  children,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  badge?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors active:scale-95 ${
+        active
+          ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
+          : "bg-white/10 text-purple-200 ring-1 ring-white/20"
+      }`}
+    >
+      {children}
+      {badge != null && badge > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white shadow">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function AdminPage() {
   const { config } = useEventConfig();
   const [auth, setAuth] = useState<AuthState>("checking");
@@ -71,6 +108,11 @@ export default function AdminPage() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [failCount, setFailCount] = useState(0);
   const [activeTab, setActiveTab] = useState<AdminTab>("photos");
+  const [pendingCount, setPendingCount] = useState(0);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+
+  const showPendingTab =
+    config.features.moderationRequired || pendingCount > 0;
 
   const displayedPhotos = useMemo(
     () => photos.slice().reverse(),
@@ -114,6 +156,62 @@ export default function AdminPage() {
     return () => {
       unsubNew();
       unsubRemoved();
+    };
+  }, [auth]);
+
+  // Compteur nouveaux messages privés (badge onglet)
+  useEffect(() => {
+    if (auth !== "authed" || !config.features.privateMessages) return;
+
+    function refreshNewMessageCount() {
+      if (activeTab === "messages") {
+        markMessagesSeen();
+        setNewMessageCount(0);
+        return;
+      }
+
+      listPrivateMessages()
+        .then((msgs) => {
+          const lastSeen = getMessagesLastSeen();
+          setNewMessageCount(
+            msgs.filter((m) => m.createdAt > lastSeen).length
+          );
+        })
+        .catch(() => {});
+    }
+
+    refreshNewMessageCount();
+    const interval = setInterval(refreshNewMessageCount, 12_000);
+    const unsub = getPhotoService().onNewPrivateMessage?.(() =>
+      refreshNewMessageCount()
+    );
+
+    return () => {
+      clearInterval(interval);
+      unsub?.();
+    };
+  }, [auth, activeTab, config.features.privateMessages]);
+
+  // Compteur photos en attente (badge onglet + visibilité)
+  useEffect(() => {
+    if (auth !== "authed") return;
+
+    const service = getPhotoService();
+    if (!service.listPendingPhotos) return;
+
+    function refreshCount() {
+      service.listPendingPhotos!()
+        .then((list) => setPendingCount(list.length))
+        .catch(() => {});
+    }
+
+    refreshCount();
+    const interval = setInterval(refreshCount, 12_000);
+    const unsub = service.onPendingPhoto?.(() => refreshCount());
+
+    return () => {
+      clearInterval(interval);
+      unsub?.();
     };
   }, [auth]);
 
@@ -308,11 +406,13 @@ export default function AdminPage() {
           <p className="text-purple-200">
             {activeTab === "photos"
               ? `${photos.length} photo(s) actuellement sur le mur`
-              : activeTab === "messages"
-                ? "Messages privés des invités"
-                : activeTab === "announce"
-                  ? "Annonce live sur le mur"
-                  : "Configuration de l'événement"}
+              : activeTab === "pending"
+                ? `${pendingCount} photo(s) en attente de validation`
+                : activeTab === "messages"
+                  ? "Messages privés des invités"
+                  : activeTab === "announce"
+                    ? "Annonce live sur le mur"
+                    : "Configuration de l'événement"}
           </p>
         </div>
         <button
@@ -324,61 +424,61 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <div className="mb-6 flex gap-2">
-        <button
-          type="button"
+      <div className="mb-6 -mx-4 overflow-x-auto px-4 py-2 [scrollbar-width:thin]">
+        <div className="flex w-max gap-2 pb-1">
+        <AdminTabButton
+          active={activeTab === "photos"}
           onClick={() => setActiveTab("photos")}
-          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
-            activeTab === "photos"
-              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
-              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
-          }`}
         >
           Photos du mur
-        </button>
+        </AdminTabButton>
+        {showPendingTab && (
+          <AdminTabButton
+            active={activeTab === "pending"}
+            onClick={() => setActiveTab("pending")}
+            badge={pendingCount}
+          >
+            🕓 À valider
+          </AdminTabButton>
+        )}
         {config.features.privateMessages && (
-          <button
-            type="button"
+          <AdminTabButton
+            active={activeTab === "messages"}
             onClick={() => setActiveTab("messages")}
-            className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
-              activeTab === "messages"
-                ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
-                : "bg-white/10 text-purple-200 ring-1 ring-white/20"
-            }`}
+            badge={newMessageCount}
           >
             Messages privés
-          </button>
+          </AdminTabButton>
         )}
-        <button
-          type="button"
+        <AdminTabButton
+          active={activeTab === "announce"}
           onClick={() => setActiveTab("announce")}
-          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
-            activeTab === "announce"
-              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
-              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
-          }`}
         >
           📣 Annonce
-        </button>
-        <button
-          type="button"
+        </AdminTabButton>
+        <AdminTabButton
+          active={activeTab === "config"}
           onClick={() => setActiveTab("config")}
-          className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 ${
-            activeTab === "config"
-              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white shadow"
-              : "bg-white/10 text-purple-200 ring-1 ring-white/20"
-          }`}
         >
           ⚙️ Configuration
-        </button>
+        </AdminTabButton>
+        </div>
       </div>
 
       {activeTab === "messages" ? (
-        <AdminMessagesTab onUnauthorized={handleUnauthorized} />
+        <AdminMessagesTab
+          onUnauthorized={handleUnauthorized}
+          onCountChange={setNewMessageCount}
+        />
       ) : activeTab === "config" ? (
         <AdminConfigTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "announce" ? (
         <AdminAnnounceTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "pending" ? (
+        <AdminPendingTab
+          onUnauthorized={handleUnauthorized}
+          onCountChange={setPendingCount}
+        />
       ) : (
         <>
       {config.features.adminBulkActions && (

@@ -27,6 +27,7 @@ const FEATURE_LABELS: Record<keyof FeatureFlags, string> = {
   qrPage: "Page QR code",
   timeBasedTheme: "Thème selon l'heure",
   adminBulkActions: "Actions groupées admin (photos)",
+  moderationRequired: "Modération des uploads (file d'attente admin)",
 };
 
 type FormState = Omit<EventConfig, "reactionEmojis"> & {

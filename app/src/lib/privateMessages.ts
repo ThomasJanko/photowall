@@ -4,6 +4,19 @@ import type { PrivateMessage } from "./types/privateMessage";
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
+const MESSAGES_LAST_SEEN_KEY = "admin:messages-last-seen";
+
+/** Horodatage de la dernière consultation de l'onglet messages (admin). */
+export function getMessagesLastSeen(): number {
+  if (typeof window === "undefined") return 0;
+  const v = localStorage.getItem(MESSAGES_LAST_SEEN_KEY);
+  return v ? Number(v) || 0 : 0;
+}
+
+export function markMessagesSeen(): void {
+  localStorage.setItem(MESSAGES_LAST_SEEN_KEY, String(Date.now()));
+}
+
 export function isPrivateMessagesLocal(): boolean {
   return (process.env.NEXT_PUBLIC_BACKEND ?? "local") === "local";
 }

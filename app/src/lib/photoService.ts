@@ -45,6 +45,18 @@ export interface PhotoService {
 
   /** Exporte des photos en ZIP. Liste vide = toutes les photos visibles. */
   exportPhotos(ids: string[]): Promise<Blob>;
+
+  /** Photos en attente de validation (admin, mode local). */
+  listPendingPhotos?(): Promise<Photo[]>;
+
+  /** Approuve une photo en attente (admin, mode local). */
+  approvePhoto?(id: string): Promise<Photo>;
+
+  /** Nouvelle photo en attente (admin, mode local). */
+  onPendingPhoto?(callback: (photo: Photo) => void): () => void;
+
+  /** Nouveau message privé (admin, mode local). */
+  onNewPrivateMessage?(callback: () => void): () => void;
 }
 
 let instance: PhotoService | null = null;
