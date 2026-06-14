@@ -58,8 +58,11 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/scripts ./src
+# tsx résout les imports server/ → ../src/... au runtime (configDb, challengesDb, adminToken)
+COPY --from=builder /app/src/config ./src/config
+COPY --from=builder /app/src/lib/adminToken.ts ./src/lib/adminToken.ts
 COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # data/ est monté en volume à l'exécution (photos.json + uploads/)
 RUN mkdir -p data/uploads && chmod +x scripts/start-prod.sh
