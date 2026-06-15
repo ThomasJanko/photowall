@@ -103,9 +103,24 @@ const storage = multer.diskStorage({
   },
 });
 
+/** Photos du mur public : uniquement des images (pas de vidéo/PDF/etc.). */
+const ALLOWED_PHOTO_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max (sécurité, la compression côté client vise ~300KB)
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_PHOTO_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Type de fichier non autorisé (image uniquement)"));
+    }
+  },
 });
 
 const privateStorage = multer.diskStorage({
@@ -696,6 +711,51 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`[socket] client déconnecté: ${socket.id}`);
   });
+});
+
+// --- 404 pour les routes API inconnues ---
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Route introuvable" });
+});
+
+// --- Error handler global (doit être déclaré en dernier) ---
+// Capture les erreurs passées via next(err) (ex: multer fileFilter/limites)
+// et toute exception synchrone levée dans une route, pour éviter de crasher
+// le process pendant la soirée.
+app.use(
+  (
+    err: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    if (err instanceof multer.MulterError) {
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Fichier trop volumineux"
+          : err.message;
+      return res.status(400).json({ error: message });
+    }
+
+    if (err instanceof Error) {
+      // Erreurs métier levées via cb(new Error(...)) (ex: fileFilter)
+      console.error("[error]", err.message);
+      return res.status(400).json({ error: err.message });
+    }
+
+    console.error("[error] inconnue:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+);
+
+// Filets de sécurité : on log mais on ne tue pas le process pendant la soirée.
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
 });
 
 server.listen(PORT, "0.0.0.0", () => {
