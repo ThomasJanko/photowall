@@ -119,6 +119,16 @@ export default function AdminPage() {
   const showPendingTab =
     config.features.moderationRequired || pendingCount > 0;
 
+  const adminNavLinks = useMemo(
+    () => [
+      ...ADMIN_NAV_LINKS,
+      ...(config.features.retrospective
+        ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" as const }]
+        : []),
+    ],
+    [config.features.retrospective]
+  );
+
   const displayedPhotos = useMemo(
     () => photos.slice().reverse(),
     [photos]
@@ -633,7 +643,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <QuickNav links={[...ADMIN_NAV_LINKS]} position="bottom-left" variant="dark" />
+      <QuickNav links={adminNavLinks} position="bottom-left" variant="dark" />
     </AdminShell>
   );
 }

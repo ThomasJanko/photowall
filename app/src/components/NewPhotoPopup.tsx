@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
+import { useEventConfig } from "@/components/EventThemeProvider";
 import type { Photo } from "@/lib/types";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
-const DEEPLINK_KEY = "wall:deeplink-photo";
-const AUTO_DISMISS_MS = 5000;
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -19,9 +18,11 @@ function resolveUrl(url: string): string {
 export function NewPhotoPopup() {
   const pathname = usePathname();
   const router = useRouter();
+  const { config } = useEventConfig();
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [visible, setVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spotlightDurationMs = config.spotlightDurationMs;
 
   const hidden =
     pathname === "/wall" || pathname.startsWith("/admin");
@@ -40,15 +41,10 @@ export function NewPhotoPopup() {
   }
 
   function showNewPhoto(incoming: Photo) {
-    try {
-      sessionStorage.setItem(DEEPLINK_KEY, JSON.stringify(incoming));
-    } catch {
-      // sessionStorage indisponible
-    }
     setPhoto(incoming);
     setVisible(true);
     clearDismissTimer();
-    dismissTimerRef.current = setTimeout(dismiss, AUTO_DISMISS_MS);
+    dismissTimerRef.current = setTimeout(dismiss, spotlightDurationMs);
   }
 
   useEffect(() => {
@@ -58,15 +54,13 @@ export function NewPhotoPopup() {
     }
 
     const service = getPhotoService();
-    const unsub = service.onNewPhoto((incoming) => {
-      showNewPhoto(incoming);
-    });
+    const unsub = service.onNewPhoto(showNewPhoto);
 
     return () => {
       unsub();
       clearDismissTimer();
     };
-  }, [hidden]);
+  }, [hidden, spotlightDurationMs]);
 
   if (hidden || !photo) return null;
 
@@ -83,7 +77,7 @@ export function NewPhotoPopup() {
           type="button"
           onClick={() => {
             dismiss();
-            router.push(`/wall?photo=${encodeURIComponent(photo.id)}`);
+            router.push("/wall");
           }}
           className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.98] transition-transform"
         >

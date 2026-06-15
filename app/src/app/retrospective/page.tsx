@@ -73,7 +73,14 @@ function VolumeControl({
 export default function RetrospectivePage() {
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
+  const [accessChecked, setAccessChecked] = useState(false);
   const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+
+  const allowed = config.features.retrospective && isAdmin;
+
+  useEffect(() => {
+    setAccessChecked(true);
+  }, []);
 
   const [photos, setPhotos] = useState<Photo[] | null>(null);
   const [challengeMap, setChallengeMap] = useState(
@@ -92,6 +99,8 @@ export default function RetrospectivePage() {
   }, [volume, muted]);
 
   useEffect(() => {
+    if (!accessChecked || !allowed) return;
+
     getPhotoService()
       .listPhotos()
       .then((list) =>
@@ -109,7 +118,7 @@ export default function RetrospectivePage() {
         setChallengeMap(map);
       })
       .catch(() => {});
-  }, []);
+  }, [accessChecked, allowed]);
 
   const stats = useMemo(() => {
     if (!photos) return null;
@@ -139,6 +148,32 @@ export default function RetrospectivePage() {
   }
 
   const count = photos?.length ?? 0;
+
+  if (!accessChecked) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-black">
+        <p className="text-purple-200 text-xl">Chargement...</p>
+      </main>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
+        <p className="text-2xl font-bold text-white">🔒 Réservé à l&apos;organisateur</p>
+        <p className="max-w-sm text-purple-200">
+          La rétrospective n&apos;est accessible qu&apos;aux personnes connectées à
+          l&apos;administration.
+        </p>
+        <Link
+          href="/wall"
+          className="rounded-full bg-white/10 text-purple-100 font-semibold px-6 py-3 ring-1 ring-white/25 active:scale-95 transition-transform"
+        >
+          ← Retour au mur
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-black">

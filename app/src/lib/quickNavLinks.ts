@@ -19,7 +19,7 @@ export function buildGuestNavLinks(
     ...(features.countdown
       ? [{ href: "/countdown", label: "Compte à rebours", icon: "⏳" }]
       : []),
-    ...(features.retrospective
+    ...(features.retrospective && isAdmin
       ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
       : []),
     ...(features.leaderboard

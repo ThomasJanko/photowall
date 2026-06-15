@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
@@ -23,13 +22,59 @@ const SERVER_URL =
 const MY_REACTIONS_KEY = "wall:my-reactions";
 /** Votes réussi/échec par appareil (format photoId:success|fail). */
 const MY_CHALLENGE_VOTES_KEY = "wall:my-challenge-votes";
-const DEEPLINK_KEY = "wall:deeplink-photo";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
 /** Durée de l'animation de sortie du bandeau d'annonce (ms). */
 const ANNOUNCEMENT_EXIT_MS = 400;
 /** Nombre max de cartes photo rendues dans la grille (state `photos` reste complet). */
 const MAX_RENDERED_PHOTOS = 60;
+/** Marge avant l'ouverture du mur pour le skew d'horloge (spotlight initial). */
+const SPOTLIGHT_GRACE_MS = 3000;
+
+/**
+ * Fusionne la réponse GET /api/photos avec queue/photos courantes sans
+ * écraser les photos en attente de spotlight ni les ignorer si le GET
+ * les inclut avant le socket.
+ */
+function mergeListPhotosWithSpotlightState(
+  list: Photo[],
+  prevQueue: Photo[],
+  prevPhotos: Photo[],
+  spotlightEnabled: boolean,
+  wallOpenTime: number,
+  socketPhotoIds: ReadonlySet<string>
+): { photos: Photo[]; queue: Photo[] } {
+  const listById = new Map(list.map((p) => [p.id, p]));
+  const queueIds = new Set(prevQueue.map((p) => p.id));
+  const nextQueue = [...prevQueue];
+
+  if (spotlightEnabled) {
+    for (const p of list) {
+      if (queueIds.has(p.id)) continue;
+      const isNewSinceOpen = p.createdAt >= wallOpenTime - SPOTLIGHT_GRACE_MS;
+      const seenViaSocket = socketPhotoIds.has(p.id);
+      if (isNewSinceOpen && !seenViaSocket) {
+        nextQueue.push(p);
+        queueIds.add(p.id);
+      }
+    }
+  }
+
+  const allQueueIds = new Set(nextQueue.map((p) => p.id));
+  const refreshedQueue = nextQueue
+    .map((p) => listById.get(p.id) ?? p)
+    .sort((a, b) => a.createdAt - b.createdAt);
+
+  const gridMap = new Map<string, Photo>();
+  for (const p of prevPhotos) {
+    if (!allQueueIds.has(p.id)) gridMap.set(p.id, p);
+  }
+  for (const p of list) {
+    if (!allQueueIds.has(p.id)) gridMap.set(p.id, p);
+  }
+
+  return { photos: Array.from(gridMap.values()), queue: refreshedQueue };
+}
 
 /** Préfixe les URLs relatives (mode local: /uploads/xxx.jpg) avec le serveur. */
 function resolveUrl(url: string): string {
@@ -79,16 +124,6 @@ function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
 }
 
 export default function WallPage() {
-  return (
-    <Suspense fallback={null}>
-      <WallPageContent />
-    </Suspense>
-  );
-}
-
-function WallPageContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { config, accent } = useEventConfig();
   const isAdmin = useIsAdmin();
   const {
@@ -103,7 +138,6 @@ function WallPageContent() {
   const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
   const [queue, setQueue] = useState<Photo[]>([]);
   const [viewerPhotoId, setViewerPhotoId] = useState<string | null>(null);
-  const orphanViewerPhotoRef = useRef<Photo | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
@@ -117,28 +151,36 @@ function WallPageContent() {
   const [announcementLeaving, setAnnouncementLeaving] = useState(false);
 
   const knownIds = useRef(new Set<string>());
+  const socketPhotoIdsRef = useRef(new Set<string>());
+  const queueRef = useRef<Photo[]>([]);
+  const photosRef = useRef<Photo[]>([]);
+  const featuresRef = useRef(features);
   const floaterSeq = useRef(0);
   const spotlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const deepLinkHandledRef = useRef<string | null>(null);
-  const photosLoadedRef = useRef(false);
   const announcementHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    featuresRef.current = features;
+  }, [features]);
+
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
+
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
 
   const viewerPhoto = useMemo(() => {
     if (!viewerPhotoId) return null;
-    const fromState =
+    return (
       photos.find((p) => p.id === viewerPhotoId) ??
-      queue.find((p) => p.id === viewerPhotoId);
-    if (fromState) {
-      orphanViewerPhotoRef.current = null;
-      return fromState;
-    }
-    if (orphanViewerPhotoRef.current?.id === viewerPhotoId) {
-      return orphanViewerPhotoRef.current;
-    }
-    return null;
+      queue.find((p) => p.id === viewerPhotoId) ??
+      null
+    );
   }, [viewerPhotoId, photos, queue]);
 
   /** Grille : les N plus récentes, la plus récente en premier. */
@@ -176,48 +218,6 @@ function WallPageContent() {
     setQueue((prev) => prev.filter((p) => p.id !== photo.id));
   }, []);
 
-  function findPhotoById(id: string): Photo | null {
-    const inPhotos = photos.find((p) => p.id === id);
-    if (inPhotos) return inPhotos;
-    const inQueue = queue.find((p) => p.id === id);
-    if (inQueue) return inQueue;
-    try {
-      const raw = sessionStorage.getItem(DEEPLINK_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Photo;
-        if (parsed.id === id) return parsed;
-      }
-    } catch {
-      // sessionStorage illisible
-    }
-    return null;
-  }
-
-  function openDeepLinkPhoto(photoId: string) {
-    if (deepLinkHandledRef.current === photoId) return;
-    const found = findPhotoById(photoId);
-    if (found) {
-      if (
-        !photos.some((p) => p.id === photoId) &&
-        !queue.some((p) => p.id === photoId)
-      ) {
-        orphanViewerPhotoRef.current = found;
-      }
-      setViewerPhotoId(photoId);
-    }
-    cleanupDeepLink(photoId);
-  }
-
-  function cleanupDeepLink(photoId: string) {
-    deepLinkHandledRef.current = photoId;
-    try {
-      sessionStorage.removeItem(DEEPLINK_KEY);
-    } catch {
-      // ignore
-    }
-    router.replace("/wall", { scroll: false });
-  }
-
   const navLinks = useMemo(
     () =>
       withAdminLink(
@@ -225,7 +225,7 @@ function WallPageContent() {
           ...(features.countdown
             ? [{ href: "/countdown", label: "Compte à rebours", icon: "⏳" }]
             : []),
-          ...(features.retrospective
+          ...(features.retrospective && isAdmin
             ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
             : []),
           ...(features.leaderboard
@@ -323,24 +323,30 @@ function WallPageContent() {
 
   useEffect(() => {
     const service = getPhotoService();
+    const wallOpenTime = Date.now();
 
     service
       .listPhotos()
       .then((list) => {
+        const merged = mergeListPhotosWithSpotlightState(
+          list,
+          queueRef.current,
+          photosRef.current,
+          featuresRef.current.spotlight,
+          wallOpenTime,
+          socketPhotoIdsRef.current
+        );
         list.forEach((p) => knownIds.current.add(p.id));
-        setPhotos(list);
-        photosLoadedRef.current = true;
-        const photoId = searchParams.get("photo");
-        if (photoId && deepLinkHandledRef.current !== photoId) {
-          openDeepLinkPhoto(photoId);
-        }
+        setPhotos(merged.photos);
+        setQueue(merged.queue);
       })
       .catch(console.error);
 
     const unsubNew = service.onNewPhoto((photo) => {
       if (knownIds.current.has(photo.id)) return;
       knownIds.current.add(photo.id);
-      if (features.spotlight) {
+      socketPhotoIdsRef.current.add(photo.id);
+      if (featuresRef.current.spotlight) {
         setQueue((prev) =>
           prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]
         );
@@ -353,16 +359,16 @@ function WallPageContent() {
 
     const unsubRemoved = service.onPhotoRemoved((id) => {
       knownIds.current.delete(id);
+      socketPhotoIdsRef.current.delete(id);
       setPhotos((prev) => prev.filter((p) => p.id !== id));
       setQueue((prev) => prev.filter((p) => p.id !== id));
     });
 
-    const unsubReaction = features.reactions
-      ? service.onReaction(({ photoId, emoji, reactions, action }) => {
-          applyReactions(photoId, reactions);
-          if (action === "add") spawnFloater(photoId, emoji);
-        })
-      : undefined;
+    const unsubReaction = service.onReaction(({ photoId, emoji, reactions, action }) => {
+      if (!featuresRef.current.reactions) return;
+      applyReactions(photoId, reactions);
+      if (action === "add") spawnFloater(photoId, emoji);
+    });
 
     const unsubChallengeVote = service.onChallengeVote?.(
       ({ photoId, challengeVotes }) => {
@@ -384,34 +390,6 @@ function WallPageContent() {
       clearAnnouncementTimers();
     };
   }, []);
-
-  /** Deep link ?photo=id depuis NewPhotoPopup (sessionStorage) ou URL directe. */
-  useEffect(() => {
-    const photoId = searchParams.get("photo");
-    if (!photoId || deepLinkHandledRef.current === photoId) return;
-
-    const fromStorage = (() => {
-      try {
-        const raw = sessionStorage.getItem(DEEPLINK_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as Photo;
-        return parsed.id === photoId ? parsed : null;
-      } catch {
-        return null;
-      }
-    })();
-
-    if (fromStorage) {
-      orphanViewerPhotoRef.current = fromStorage;
-      setViewerPhotoId(photoId);
-      cleanupDeepLink(photoId);
-      return;
-    }
-
-    if (!photosLoadedRef.current) return;
-
-    openDeepLinkPhoto(photoId);
-  }, [searchParams, photos, queue, router]);
 
   useEffect(() => {
     if (!spotlight) return;
@@ -720,10 +698,7 @@ function WallPageContent() {
       {viewerPhoto && (
         <PhotoLightbox
           photo={viewerPhoto}
-          onClose={() => {
-            setViewerPhotoId(null);
-            orphanViewerPhotoRef.current = null;
-          }}
+          onClose={() => setViewerPhotoId(null)}
           challengeInfo={
             viewerPhoto.challengeId
               ? resolveChallengeLabel(viewerPhoto.challengeId)
