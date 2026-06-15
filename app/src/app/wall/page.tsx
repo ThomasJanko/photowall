@@ -25,6 +25,8 @@ const MY_CHALLENGE_VOTES_KEY = "wall:my-challenge-votes";
 const FLOATER_LIFETIME_MS = 1700;
 /** Durée de l'animation de sortie du bandeau d'annonce (ms). */
 const ANNOUNCEMENT_EXIT_MS = 400;
+/** Nombre max de cartes photo rendues dans la grille (state `photos` reste complet). */
+const MAX_RENDERED_PHOTOS = 60;
 
 /** Préfixe les URLs relatives (mode local: /uploads/xxx.jpg) avec le serveur. */
 function resolveUrl(url: string): string {
@@ -112,6 +114,16 @@ export default function WallPage() {
   const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
+
+  /** Grille : les N plus récentes, la plus récente en premier. */
+  const displayedPhotos = useMemo(
+    () =>
+      [...photos]
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, MAX_RENDERED_PHOTOS),
+    [photos]
+  );
+  const isGridTruncated = photos.length > MAX_RENDERED_PHOTOS;
 
   const challengeById = useMemo(() => {
     const map = new Map<string, PublicChallenge>();
@@ -482,8 +494,15 @@ export default function WallPage() {
             {welcomeMessage}
           </p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {photos.map((photo) => {
+          <>
+            {isGridTruncated && (
+              <p className="mb-4 text-center text-sm text-purple-300/90 tabular-nums">
+                📷 {photos.length} photo{photos.length !== 1 ? "s" : ""} · les{" "}
+                {MAX_RENDERED_PHOTOS} plus récentes affichées
+              </p>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {displayedPhotos.map((photo) => {
               const challengeInfo = photo.challengeId
                 ? resolveChallengeLabel(photo.challengeId)
                 : null;
@@ -493,6 +512,8 @@ export default function WallPage() {
                   <img
                     src={resolveUrl(photo.url)}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                   {challengeInfo && (
@@ -542,7 +563,8 @@ export default function WallPage() {
               </div>
             );
             })}
-          </div>
+            </div>
+          </>
         )}
       </div>
 
