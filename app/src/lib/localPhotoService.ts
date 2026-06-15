@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -182,5 +182,79 @@ export class LocalPhotoService implements PhotoService {
   onNewPrivateMessage(callback: () => void): () => void {
     this.socket.on("message:new", callback);
     return () => this.socket.off("message:new", callback);
+  }
+
+  async listTimelineEras(): Promise<TimelineEra[]> {
+    const res = await fetch(`${SERVER_URL}/api/timeline/eras`);
+    if (!res.ok) throw new Error(`Chargement frise échoué (${res.status})`);
+    return res.json();
+  }
+
+  async listTimelineEntries(): Promise<TimelineEntry[]> {
+    const res = await fetch(`${SERVER_URL}/api/timeline/entries`);
+    if (!res.ok) throw new Error(`Chargement souvenirs échoué (${res.status})`);
+    return res.json();
+  }
+
+  async addTimelineEntry(data: AddTimelineEntryInput): Promise<TimelineEntry> {
+    const form = new FormData();
+    form.append("text", data.text);
+    form.append("author", data.author);
+    if (data.eraId) form.append("eraId", data.eraId);
+    if (data.photo) form.append("photo", data.photo, "timeline.jpg");
+
+    const res = await fetch(`${SERVER_URL}/api/timeline/entries`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) throw new Error(`Ajout souvenir échoué (${res.status})`);
+    return res.json();
+  }
+
+  onNewTimelineEntry(callback: (entry: TimelineEntry) => void): () => void {
+    this.socket.on("timeline:new", callback);
+    return () => this.socket.off("timeline:new", callback);
+  }
+
+  onTimelineErasUpdated(callback: (eras: TimelineEra[]) => void): () => void {
+    this.socket.on("timeline:eras", callback);
+    return () => this.socket.off("timeline:eras", callback);
+  }
+
+  async saveTimelineEras(eras: TimelineEra[]): Promise<TimelineEra[]> {
+    const res = await adminFetch(`${SERVER_URL}/api/timeline/eras`, {
+      method: "PUT",
+      body: JSON.stringify({ eras }),
+    });
+    if (!res.ok) throw new Error(`Sauvegarde frise échouée (${res.status})`);
+    return res.json();
+  }
+
+  async removeTimelineEntry(id: string): Promise<void> {
+    const res = await adminFetch(`${SERVER_URL}/api/timeline/entries/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`Suppression souvenir échouée (${res.status})`);
+  }
+
+  async listPendingTimelineEntries(): Promise<TimelineEntry[]> {
+    const res = await adminFetch(`${SERVER_URL}/api/timeline/entries/pending`);
+    if (!res.ok) {
+      throw new Error(`Chargement souvenirs en attente échoué (${res.status})`);
+    }
+    return res.json();
+  }
+
+  async approveTimelineEntry(id: string): Promise<TimelineEntry> {
+    const res = await adminFetch(`${SERVER_URL}/api/timeline/entries/${id}/approve`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`Validation souvenir échouée (${res.status})`);
+    return res.json();
+  }
+
+  onPendingTimelineEntry(callback: (entry: TimelineEntry) => void): () => void {
+    this.socket.on("timeline:pending", callback);
+    return () => this.socket.off("timeline:pending", callback);
   }
 }

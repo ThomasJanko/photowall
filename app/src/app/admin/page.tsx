@@ -16,6 +16,7 @@ import { AdminAnnounceTab } from "@/components/AdminAnnounceTab";
 import { AdminPollTab } from "@/components/AdminPollTab";
 import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { AdminChallengesTab } from "@/components/AdminChallengesTab";
+import { AdminTimelineTab } from "@/components/AdminTimelineTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
@@ -30,7 +31,7 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "pending" | "messages" | "poll" | "challenges" | "config" | "announce";
+type AdminTab = "photos" | "pending" | "messages" | "poll" | "challenges" | "timeline" | "config" | "announce";
 
 const ADMIN_NAV_LINKS = [
   { href: "/", label: "Accueil", icon: "🏠" },
@@ -114,6 +115,7 @@ export default function AdminPage() {
   const [failCount, setFailCount] = useState(0);
   const [activeTab, setActiveTab] = useState<AdminTab>("photos");
   const [pendingCount, setPendingCount] = useState(0);
+  const [timelinePendingCount, setTimelinePendingCount] = useState(0);
   const [newMessageCount, setNewMessageCount] = useState(0);
 
   const showPendingTab =
@@ -125,9 +127,18 @@ export default function AdminPage() {
       ...(config.features.retrospective
         ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" as const }]
         : []),
+      ...(config.features.timeline
+        ? [{ href: "/timeline", label: "Frise", icon: "🕰️" as const }]
+        : []),
     ],
-    [config.features.retrospective]
+    [config.features.retrospective, config.features.timeline]
   );
+
+  const showTimelineTab = config.features.timeline === true;
+  const showTimelinePending =
+    showTimelineTab &&
+    config.features.moderationRequired &&
+    timelinePendingCount > 0;
 
   const displayedPhotos = useMemo(
     () => photos.slice().reverse(),
@@ -432,7 +443,9 @@ export default function AdminPage() {
                     ? "Sondage live invités"
                     : activeTab === "challenges"
                       ? "Défis photo invités"
-                      : activeTab === "announce"
+                      : activeTab === "timeline"
+                        ? "Frise chronologique"
+                        : activeTab === "announce"
                     ? "Annonce live sur le mur"
                     : "Configuration de l'événement"}
           </p>
@@ -490,6 +503,15 @@ export default function AdminPage() {
         >
           🎯 Défis
         </AdminTabButton>
+        {showTimelineTab && (
+          <AdminTabButton
+            active={activeTab === "timeline"}
+            onClick={() => setActiveTab("timeline")}
+            badge={showTimelinePending ? timelinePendingCount : undefined}
+          >
+            🕰️ Timeline
+          </AdminTabButton>
+        )}
         <AdminTabButton
           active={activeTab === "config"}
           onClick={() => setActiveTab("config")}
@@ -512,6 +534,11 @@ export default function AdminPage() {
         <AdminPollTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "challenges" ? (
         <AdminChallengesTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "timeline" ? (
+        <AdminTimelineTab
+          onUnauthorized={handleUnauthorized}
+          onPendingCountChange={setTimelinePendingCount}
+        />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}

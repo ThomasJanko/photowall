@@ -25,6 +25,8 @@ export interface FeatureFlags {
   livePolls: boolean;
   /** Affiche la page classement des défis photo. */
   leaderboard: boolean;
+  /** Frise chronologique interactive (/timeline). */
+  timeline: boolean;
 }
 
 /** Écrans où la modal sondage peut apparaître. */
@@ -97,6 +99,7 @@ export const eventConfig: EventConfig = {
     moderationRequired: false,
     livePolls: true,
     leaderboard: true,
+    timeline: false,
   },
   pollScreens: {
     home: true,

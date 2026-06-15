@@ -25,6 +25,9 @@ export function buildGuestNavLinks(
     ...(features.leaderboard
       ? [{ href: "/classement", label: "Classement", icon: "🏆" }]
       : []),
+    ...(features.timeline
+      ? [{ href: "/timeline", label: "Frise", icon: "🕰️" }]
+      : []),
   ];
 
   for (const item of optional) {

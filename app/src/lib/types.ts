@@ -38,3 +38,32 @@ export interface AnnouncementEvent {
   emoji?: string;
   durationMs: number;
 }
+
+/** Bloc structurant de la frise chronologique (/timeline). */
+export interface TimelineEra {
+  id: string;
+  label: string;
+  period: string;
+  order: number;
+  description?: string;
+  photoUrl?: string;
+  color?: string;
+}
+
+/** Souvenir ajouté par un invité sur la frise. */
+export interface TimelineEntry {
+  id: string;
+  eraId: string | null;
+  author: string;
+  text: string;
+  photoUrl?: string;
+  createdAt: number;
+  approved?: boolean;
+}
+
+export interface AddTimelineEntryInput {
+  text: string;
+  author: string;
+  eraId?: string | null;
+  photo?: Blob;
+}

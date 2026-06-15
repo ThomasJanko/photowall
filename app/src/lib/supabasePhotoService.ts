@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent } from "./types";
+import type { Photo, ReactionEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
 import type { PhotoService } from "./photoService";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -246,5 +246,46 @@ export class SupabasePhotoService implements PhotoService {
     );
 
     return zip.generateAsync({ type: "blob" });
+  }
+
+  /** Timeline : non implémenté en mode Supabase (no-op). */
+  async listTimelineEras(): Promise<TimelineEra[]> {
+    return [];
+  }
+
+  async listTimelineEntries(): Promise<TimelineEntry[]> {
+    return [];
+  }
+
+  async addTimelineEntry(_data: AddTimelineEntryInput): Promise<TimelineEntry> {
+    throw new Error("Timeline non disponible en mode Supabase");
+  }
+
+  onNewTimelineEntry(_callback: (entry: TimelineEntry) => void): () => void {
+    return () => {};
+  }
+
+  onTimelineErasUpdated(_callback: (eras: TimelineEra[]) => void): () => void {
+    return () => {};
+  }
+
+  async saveTimelineEras(_eras: TimelineEra[]): Promise<TimelineEra[]> {
+    throw new Error("Timeline admin non disponible en mode Supabase");
+  }
+
+  async removeTimelineEntry(_id: string): Promise<void> {
+    throw new Error("Timeline admin non disponible en mode Supabase");
+  }
+
+  async listPendingTimelineEntries(): Promise<TimelineEntry[]> {
+    return [];
+  }
+
+  async approveTimelineEntry(_id: string): Promise<TimelineEntry> {
+    throw new Error("Timeline admin non disponible en mode Supabase");
+  }
+
+  onPendingTimelineEntry(_callback: (entry: TimelineEntry) => void): () => void {
+    return () => {};
   }
 }

@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
 
 /**
  * Interface commune aux deux backends (local et online).
@@ -72,6 +72,18 @@ export interface PhotoService {
 
   /** Nouveau message privé (admin, mode local). */
   onNewPrivateMessage?(callback: () => void): () => void;
+
+  /** Frise chronologique (/timeline). */
+  listTimelineEras?(): Promise<TimelineEra[]>;
+  listTimelineEntries?(): Promise<TimelineEntry[]>;
+  addTimelineEntry?(data: AddTimelineEntryInput): Promise<TimelineEntry>;
+  onNewTimelineEntry?(callback: (entry: TimelineEntry) => void): () => void;
+  onTimelineErasUpdated?(callback: (eras: TimelineEra[]) => void): () => void;
+  saveTimelineEras?(eras: TimelineEra[]): Promise<TimelineEra[]>;
+  removeTimelineEntry?(id: string): Promise<void>;
+  listPendingTimelineEntries?(): Promise<TimelineEntry[]>;
+  approveTimelineEntry?(id: string): Promise<TimelineEntry>;
+  onPendingTimelineEntry?(callback: (entry: TimelineEntry) => void): () => void;
 }
 
 let instance: PhotoService | null = null;

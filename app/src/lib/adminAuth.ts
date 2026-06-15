@@ -85,7 +85,11 @@ export async function adminFetch(
   for (const [key, value] of Object.entries(auth)) {
     headers.set(key, value);
   }
-  if (init?.body && !headers.has("Content-Type")) {
+  if (
+    init?.body &&
+    !headers.has("Content-Type") &&
+    !(init.body instanceof FormData)
+  ) {
     headers.set("Content-Type", "application/json");
   }
 

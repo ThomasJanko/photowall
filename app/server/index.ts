@@ -50,6 +50,17 @@ import {
   type PollRow,
 } from "./pollDb";
 import {
+  listTimelineEras,
+  saveTimelineEras,
+  listApprovedTimelineEntries,
+  listPendingTimelineEntries,
+  insertTimelineEntry,
+  approveTimelineEntry,
+  deleteTimelineEntry,
+  type TimelineEraRow,
+  type TimelineEntryRow,
+} from "./timelineDb";
+import {
   createAdminToken,
   verifyAdminToken,
   getAdminCode,
@@ -84,8 +95,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Parse les body JSON (utilisé par la route de réaction)
-app.use(express.json());
+// Parse les body JSON uniquement (pas les uploads multipart/form-data).
+app.use(
+  express.json({
+    type: (req) =>
+      (req.headers["content-type"] ?? "").includes("application/json"),
+  })
+);
 
 const io = new SocketIOServer(server, {
   cors: { origin: "*" },
@@ -173,6 +189,81 @@ function parseAuthorPseudo(raw: unknown): string | undefined {
   if (typeof raw !== "string") return undefined;
   const trimmed = raw.trim().slice(0, 20);
   return trimmed.length >= 2 ? trimmed : undefined;
+}
+
+function parseTimelineText(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim().slice(0, 500);
+  return trimmed.length >= 2 ? trimmed : null;
+}
+
+function parseEraId(raw: unknown): string | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string") return null;
+  const id = raw.trim();
+  if (!id) return null;
+  return listTimelineEras().some((e) => e.id === id) ? id : null;
+}
+
+function filenameFromUploadUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  const match = url.match(/\/uploads\/([^/?#]+)$/);
+  return match?.[1];
+}
+
+function toPublicTimelineEra(row: TimelineEraRow) {
+  return {
+    id: row.id,
+    label: row.label,
+    period: row.period,
+    order: row.order,
+    ...(row.description ? { description: row.description } : {}),
+    ...(row.photo_filename
+      ? { photoUrl: `/uploads/${row.photo_filename}` }
+      : {}),
+    ...(row.color ? { color: row.color } : {}),
+  };
+}
+
+function toPublicTimelineEntry(row: TimelineEntryRow) {
+  return {
+    id: row.id,
+    eraId: row.era_id,
+    author: row.author,
+    text: row.text,
+    createdAt: row.created_at,
+    approved: row.approved,
+    ...(row.photo_filename
+      ? { photoUrl: `/uploads/${row.photo_filename}` }
+      : {}),
+  };
+}
+
+function eraRowFromPublic(
+  era: {
+    id: string;
+    label: string;
+    period: string;
+    order: number;
+    description?: string;
+    photoUrl?: string;
+    color?: string;
+  },
+  existing?: TimelineEraRow
+): TimelineEraRow {
+  const photo_filename =
+    filenameFromUploadUrl(era.photoUrl) ?? existing?.photo_filename;
+  return {
+    id: era.id,
+    label: era.label.trim().slice(0, 80),
+    period: era.period.trim().slice(0, 40),
+    order: era.order,
+    ...(era.description?.trim()
+      ? { description: era.description.trim().slice(0, 2000) }
+      : {}),
+    ...(photo_filename ? { photo_filename } : {}),
+    ...(era.color?.match(/^#[0-9a-fA-F]{6}$/) ? { color: era.color } : {}),
+  };
 }
 
 // Liste des photos visibles
@@ -706,6 +797,117 @@ app.post("/api/polls/:id/close", requireAdmin, (req, res) => {
   io.emit("poll:closed", publicPoll);
   res.json(publicPoll);
 });
+
+// --- Timeline ---
+
+app.get("/api/timeline/eras", (_req, res) => {
+  res.json(listTimelineEras().map(toPublicTimelineEra));
+});
+
+app.get("/api/timeline/entries", (_req, res) => {
+  res.json(listApprovedTimelineEntries().map(toPublicTimelineEntry));
+});
+
+app.post("/api/timeline/entries", upload.single("photo"), (req, res) => {
+  const text = parseTimelineText(req.body?.text);
+  const author = parseAuthorPseudo(req.body?.author);
+  if (!text) return res.status(400).json({ error: "Texte requis (2–500 car.)" });
+  if (!author) return res.status(400).json({ error: "Pseudo requis" });
+
+  const eraId = parseEraId(req.body?.eraId);
+  const moderationRequired = getConfig().features.moderationRequired === true;
+  const photo_filename = req.file?.filename;
+
+  const row = insertTimelineEntry({
+    era_id: eraId,
+    author,
+    text,
+    approved: !moderationRequired,
+    ...(photo_filename ? { photo_filename } : {}),
+  });
+
+  const entry = toPublicTimelineEntry(row);
+  if (row.approved) {
+    io.emit("timeline:new", entry);
+  } else {
+    io.emit("timeline:pending", entry);
+  }
+  res.status(201).json(entry);
+});
+
+app.get("/api/timeline/entries/pending", requireAdmin, (_req, res) => {
+  res.json(listPendingTimelineEntries().map(toPublicTimelineEntry));
+});
+
+app.post("/api/timeline/entries/:id/approve", requireAdmin, (req, res) => {
+  const row = approveTimelineEntry(req.params.id);
+  if (!row) return res.status(404).json({ error: "Entrée introuvable" });
+  const entry = toPublicTimelineEntry(row);
+  io.emit("timeline:new", entry);
+  res.json(entry);
+});
+
+app.delete("/api/timeline/entries/:id", requireAdmin, (req, res) => {
+  if (!deleteTimelineEntry(req.params.id)) {
+    return res.status(404).json({ error: "Entrée introuvable" });
+  }
+  io.emit("timeline:removed", { id: req.params.id });
+  res.sendStatus(204);
+});
+
+app.put("/api/timeline/eras", requireAdmin, (req, res) => {
+  const raw: unknown = req.body?.eras;
+  if (!Array.isArray(raw)) {
+    return res.status(400).json({ error: "eras[] requis" });
+  }
+
+  const existing = new Map(listTimelineEras().map((e) => [e.id, e]));
+  const eras: TimelineEraRow[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
+    if (
+      !item ||
+      typeof item !== "object" ||
+      typeof (item as { id?: unknown }).id !== "string" ||
+      typeof (item as { label?: unknown }).label !== "string" ||
+      typeof (item as { period?: unknown }).period !== "string"
+    ) {
+      return res.status(400).json({ error: `Ère invalide à l'index ${i}` });
+    }
+    const pub = item as {
+      id: string;
+      label: string;
+      period: string;
+      order: number;
+      description?: string;
+      photoUrl?: string;
+      color?: string;
+    };
+    eras.push(
+      eraRowFromPublic(
+        { ...pub, order: typeof pub.order === "number" ? pub.order : i },
+        existing.get(pub.id)
+      )
+    );
+  }
+
+  const saved = saveTimelineEras(eras).map(toPublicTimelineEra);
+  io.emit("timeline:eras", saved);
+  res.json(saved);
+});
+
+app.post(
+  "/api/timeline/eras/photo",
+  requireAdmin,
+  upload.single("photo"),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier reçu" });
+    }
+    res.status(201).json({ photoUrl: `/uploads/${req.file.filename}` });
+  }
+);
 
 io.on("connection", (socket) => {
   console.log(`[socket] client connecté: ${socket.id}`);
