@@ -17,6 +17,7 @@ import {
   TimelineUnassignedEntries,
 } from "@/components/timeline/TimelineEraCard";
 import { AddTimelineMemoryModal } from "@/components/timeline/AddTimelineMemoryModal";
+import { TimelineImageLightbox } from "@/components/timeline/TimelineImageLightbox";
 
 export default function TimelinePage() {
   const { config, accent } = useEventConfig();
@@ -36,6 +37,10 @@ export default function TimelinePage() {
   );
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{
+    src: string;
+    caption?: string;
+  } | null>(null);
 
   const moderationEnabled = config.features.moderationRequired === true;
 
@@ -182,9 +187,13 @@ export default function TimelinePage() {
                   era={era}
                   index={index}
                   entries={entriesByEra.map.get(era.id) ?? []}
+                  onPhotoClick={(src, caption) => setLightbox({ src, caption })}
                 />
               ))}
-              <TimelineUnassignedEntries entries={entriesByEra.unassigned} />
+              <TimelineUnassignedEntries
+                entries={entriesByEra.unassigned}
+                onPhotoClick={(src, caption) => setLightbox({ src, caption })}
+              />
             </div>
           )}
         </div>
@@ -206,6 +215,14 @@ export default function TimelinePage() {
           onClose={() => setModalOpen(false)}
           onSubmit={handleAddMemory}
         />
+
+        {lightbox && (
+          <TimelineImageLightbox
+            src={lightbox.src}
+            caption={lightbox.caption}
+            onClose={() => setLightbox(null)}
+          />
+        )}
       </main>
     </PseudoGate>
   );

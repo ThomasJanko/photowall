@@ -8,9 +8,10 @@ interface TimelineEraCardProps {
   era: TimelineEra;
   index: number;
   entries: TimelineEntry[];
+  onPhotoClick?: (src: string, caption?: string) => void;
 }
 
-export function TimelineEraCard({ era, index, entries }: TimelineEraCardProps) {
+export function TimelineEraCard({ era, index, entries, onPhotoClick }: TimelineEraCardProps) {
   const { ref, visible } = useTimelineInView();
   const accent = eraAccentColor(era.color, index);
 
@@ -56,7 +57,13 @@ export function TimelineEraCard({ era, index, entries }: TimelineEraCardProps) {
             </p>
           )}
           {era.photoUrl && (
-            <div className="mt-4 overflow-hidden rounded-xl bg-black/20 ring-2 ring-white/20">
+            <button
+              type="button"
+              onClick={() =>
+                onPhotoClick?.(resolveMediaUrl(era.photoUrl!), era.label)
+              }
+              className="mt-4 block w-full overflow-hidden rounded-xl bg-black/20 ring-2 ring-white/20 cursor-zoom-in transition hover:ring-white/40"
+            >
               <img
                 src={resolveMediaUrl(era.photoUrl)}
                 alt=""
@@ -64,7 +71,7 @@ export function TimelineEraCard({ era, index, entries }: TimelineEraCardProps) {
                 loading="lazy"
                 decoding="async"
               />
-            </div>
+            </button>
           )}
         </div>
 
@@ -79,6 +86,7 @@ export function TimelineEraCard({ era, index, entries }: TimelineEraCardProps) {
                   key={entry.id}
                   entry={entry}
                   accent={accent}
+                  onPhotoClick={onPhotoClick}
                 />
               ))}
             </div>
@@ -92,9 +100,11 @@ export function TimelineEraCard({ era, index, entries }: TimelineEraCardProps) {
 function TimelineGuestEntry({
   entry,
   accent,
+  onPhotoClick,
 }: {
   entry: TimelineEntry;
   accent: string;
+  onPhotoClick?: (src: string, caption?: string) => void;
 }) {
   const { ref, visible } = useTimelineInView(0.08);
   const hasPhoto = Boolean(entry.photoUrl);
@@ -114,7 +124,16 @@ function TimelineGuestEntry({
       }}
     >
       {hasPhoto && (
-        <div className="aspect-square w-full overflow-hidden bg-black/20">
+        <button
+          type="button"
+          onClick={() =>
+            onPhotoClick?.(
+              resolveMediaUrl(entry.photoUrl!),
+              `${entry.text}\n— ${entry.author}`
+            )
+          }
+          className="aspect-square w-full overflow-hidden bg-black/20 cursor-zoom-in"
+        >
           <img
             src={resolveMediaUrl(entry.photoUrl!)}
             alt=""
@@ -122,7 +141,7 @@ function TimelineGuestEntry({
             loading="lazy"
             decoding="async"
           />
-        </div>
+        </button>
       )}
       <div className={`p-2.5 ${hasPhoto ? "pt-2" : ""}`}>
         <p
@@ -142,10 +161,12 @@ function TimelineGuestEntry({
 
 interface TimelineUnassignedEntriesProps {
   entries: TimelineEntry[];
+  onPhotoClick?: (src: string, caption?: string) => void;
 }
 
 export function TimelineUnassignedEntries({
   entries,
+  onPhotoClick,
 }: TimelineUnassignedEntriesProps) {
   const { ref, visible } = useTimelineInView();
   const accent = eraAccentColor(undefined, 0);
@@ -162,7 +183,12 @@ export function TimelineUnassignedEntries({
       </h2>
       <div className="flex w-full flex-wrap justify-center gap-2.5 sm:gap-3 lg:gap-3.5">
         {entries.map((entry) => (
-          <TimelineGuestEntry key={entry.id} entry={entry} accent={accent} />
+          <TimelineGuestEntry
+            key={entry.id}
+            entry={entry}
+            accent={accent}
+            onPhotoClick={onPhotoClick}
+          />
         ))}
       </div>
     </section>
