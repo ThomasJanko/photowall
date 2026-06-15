@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { EventThemeProvider } from "@/components/EventThemeProvider";
 import { ToastProvider } from "@/components/ToastProvider";
+import { NewPhotoPopup } from "@/components/NewPhotoPopup";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,7 +32,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <EventThemeProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <NewPhotoPopup />
+            {children}
+          </ToastProvider>
         </EventThemeProvider>
       </body>
     </html>

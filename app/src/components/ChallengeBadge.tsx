@@ -2,20 +2,35 @@ interface ChallengeBadgeProps {
   label: string;
   emoji?: string;
   compact?: boolean;
+  /** Coin absolu sur vignette (défaut) vs flux normal pour lightbox */
+  floating?: boolean;
 }
 
 /** Tag défi affiché sur une photo (/wall). */
-export function ChallengeBadge({ label, emoji, compact }: ChallengeBadgeProps) {
+export function ChallengeBadge({
+  label,
+  emoji,
+  compact,
+  floating = true,
+}: ChallengeBadgeProps) {
   return (
     <span
-      className={`pointer-events-none absolute top-1.5 left-1.5 z-10 flex max-w-[85%] items-center gap-1 rounded-full bg-black/65 px-2 py-0.5 text-white ring-1 ring-white/25 backdrop-blur-sm ${
-        compact ? "text-[10px]" : "text-xs"
+      className={`pointer-events-none z-10 inline-flex max-w-full items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-white ring-1 ring-white/25 backdrop-blur-sm ${
+        floating
+          ? `absolute top-1.5 left-1.5 max-w-[85%] ${
+              compact ? "text-[10px]" : "text-xs"
+            }`
+          : `text-sm sm:text-base ${compact ? "text-xs" : ""}`
       }`}
       title={label}
     >
-      <span>🎯</span>
-      {emoji && <span>{emoji}</span>}
-      <span className="truncate font-semibold">{label}</span>
+      <span aria-hidden>🎯</span>
+      {emoji && <span aria-hidden>{emoji}</span>}
+      <span
+        className={`font-semibold leading-tight ${floating ? "truncate" : ""}`}
+      >
+        {label}
+      </span>
     </span>
   );
 }

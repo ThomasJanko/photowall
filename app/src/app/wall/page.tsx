@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { PollModal } from "@/components/PollModal";
 import { ChallengeBadge } from "@/components/ChallengeBadge";
+import { PhotoLightbox, type Floater } from "@/components/PhotoLightbox";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
 import { QuickNav } from "@/components/QuickNav";
@@ -21,6 +23,7 @@ const SERVER_URL =
 const MY_REACTIONS_KEY = "wall:my-reactions";
 /** Votes réussi/échec par appareil (format photoId:success|fail). */
 const MY_CHALLENGE_VOTES_KEY = "wall:my-challenge-votes";
+const DEEPLINK_KEY = "wall:deeplink-photo";
 /** Durée de vie d'un emoji flottant (aligné sur l'animation CSS). */
 const FLOATER_LIFETIME_MS = 1700;
 /** Durée de l'animation de sortie du bandeau d'annonce (ms). */
@@ -59,13 +62,6 @@ function loadMyChallengeVotes(): Set<string> {
   }
 }
 
-interface Floater {
-  id: number;
-  photoId: string;
-  emoji: string;
-  left: number;
-}
-
 function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
   return (
     <>
@@ -83,6 +79,16 @@ function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
 }
 
 export default function WallPage() {
+  return (
+    <Suspense fallback={null}>
+      <WallPageContent />
+    </Suspense>
+  );
+}
+
+function WallPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { config, accent } = useEventConfig();
   const isAdmin = useIsAdmin();
   const {
@@ -96,6 +102,8 @@ export default function WallPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
   const [queue, setQueue] = useState<Photo[]>([]);
+  const [viewerPhotoId, setViewerPhotoId] = useState<string | null>(null);
+  const orphanViewerPhotoRef = useRef<Photo | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
@@ -110,10 +118,28 @@ export default function WallPage() {
 
   const knownIds = useRef(new Set<string>());
   const floaterSeq = useRef(0);
+  const spotlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deepLinkHandledRef = useRef<string | null>(null);
+  const photosLoadedRef = useRef(false);
   const announcementHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const spotlight = features.spotlight ? (queue[0] ?? null) : null;
+
+  const viewerPhoto = useMemo(() => {
+    if (!viewerPhotoId) return null;
+    const fromState =
+      photos.find((p) => p.id === viewerPhotoId) ??
+      queue.find((p) => p.id === viewerPhotoId);
+    if (fromState) {
+      orphanViewerPhotoRef.current = null;
+      return fromState;
+    }
+    if (orphanViewerPhotoRef.current?.id === viewerPhotoId) {
+      return orphanViewerPhotoRef.current;
+    }
+    return null;
+  }, [viewerPhotoId, photos, queue]);
 
   /** Grille : les N plus récentes, la plus récente en premier. */
   const displayedPhotos = useMemo(
@@ -136,6 +162,60 @@ export default function WallPage() {
     return c
       ? { label: c.label, emoji: c.emoji }
       : { label: "Défi supprimé", emoji: undefined };
+  }
+
+  /** Retire le spotlight courant de la queue et l'ajoute à la grille (client local). */
+  const completeSpotlight = useCallback((photo: Photo) => {
+    if (spotlightTimerRef.current) {
+      clearTimeout(spotlightTimerRef.current);
+      spotlightTimerRef.current = null;
+    }
+    setPhotos((prev) =>
+      prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]
+    );
+    setQueue((prev) => prev.filter((p) => p.id !== photo.id));
+  }, []);
+
+  function findPhotoById(id: string): Photo | null {
+    const inPhotos = photos.find((p) => p.id === id);
+    if (inPhotos) return inPhotos;
+    const inQueue = queue.find((p) => p.id === id);
+    if (inQueue) return inQueue;
+    try {
+      const raw = sessionStorage.getItem(DEEPLINK_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Photo;
+        if (parsed.id === id) return parsed;
+      }
+    } catch {
+      // sessionStorage illisible
+    }
+    return null;
+  }
+
+  function openDeepLinkPhoto(photoId: string) {
+    if (deepLinkHandledRef.current === photoId) return;
+    const found = findPhotoById(photoId);
+    if (found) {
+      if (
+        !photos.some((p) => p.id === photoId) &&
+        !queue.some((p) => p.id === photoId)
+      ) {
+        orphanViewerPhotoRef.current = found;
+      }
+      setViewerPhotoId(photoId);
+    }
+    cleanupDeepLink(photoId);
+  }
+
+  function cleanupDeepLink(photoId: string) {
+    deepLinkHandledRef.current = photoId;
+    try {
+      sessionStorage.removeItem(DEEPLINK_KEY);
+    } catch {
+      // ignore
+    }
+    router.replace("/wall", { scroll: false });
   }
 
   const navLinks = useMemo(
@@ -249,6 +329,11 @@ export default function WallPage() {
       .then((list) => {
         list.forEach((p) => knownIds.current.add(p.id));
         setPhotos(list);
+        photosLoadedRef.current = true;
+        const photoId = searchParams.get("photo");
+        if (photoId && deepLinkHandledRef.current !== photoId) {
+          openDeepLinkPhoto(photoId);
+        }
       })
       .catch(console.error);
 
@@ -256,7 +341,9 @@ export default function WallPage() {
       if (knownIds.current.has(photo.id)) return;
       knownIds.current.add(photo.id);
       if (features.spotlight) {
-        setQueue((prev) => [...prev, photo]);
+        setQueue((prev) =>
+          prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]
+        );
       } else {
         setPhotos((prev) =>
           prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]
@@ -298,16 +385,48 @@ export default function WallPage() {
     };
   }, []);
 
+  /** Deep link ?photo=id depuis NewPhotoPopup (sessionStorage) ou URL directe. */
+  useEffect(() => {
+    const photoId = searchParams.get("photo");
+    if (!photoId || deepLinkHandledRef.current === photoId) return;
+
+    const fromStorage = (() => {
+      try {
+        const raw = sessionStorage.getItem(DEEPLINK_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as Photo;
+        return parsed.id === photoId ? parsed : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    if (fromStorage) {
+      orphanViewerPhotoRef.current = fromStorage;
+      setViewerPhotoId(photoId);
+      cleanupDeepLink(photoId);
+      return;
+    }
+
+    if (!photosLoadedRef.current) return;
+
+    openDeepLinkPhoto(photoId);
+  }, [searchParams, photos, queue, router]);
+
   useEffect(() => {
     if (!spotlight) return;
-    const timer = setTimeout(() => {
-      setPhotos((prev) =>
-        prev.some((p) => p.id === spotlight.id) ? prev : [...prev, spotlight]
-      );
-      setQueue((prev) => prev.filter((p) => p.id !== spotlight.id));
+    const current = spotlight;
+    spotlightTimerRef.current = setTimeout(() => {
+      spotlightTimerRef.current = null;
+      completeSpotlight(current);
     }, spotlightDurationMs);
-    return () => clearTimeout(timer);
-  }, [spotlight]);
+    return () => {
+      if (spotlightTimerRef.current) {
+        clearTimeout(spotlightTimerRef.current);
+        spotlightTimerRef.current = null;
+      }
+    };
+  }, [spotlight?.id, spotlightDurationMs, completeSpotlight]);
 
   async function handleReact(photoId: string, emoji: string) {
     const key = `${photoId}:${emoji}`;
@@ -508,13 +627,17 @@ export default function WallPage() {
                 : null;
               return (
               <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
-                <div className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20">
+                <button
+                  type="button"
+                  onClick={() => setViewerPhotoId(photo.id)}
+                  className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20 text-left active:scale-[0.98] transition-transform"
+                >
                   <img
                     src={resolveUrl(photo.url)}
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
                   />
                   {challengeInfo && (
                     <ChallengeBadge
@@ -527,7 +650,7 @@ export default function WallPage() {
                       floaters={floaters.filter((f) => f.photoId === photo.id)}
                     />
                   )}
-                </div>
+                </button>
                 {features.reactions && (
                   <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
                     {reactionEmojis.map((emoji) => {
@@ -578,45 +701,40 @@ export default function WallPage() {
       <QuickNav links={navLinks} position="bottom-left" />
 
       {spotlight && (
-        <div
-          key={spotlight.id}
-          className="spotlight-pop-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 md:p-12"
-        >
-          <div className="relative flex max-h-full max-w-full items-center justify-center">
-            {spotlight.challengeId && (
-              <div className="absolute top-4 left-4 z-10 sm:top-6 sm:left-6">
-                <ChallengeBadge
-                  {...resolveChallengeLabel(spotlight.challengeId)}
-                />
-              </div>
-            )}
-            <img
-              src={resolveUrl(spotlight.url)}
-              alt=""
-              className="max-w-full max-h-[82vh] rounded-2xl shadow-2xl ring-4 ring-white/30 object-contain"
-            />
-            {features.reactions && (
-              <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
-                {reactionEmojis.map((emoji) => (
-                  <span
-                    key={emoji}
-                    className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
-                  >
-                    <span className="text-base md:text-xl">{emoji}</span>
-                    <span className="text-xs md:text-base tabular-nums">
-                      {spotlight.reactions?.[emoji] ?? 0}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            )}
-            {features.reactions && (
-              <FloatersOverlay
-                floaters={floaters.filter((f) => f.photoId === spotlight.id)}
-              />
-            )}
-          </div>
-        </div>
+        <PhotoLightbox
+          photo={spotlight}
+          onClose={() => completeSpotlight(spotlight)}
+          challengeInfo={
+            spotlight.challengeId
+              ? resolveChallengeLabel(spotlight.challengeId)
+              : undefined
+          }
+          reactionEmojis={[...reactionEmojis]}
+          features={features}
+          floaters={floaters}
+          zIndexClass="z-50"
+          animate
+        />
+      )}
+
+      {viewerPhoto && (
+        <PhotoLightbox
+          photo={viewerPhoto}
+          onClose={() => {
+            setViewerPhotoId(null);
+            orphanViewerPhotoRef.current = null;
+          }}
+          challengeInfo={
+            viewerPhoto.challengeId
+              ? resolveChallengeLabel(viewerPhoto.challengeId)
+              : undefined
+          }
+          reactionEmojis={[...reactionEmojis]}
+          features={features}
+          floaters={floaters}
+          zIndexClass="z-[60]"
+          animate={false}
+        />
       )}
     </main>
   );
