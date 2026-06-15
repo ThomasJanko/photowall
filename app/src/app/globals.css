@@ -534,3 +534,56 @@ body {
 .new-photo-popup-leave {
   animation: new-photo-popup-out 0.32s ease-out both;
 }
+
+/* Utilitaire : masquer les scrollbars (défilement conservé). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb,
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    display: none;
+    background: transparent;
+  }
+}
+
+/*
+ * Scrollbars masquées partout (fin de fichier = priorité sur Tailwind).
+ * Le défilement reste actif (touch, molette, trackpad).
+ */
+html,
+body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  -webkit-appearance: none;
+}

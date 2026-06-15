@@ -446,7 +446,7 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <div className="mb-6 -mx-4 overflow-x-auto px-4 py-2 [scrollbar-width:thin]">
+      <div className="scrollbar-none mb-6 -mx-4 overflow-x-auto px-4 py-2">
         <div className="flex w-max gap-2 pb-1">
         <AdminTabButton
           active={activeTab === "photos"}

@@ -79,7 +79,7 @@ export function PhotoFilterPicker({
       <p className="mb-2 text-center text-xs font-medium text-purple-200/90">
         Filtres
       </p>
-      <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-thin touch-pan-x">
+      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x">
         {PHOTO_FILTERS.map((f) => (
           <div key={f.id} className="snap-start">
             <FilterThumbnail

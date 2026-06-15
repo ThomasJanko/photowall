@@ -32,7 +32,7 @@ export function ChallengePicker({
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="scrollbar-none py-2 max-h-[250px] overflow-y-auto overscroll-contain flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onSelect(null)}
