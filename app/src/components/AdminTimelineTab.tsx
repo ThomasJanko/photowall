@@ -8,6 +8,7 @@ import { adminFetch } from "@/lib/adminAuth";
 import { resolveMediaUrl, eraAccentColor } from "@/lib/timelineUtils";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { useToast } from "@/components/ToastProvider";
+import { Camera, Clock, Plus } from "lucide-react";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -178,8 +179,9 @@ export function AdminTimelineTab({
     <div className="space-y-8 pb-8">
       {moderation && pending.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-amber-200">
-            🕓 Souvenirs à valider ({pending.length})
+          <h2 className="text-lg font-bold text-amber-200 inline-flex items-center gap-2">
+            <Clock className="h-5 w-5 shrink-0" aria-hidden />
+            Souvenirs à valider ({pending.length})
           </h2>
           {pending.map((entry) => (
             <EntryAdminRow
@@ -239,9 +241,10 @@ export function AdminTimelineTab({
               onClick={() =>
                 setEras((prev) => [...prev, newEra(prev.length)])
               }
-              className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20"
             >
-              + Période
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+              Période
             </button>
             <button
               type="button"
@@ -308,8 +311,9 @@ export function AdminTimelineTab({
                   className="ml-2 h-8 w-12 cursor-pointer rounded border-0 bg-transparent"
                 />
               </label>
-              <label className="cursor-pointer rounded-full bg-white/10 px-3 py-2 text-xs text-white ring-1 ring-white/20">
-                📷 Photo
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3 py-2 text-xs text-white ring-1 ring-white/20">
+                <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Photo
                 <input
                   type="file"
                   accept="image/*"

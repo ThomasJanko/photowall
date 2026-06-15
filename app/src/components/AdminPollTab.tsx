@@ -12,6 +12,7 @@ import {
 import { updateEventConfigApi } from "@/lib/eventConfigApi";
 import type { PollScreens } from "@/config/event";
 import type { Poll } from "@/lib/types/poll";
+import { Plus, X } from "lucide-react";
 
 const SCREEN_LABELS: Record<keyof PollScreens, string> = {
   home: "Accueil (/)",
@@ -262,7 +263,7 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
                     className="cursor-pointer shrink-0 rounded-lg bg-white/10 px-3 text-purple-200 ring-1 ring-white/20 active:scale-95 transition-transform"
                     aria-label="Supprimer l'option"
                   >
-                    ✕
+                    <X className="h-4 w-4" aria-hidden />
                   </button>
                 )}
               </div>
@@ -270,9 +271,10 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
             <button
               type="button"
               onClick={addOption}
-              className="cursor-pointer text-sm text-purple-300 underline underline-offset-2"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-purple-300 underline underline-offset-2"
             >
-              + Ajouter une option
+              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+              Ajouter une option
             </button>
           </fieldset>
 

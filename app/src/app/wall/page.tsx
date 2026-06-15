@@ -17,6 +17,7 @@ import { buildNavLinks } from "@/lib/quickNavLinks";
 import { usePathname } from "next/navigation";
 import type { AnnouncementEvent } from "@/lib/types";
 import { announcementRemainingMs } from "@/lib/announcementUtils";
+import { Camera } from "lucide-react";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -666,9 +667,10 @@ export default function WallPage() {
 
       <Link
         href="/"
-        className="fixed bottom-6 right-6 z-40 rounded-full bg-white/90 text-purple-900 font-semibold px-6 py-3 shadow-2xl active:scale-95 transition-transform"
+        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-white/90 text-purple-900 font-semibold px-6 py-3 shadow-2xl active:scale-95 transition-transform"
       >
-        📷 Prendre une photo
+        <Camera className="h-4 w-4 shrink-0" aria-hidden />
+        Prendre une photo
       </Link>
 
       <QuickNav links={navLinks} position="bottom-left" />

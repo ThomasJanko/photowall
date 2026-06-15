@@ -1,3 +1,5 @@
+import { Target } from "lucide-react";
+
 interface ChallengeBadgeProps {
   label: string;
   emoji?: string;
@@ -24,8 +26,11 @@ export function ChallengeBadge({
       }`}
       title={label}
     >
-      <span aria-hidden>🎯</span>
-      {emoji && <span aria-hidden>{emoji}</span>}
+      {emoji ? (
+        <span aria-hidden>{emoji}</span>
+      ) : (
+        <Target className="h-3 w-3 shrink-0" aria-hidden />
+      )}
       <span
         className={`font-semibold leading-tight ${floating ? "truncate" : ""}`}
       >

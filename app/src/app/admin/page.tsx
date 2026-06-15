@@ -25,6 +25,18 @@ import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
+  Clock,
+  Download,
+  EyeOff,
+  History,
+  Megaphone,
+  Settings,
+  Target,
+  Trash2,
+  X,
+} from "lucide-react";
+import {
   getMessagesLastSeen,
   listPrivateMessages,
   markMessagesSeen,
@@ -465,7 +477,10 @@ export default function AdminPage() {
             onClick={() => setActiveTab("pending")}
             badge={pendingCount}
           >
-            🕓 À valider
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-4 w-4 shrink-0" aria-hidden />
+              À valider
+            </span>
           </AdminTabButton>
         )}
         {config.features.privateMessages && (
@@ -481,19 +496,28 @@ export default function AdminPage() {
           active={activeTab === "announce"}
           onClick={() => setActiveTab("announce")}
         >
-          📣 Annonce
+          <span className="inline-flex items-center gap-1.5">
+            <Megaphone className="h-4 w-4 shrink-0" aria-hidden />
+            Annonce
+          </span>
         </AdminTabButton>
         <AdminTabButton
           active={activeTab === "poll"}
           onClick={() => setActiveTab("poll")}
         >
-          📊 Sondage
+          <span className="inline-flex items-center gap-1.5">
+            <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
+            Sondage
+          </span>
         </AdminTabButton>
         <AdminTabButton
           active={activeTab === "challenges"}
           onClick={() => setActiveTab("challenges")}
         >
-          🎯 Défis
+          <span className="inline-flex items-center gap-1.5">
+            <Target className="h-4 w-4 shrink-0" aria-hidden />
+            Défis
+          </span>
         </AdminTabButton>
         {showTimelineTab && (
           <AdminTabButton
@@ -501,14 +525,20 @@ export default function AdminPage() {
             onClick={() => setActiveTab("timeline")}
             badge={showTimelinePending ? timelinePendingCount : undefined}
           >
-            🕰️ Timeline
+            <span className="inline-flex items-center gap-1.5">
+              <History className="h-4 w-4 shrink-0" aria-hidden />
+              Timeline
+            </span>
           </AdminTabButton>
         )}
         <AdminTabButton
           active={activeTab === "config"}
           onClick={() => setActiveTab("config")}
         >
-          ⚙️ Configuration
+          <span className="inline-flex items-center gap-1.5">
+            <Settings className="h-4 w-4 shrink-0" aria-hidden />
+            Configuration
+          </span>
         </AdminTabButton>
         </div>
       </div>
@@ -593,8 +623,9 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => handleHide(photo.id)}
                 disabled={busy}
-                className="absolute top-1 right-1 cursor-pointer bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
+                className="absolute top-1 right-1 cursor-pointer inline-flex items-center gap-1 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
               >
+                <EyeOff className="h-3 w-3 shrink-0" aria-hidden />
                 Masquer
               </button>
             </div>
@@ -622,7 +653,10 @@ export default function AdminPage() {
               disabled={!hasSelection || busy}
               className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
             >
-              📥 Télécharger la sélection
+              <span className="inline-flex items-center gap-2">
+                <Download className="h-4 w-4 shrink-0" aria-hidden />
+                Télécharger la sélection
+              </span>
             </button>
             <button
               type="button"
@@ -630,7 +664,10 @@ export default function AdminPage() {
               disabled={!hasSelection || busy}
               className="cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
             >
-              🗑️ Supprimer la sélection
+              <span className="inline-flex items-center gap-2">
+                <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                Supprimer la sélection
+              </span>
             </button>
           </div>
         </div>
@@ -651,7 +688,10 @@ export default function AdminPage() {
             onClick={() => setZoomedPhoto(null)}
             className="absolute top-4 right-4 cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
           >
-            ✕ Fermer
+            <span className="inline-flex items-center gap-2">
+              <X className="h-4 w-4 shrink-0" aria-hidden />
+              Fermer
+            </span>
           </button>
           <img
             src={resolveUrl(zoomedPhoto.url)}

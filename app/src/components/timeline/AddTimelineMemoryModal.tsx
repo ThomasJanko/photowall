@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/compressImage";
 import { getGuestPseudo } from "@/lib/guestPseudo";
 import type { TimelineEra } from "@/lib/types";
+import { Camera } from "lucide-react";
 
 const MAX_TEXT = 500;
 
@@ -156,9 +157,10 @@ export function AddTimelineMemoryModal({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="w-full rounded-xl bg-white/10 py-3 text-sm font-semibold text-purple-100 ring-1 ring-white/20 active:scale-[0.98] transition-transform"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-sm font-semibold text-purple-100 ring-1 ring-white/20 active:scale-[0.98] transition-transform"
           >
-            📷 {previewUrl ? "Changer la photo" : "Ajouter une photo (optionnel)"}
+            <Camera className="h-4 w-4 shrink-0" aria-hidden />
+            {previewUrl ? "Changer la photo" : "Ajouter une photo (optionnel)"}
           </button>
           {previewUrl && (
             <img

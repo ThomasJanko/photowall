@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Pause, Play, SkipForward } from "lucide-react";
 import type { Photo } from "@/lib/types";
 import type { RetrospectiveStats } from "@/lib/retrospectiveStats";
 import type { Scene } from "@/lib/retrospectiveScenes";
@@ -102,17 +103,21 @@ export function RetrospectiveShow({
             type="button"
             onClick={togglePause}
             aria-label={paused ? "Reprendre" : "Pause"}
-            className="cursor-pointer rounded-full bg-black/50 px-4 py-2 text-sm text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
+            className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
           >
-            {paused ? "▶" : "⏸"}
+            {paused ? (
+              <Play className="h-4 w-4 fill-current" aria-hidden />
+            ) : (
+              <Pause className="h-4 w-4 fill-current" aria-hidden />
+            )}
           </button>
           <button
             type="button"
             onClick={skipScene}
             aria-label="Scène suivante"
-            className="cursor-pointer rounded-full bg-black/50 px-4 py-2 text-sm text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
+            className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
           >
-            ⏭
+            <SkipForward className="h-4 w-4" aria-hidden />
           </button>
           <Link
             href="/wall"

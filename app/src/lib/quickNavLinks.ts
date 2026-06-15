@@ -1,5 +1,18 @@
-import type { QuickNavLink } from "@/components/QuickNav";
+"use client";
+
+import type { QuickNavLink } from "@/lib/quickNavLink";
 import type { FeatureFlags } from "@/config/event";
+import {
+  Clapperboard,
+  History,
+  Home,
+  Hourglass,
+  LayoutGrid,
+  Mail,
+  QrCode,
+  ShieldCheck,
+  Trophy,
+} from "lucide-react";
 
 /**
  * Liens QuickNav pour la page courante : toutes les destinations actives
@@ -13,35 +26,35 @@ export function buildNavLinks(
   const links: QuickNavLink[] = [];
 
   if (pathname !== "/") {
-    links.push({ href: "/", label: "Accueil", icon: "🏠" });
+    links.push({ href: "/", label: "Accueil", icon: Home });
   }
   if (pathname !== "/wall") {
-    links.push({ href: "/wall", label: "Mur", icon: "🖼️" });
+    links.push({ href: "/wall", label: "Mur", icon: LayoutGrid });
   }
   if (features.privateMessages && pathname !== "/message") {
-    links.push({ href: "/message", label: "Message privé", icon: "💌" });
+    links.push({ href: "/message", label: "Message privé", icon: Mail });
   }
   if (features.qrPage && pathname !== "/qr") {
-    links.push({ href: "/qr", label: "QR code", icon: "📱" });
+    links.push({ href: "/qr", label: "QR code", icon: QrCode });
   }
   if (features.countdown && pathname !== "/countdown") {
-    links.push({ href: "/countdown", label: "Compte à rebours", icon: "⏳" });
+    links.push({ href: "/countdown", label: "Compte à rebours", icon: Hourglass });
   }
   if (features.leaderboard && pathname !== "/classement") {
-    links.push({ href: "/classement", label: "Classement", icon: "🏆" });
+    links.push({ href: "/classement", label: "Classement", icon: Trophy });
   }
   if (features.timeline && pathname !== "/timeline") {
-    links.push({ href: "/timeline", label: "Frise", icon: "🕰️" });
+    links.push({ href: "/timeline", label: "Frise", icon: History });
   }
   if (
     features.retrospective &&
     isAdmin &&
     pathname !== "/retrospective"
   ) {
-    links.push({ href: "/retrospective", label: "Rétrospective", icon: "🎬" });
+    links.push({ href: "/retrospective", label: "Rétrospective", icon: Clapperboard });
   }
   if (isAdmin && pathname !== "/admin") {
-    links.push({ href: "/admin", label: "Admin", icon: "🔧" });
+    links.push({ href: "/admin", label: "Admin", icon: ShieldCheck });
   }
 
   return links;

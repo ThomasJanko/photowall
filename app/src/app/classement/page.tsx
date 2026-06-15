@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import { fetchLeaderboard, type LeaderboardEntry } from "@/lib/leaderboardApi";
 import { getPhotoService } from "@/lib/photoService";
 import { useToast } from "@/components/ToastProvider";
+import { Camera } from "lucide-react";
 
 function PlayerPodium({
   entry,
@@ -175,9 +176,10 @@ export default function ClassementPage() {
         <div className="text-center">
           <Link
             href="/"
-            className="text-sm text-purple-300 hover:text-purple-200 underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-purple-300 hover:text-purple-200 underline-offset-4 hover:underline"
           >
-            📷 Relever un défi
+            <Camera className="h-4 w-4 shrink-0" aria-hidden />
+            Relever un défi
           </Link>
         </div>
       </div>

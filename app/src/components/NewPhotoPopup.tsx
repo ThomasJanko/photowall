@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import type { Photo } from "@/lib/types";
+import { X } from "lucide-react";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -98,7 +99,7 @@ export function NewPhotoPopup() {
           aria-label="Fermer"
           className="shrink-0 rounded-full p-1.5 text-white/80 hover:bg-white/10 active:scale-90 transition-transform"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
     </div>

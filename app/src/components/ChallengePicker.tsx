@@ -1,6 +1,7 @@
 "use client";
 
 import type { Challenge } from "@/config/event";
+import { Camera, Target } from "lucide-react";
 
 interface ChallengePickerProps {
   challenges: readonly Challenge[];
@@ -23,8 +24,9 @@ export function ChallengePicker({
   return (
     <section className="w-full space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-purple-200">
-          🎯 Défis photo
+        <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-purple-200">
+          <Target className="h-4 w-4 shrink-0" aria-hidden />
+          Défis photo
         </h2>
         <p className="text-xs text-purple-400 tabular-nums">
           {completedCount}/{challenges.length} relevé
@@ -36,13 +38,14 @@ export function ChallengePicker({
         <button
           type="button"
           onClick={() => onSelect(null)}
-          className={`cursor-pointer rounded-full px-3 py-2 text-left text-xs sm:text-sm font-medium ring-1 transition-colors active:scale-95 ${
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-left text-xs sm:text-sm font-medium ring-1 transition-colors active:scale-95 ${
             selectedId === null
               ? "bg-pink-500/30 text-white ring-pink-300/60"
               : "bg-white/10 text-purple-100 ring-white/20"
           }`}
         >
-          📷 Photo libre
+          <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Photo libre
         </button>
 
         {challenges.map((c) => {

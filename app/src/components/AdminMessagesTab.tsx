@@ -8,6 +8,7 @@ import {
   listPrivateMessages,
 } from "@/lib/privateMessages";
 import { useToast } from "@/components/ToastProvider";
+import { Download } from "lucide-react";
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -105,9 +106,10 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
       <button
         type="button"
         onClick={handleDownload}
-        className="cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
       >
-        📥 Télécharger
+        <Download className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Télécharger
       </button>
     </div>
   );

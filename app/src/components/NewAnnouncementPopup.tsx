@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
 import type { AnnouncementEvent } from "@/lib/types";
+import { X } from "lucide-react";
 
 /** Durée d'affichage du popup hors /wall (fixe, comme les autres popups ~10s). */
 const POPUP_VISIBLE_MS = 10_000;
@@ -103,7 +104,7 @@ export function NewAnnouncementPopup() {
           aria-label="Fermer"
           className="shrink-0 rounded-full p-1.5 text-white/80 hover:bg-white/10 active:scale-90 transition-transform"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
     </div>

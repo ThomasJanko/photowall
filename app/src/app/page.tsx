@@ -13,6 +13,13 @@ import { ChallengePicker } from "@/components/ChallengePicker";
 import { PseudoGate } from "@/components/PseudoGate";
 import { UploadStatusBanner } from "@/components/UploadStatusBanner";
 import { buildNavLinks } from "@/lib/quickNavLinks";
+import {
+  Camera,
+  LayoutGrid,
+  Loader2,
+  Mail,
+  RotateCcw,
+} from "lucide-react";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { usePathname } from "next/navigation";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
@@ -370,9 +377,10 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={reset}
-                className="flex-1 rounded-full bg-white/10 text-white font-semibold px-6 py-4 backdrop-blur-sm ring-1 ring-white/20 active:scale-95 transition-transform"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-white/10 text-white font-semibold px-6 py-4 backdrop-blur-sm ring-1 ring-white/20 active:scale-95 transition-transform"
               >
-                ↩️ Recommencer
+                <RotateCcw className="h-4 w-4 shrink-0" aria-hidden />
+                Recommencer
               </button>
               <button
                 type="button"
@@ -380,18 +388,33 @@ export default function UploadPage() {
                 disabled={status === "uploading"}
                 className="flex-1 rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-6 py-4 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
               >
-                {status === "uploading" ? "Envoi... ⏳" : "Envoyer ✨"}
+                {status === "uploading" ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                    Envoi...
+                  </span>
+                ) : (
+                  "Envoyer ✨"
+                )}
               </button>
             </div>
           </div>
         ) : (
           <label
             htmlFor="photo-input"
-            className="w-full max-w-xs cursor-pointer text-center rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-8 py-5 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
+            className="inline-flex w-full max-w-xs cursor-pointer items-center justify-center gap-2 text-center rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-8 py-5 text-lg shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
           >
-            {status === "compressing"
-              ? "Préparation... ⏳"
-              : "📷 Prendre une photo"}
+            {status === "compressing" ? (
+              <>
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden />
+                Préparation...
+              </>
+            ) : (
+              <>
+                <Camera className="h-5 w-5 shrink-0" aria-hidden />
+                Prendre une photo
+              </>
+            )}
           </label>
         )}
 
@@ -424,17 +447,19 @@ export default function UploadPage() {
 
       <Link
         href="/wall"
-        className="relative mt-6 rounded-full text-purple-200 font-semibold px-6 py-3 ring-1 ring-white/20 bg-white/5 backdrop-blur-sm active:scale-95 transition-transform"
+        className="relative mt-6 inline-flex items-center gap-2 rounded-full text-purple-200 font-semibold px-6 py-3 ring-1 ring-white/20 bg-white/5 backdrop-blur-sm active:scale-95 transition-transform"
       >
-        🖼️ Voir le mur de photos
+        <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
+        Voir le mur de photos
       </Link>
 
       {config.features.privateMessages && (
         <Link
           href="/message"
-          className="relative mt-3 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"
+          className="relative mt-3 inline-flex items-center gap-2 text-sm text-purple-300/80 hover:text-purple-200 transition-colors"
         >
-          💌 Laisser un message privé
+          <Mail className="h-4 w-4 shrink-0" aria-hidden />
+          Laisser un message privé
         </Link>
       )}
 

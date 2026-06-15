@@ -13,6 +13,7 @@ import { computeRetrospectiveStats } from "@/lib/retrospectiveStats";
 import { buildRetrospectiveScenes } from "@/lib/retrospectiveScenes";
 import { RetrospectiveShow } from "@/components/retrospective/RetrospectiveShow";
 import { fetchActiveChallenges } from "@/lib/challengesApi";
+import { Play } from "lucide-react";
 
 // ============================================================================
 const MUSIC_SRC = "/music/retrospective.mp3";
@@ -222,9 +223,10 @@ export default function RetrospectivePage() {
           <button
             type="button"
             onClick={handleStart}
-            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-10 py-5 text-xl sm:text-2xl shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-10 py-5 text-xl sm:text-2xl shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
           >
-            ▶ Lancer la rétrospective
+            <Play className="h-6 w-6 shrink-0 fill-current sm:h-7 sm:w-7" aria-hidden />
+            Lancer la rétrospective
           </button>
           <Link
             href="/wall"

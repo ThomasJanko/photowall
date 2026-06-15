@@ -13,6 +13,7 @@ import {
   isPollMinimized,
   setPollMinimized,
 } from "@/lib/pollMinimized";
+import { BarChart3 } from "lucide-react";
 import { hasVotedPoll, markPollVoted } from "@/lib/pollVoted";
 import type { Poll } from "@/lib/types/poll";
 import { useToast } from "@/components/ToastProvider";
@@ -192,10 +193,10 @@ export function PollModal({ screen }: PollModalProps) {
   }
 
   const fabLabel = isClosed
-    ? "📊 Résultats"
+    ? "Résultats"
     : voted
-      ? "📊 Sondage ✓"
-      : "📊 Sondage";
+      ? "Sondage ✓"
+      : "Sondage";
 
   return (
     <>
@@ -204,12 +205,13 @@ export function PollModal({ screen }: PollModalProps) {
           type="button"
           onClick={handleOpen}
           aria-label="Ouvrir le sondage"
-          className={`fixed bottom-6 right-4 z-50 cursor-pointer rounded-full px-4 py-3 text-sm font-bold shadow-2xl active:scale-95 transition-transform ${
+          className={`fixed bottom-6 right-4 z-50 inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm font-bold shadow-2xl active:scale-95 transition-transform ${
             isActive && !voted
               ? "bg-linear-to-r from-pink-500 to-purple-500 text-white animate-pulse"
               : "bg-black/60 text-white ring-1 ring-white/25 backdrop-blur-sm"
           }`}
         >
+          <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
           {fabLabel}
         </button>
       )}
@@ -228,8 +230,8 @@ export function PollModal({ screen }: PollModalProps) {
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-pink-300">
-                  📊{" "}
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-pink-300">
+                  <BarChart3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   {isClosed
                     ? "Résultats"
                     : voted

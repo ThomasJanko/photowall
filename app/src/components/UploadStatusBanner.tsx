@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2, RefreshCw } from "lucide-react";
+
 interface UploadStatusBannerProps {
   isUploading: boolean;
   isFlushingQueue: boolean;
@@ -32,14 +34,20 @@ export function UploadStatusBanner({
     >
       {showSending && (
         <p className="rounded-2xl bg-white/10 px-4 py-3 text-center text-sm font-medium text-purple-100 ring-1 ring-white/20 backdrop-blur-sm">
-          <span className="pulse-soft inline-block">📤 Envoi en cours...</span>
+          <span className="inline-flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            Envoi en cours...
+          </span>
         </p>
       )}
 
       {showQueue && (
         <p className="rounded-2xl bg-white/10 px-4 py-3 text-center text-sm font-medium text-purple-200 ring-1 ring-pink-400/25 backdrop-blur-sm">
-          🔄 En attente d&apos;envoi (réseau faible) —{" "}
-          {queueCount} photo{queueCount !== 1 ? "s" : ""} en attente
+          <span className="inline-flex items-center justify-center gap-2">
+            <RefreshCw className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            En attente d&apos;envoi (réseau faible) —{" "}
+            {queueCount} photo{queueCount !== 1 ? "s" : ""} en attente
+          </span>
         </p>
       )}
 

@@ -13,6 +13,7 @@ import {
 } from "@/lib/eventConfigApi";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { useToast } from "@/components/ToastProvider";
+import { Plus, X } from "lucide-react";
 
 interface AdminConfigTabProps {
   onUnauthorized: (err: unknown) => boolean;
@@ -261,9 +262,10 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
                 type="button"
                 onClick={() => removeEmoji(i)}
                 disabled={form.reactionEmojis.length <= 1}
-                className="rounded-lg bg-red-600/80 px-3 text-sm text-white disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg bg-red-600/80 px-3 text-sm text-white disabled:opacity-40"
+                aria-label="Supprimer l'emoji"
               >
-                ✕
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </li>
           ))}
@@ -271,9 +273,10 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
         <button
           type="button"
           onClick={addEmoji}
-          className="text-sm text-purple-200 underline underline-offset-2"
+          className="inline-flex items-center gap-1.5 text-sm text-purple-200 underline underline-offset-2"
         >
-          + Ajouter un emoji
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
+          Ajouter un emoji
         </button>
         <label className="block space-y-1">
           <span className="text-sm text-purple-200">

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ADMIN_TOKEN_KEY } from "./adminAuth";
-import type { QuickNavLink } from "@/components/QuickNav";
+import type { QuickNavLink } from "@/lib/quickNavLink";
+import { ShieldCheck } from "lucide-react";
 
 /** Présence du token admin en localStorage (pas de vérif serveur ici). */
 export function useIsAdmin(): boolean {
@@ -31,5 +32,5 @@ export function withAdminLink(
   isAdmin: boolean
 ): QuickNavLink[] {
   if (!isAdmin || links.some((l) => l.href === "/admin")) return links;
-  return [...links, { href: "/admin", label: "Admin", icon: "🔧" }];
+  return [...links, { href: "/admin", label: "Admin", icon: ShieldCheck }];
 }

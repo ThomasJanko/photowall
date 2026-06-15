@@ -8,6 +8,7 @@ import {
   updateChallengeApi,
   type AdminChallenge,
 } from "@/lib/challengesApi";
+import { Plus } from "lucide-react";
 
 interface AdminChallengesTabProps {
   onUnauthorized: (err: unknown) => boolean;
@@ -133,9 +134,10 @@ export function AdminChallengesTab({ onUnauthorized }: AdminChallengesTabProps) 
         <button
           type="submit"
           disabled={busy || !newLabel.trim()}
-          className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:scale-95 transition-transform"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:scale-95 transition-transform"
         >
-          + Ajouter
+          <Plus className="h-4 w-4 shrink-0" aria-hidden />
+          Ajouter
         </button>
       </form>
 

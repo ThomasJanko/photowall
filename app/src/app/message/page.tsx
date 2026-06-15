@@ -16,6 +16,7 @@ import {
   validatePrivateMedia,
   type ValidatedPrivateMedia,
 } from "@/lib/validatePrivateMedia";
+import { Camera, Loader2, Video } from "lucide-react";
 
 type Status = "idle" | "validating" | "sending";
 
@@ -207,19 +208,25 @@ export default function MessagePage() {
                   <div className="grid grid-cols-2 gap-2">
                     <label
                       htmlFor="photo-input"
-                      className="cursor-pointer text-center rounded-full bg-white/10 text-white font-semibold px-4 py-4 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+                      className="inline-flex cursor-pointer items-center justify-center gap-1.5 text-center rounded-full bg-white/10 text-white font-semibold px-4 py-4 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                      {status === "validating"
-                        ? "… ⏳"
-                        : "📷 Photo"}
+                      {status === "validating" ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                      ) : (
+                        <Camera className="h-4 w-4 shrink-0" aria-hidden />
+                      )}
+                      {status === "validating" ? "…" : "Photo"}
                     </label>
                     <label
                       htmlFor="video-input"
-                      className="cursor-pointer text-center rounded-full bg-white/10 text-white font-semibold px-4 py-4 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+                      className="inline-flex cursor-pointer items-center justify-center gap-1.5 text-center rounded-full bg-white/10 text-white font-semibold px-4 py-4 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                      {status === "validating"
-                        ? "… ⏳"
-                        : "🎥 Filmer"}
+                      {status === "validating" ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                      ) : (
+                        <Video className="h-4 w-4 shrink-0" aria-hidden />
+                      )}
+                      {status === "validating" ? "…" : "Filmer"}
                     </label>
                   </div>
                   <p className="text-center text-xs text-purple-400">

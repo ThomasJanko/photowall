@@ -8,12 +8,10 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { Link2 } from "lucide-react";
+import type { QuickNavLink } from "@/lib/quickNavLink";
 
-export interface QuickNavLink {
-  href: string;
-  label: string;
-  icon?: string;
-}
+export type { QuickNavLink };
 
 type QuickNavPosition =
   | "bottom-left"
@@ -97,6 +95,8 @@ export function QuickNav({
         const travel = fromAnchor * ROW_STEP + 8;
         const enterY = isBottom ? `${travel}px` : `-${travel}px`;
 
+        const Icon = link.icon ?? Link2;
+
         return (
         <Link
           key={link.href}
@@ -111,9 +111,7 @@ export function QuickNav({
             } as CSSProperties
           }
         >
-          <span className="text-lg leading-none" aria-hidden>
-            {link.icon ?? "🔗"}
-          </span>
+          <Icon className="h-5 w-5 shrink-0" aria-hidden />
           <span>{link.label}</span>
         </Link>
         );
