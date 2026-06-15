@@ -12,6 +12,7 @@ import {
   updateEventConfigApi,
 } from "@/lib/eventConfigApi";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { useToast } from "@/components/ToastProvider";
 
 interface AdminConfigTabProps {
   onUnauthorized: (err: unknown) => boolean;
@@ -45,20 +46,18 @@ function configToForm(cfg: EventConfig): FormState {
 
 export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
   const { refreshConfig } = useEventConfig();
+  const { showToast } = useToast();
   const [form, setForm] = useState<FormState>(() => configToForm(defaultEventConfig));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    type: "ok" | "err";
-    text: string;
-  } | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEventConfig()
       .then((cfg) => setForm(configToForm(cfg)))
-      .catch(() => setFeedback({ type: "err", text: "Chargement impossible" }))
+      .catch(() => showToast("Chargement impossible", "error"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [showToast]);
 
   function setThemeField(key: keyof EventConfig["theme"], value: string) {
     setForm((f) => ({
@@ -96,11 +95,11 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setFeedback(null);
+    setValidationError(null);
 
     const emojis = form.reactionEmojis.map((s) => s.trim()).filter(Boolean);
     if (emojis.length === 0) {
-      setFeedback({ type: "err", text: "Au moins un emoji de réaction requis" });
+      setValidationError("Au moins un emoji de réaction requis");
       setBusy(false);
       return;
     }
@@ -121,16 +120,16 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
       const saved = await updateEventConfigApi(payload);
       setForm(configToForm(saved));
       await refreshConfig();
-      setFeedback({
-        type: "ok",
-        text: "Configuration enregistrée. Rechargez les pages invités (mur, etc.) pour appliquer les changements.",
-      });
+      showToast(
+        "Configuration enregistrée. Rechargez les pages invités (mur, etc.) pour appliquer les changements.",
+        "success"
+      );
     } catch (err) {
       if (onUnauthorized(err)) return;
-      setFeedback({
-        type: "err",
-        text: err instanceof Error ? err.message : "Erreur lors de la sauvegarde",
-      });
+      showToast(
+        err instanceof Error ? err.message : "Erreur lors de la sauvegarde",
+        "error"
+      );
     } finally {
       setBusy(false);
     }
@@ -145,18 +144,18 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
       return;
     }
     setBusy(true);
-    setFeedback(null);
+    setValidationError(null);
     try {
       const saved = await resetEventConfigApi();
       setForm(configToForm(saved));
       await refreshConfig();
-      setFeedback({
-        type: "ok",
-        text: "Configuration réinitialisée. Rechargez les pages invités.",
-      });
+      showToast(
+        "Configuration réinitialisée. Rechargez les pages invités.",
+        "success"
+      );
     } catch (err) {
       if (onUnauthorized(err)) return;
-      setFeedback({ type: "err", text: "Réinitialisation échouée" });
+      showToast("Réinitialisation échouée", "error");
     } finally {
       setBusy(false);
     }
@@ -174,15 +173,9 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
         temps réel sur la config.
       </p>
 
-      {feedback && (
-        <p
-          className={`rounded-xl text-sm px-4 py-3 ring-1 ${
-            feedback.type === "ok"
-              ? "bg-green-400/10 text-green-200 ring-green-400/25"
-              : "bg-orange-400/15 text-orange-200 ring-orange-400/30"
-          }`}
-        >
-          {feedback.text}
+      {validationError && (
+        <p className="rounded-xl bg-orange-400/15 text-orange-200 text-sm px-4 py-3 ring-1 ring-orange-400/30">
+          {validationError}
         </p>
       )}
 

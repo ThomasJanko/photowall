@@ -11,6 +11,7 @@ import { QuickNav } from "@/components/QuickNav";
 import { PollModal } from "@/components/PollModal";
 import { ChallengePicker } from "@/components/ChallengePicker";
 import { PseudoGate } from "@/components/PseudoGate";
+import { UploadStatusBanner } from "@/components/UploadStatusBanner";
 import { buildGuestNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
@@ -34,8 +35,12 @@ import {
   getMyPendingPhotoIds,
   removeMyPendingPhoto,
 } from "@/lib/myPendingPhotos";
+import { useUploadQueueStatus } from "@/lib/useUploadQueueStatus";
 
 type Status = "idle" | "compressing" | "uploading" | "success" | "error";
+
+const SUCCESS_BANNER_MS = 3000;
+const SUCCESS_FADE_START_MS = 2200;
 
 export default function UploadPage() {
   const { config } = useEventConfig();
@@ -47,7 +52,14 @@ export default function UploadPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<Status>("idle");
-  const [pendingCount, setPendingCount] = useState(0);
+  const { queueCount, refreshQueueCount } = useUploadQueueStatus();
+  const [isFlushingQueue, setIsFlushingQueue] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [successLeaving, setSuccessLeaving] = useState(false);
+  const successTimersRef = useRef<{
+    fade: ReturnType<typeof setTimeout> | null;
+    hide: ReturnType<typeof setTimeout> | null;
+  }>({ fade: null, hide: null });
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(
     null
   );
@@ -111,39 +123,71 @@ export default function UploadPage() {
     setCompletedIds(getCompletedChallengeIds());
   }, []);
 
-  useEffect(() => {
-    flushQueue();
-    const interval = setInterval(flushQueue, 15000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const clearSuccessBannerTimers = useCallback(() => {
+    if (successTimersRef.current.fade) {
+      clearTimeout(successTimersRef.current.fade);
+      successTimersRef.current.fade = null;
+    }
+    if (successTimersRef.current.hide) {
+      clearTimeout(successTimersRef.current.hide);
+      successTimersRef.current.hide = null;
+    }
   }, []);
 
-  async function flushQueue() {
+  const triggerSuccessBanner = useCallback(() => {
+    clearSuccessBannerTimers();
+    setSuccessVisible(true);
+    setSuccessLeaving(false);
+    successTimersRef.current.fade = setTimeout(() => {
+      setSuccessLeaving(true);
+    }, SUCCESS_FADE_START_MS);
+    successTimersRef.current.hide = setTimeout(() => {
+      setSuccessVisible(false);
+      setSuccessLeaving(false);
+    }, SUCCESS_BANNER_MS);
+  }, [clearSuccessBannerTimers]);
+
+  useEffect(() => () => clearSuccessBannerTimers(), [clearSuccessBannerTimers]);
+
+  const flushQueue = useCallback(async () => {
     const queue = loadQueue();
-    setPendingCount(queue.length);
+    refreshQueueCount();
     if (queue.length === 0) return;
 
+    setIsFlushingQueue(true);
     const service = getPhotoService();
     const pseudo = getGuestPseudo() ?? undefined;
-    for (const item of queue) {
-      try {
-        const blob = dataUrlToBlob(item.dataUrl);
-        const photo = await service.upload(
-          blob,
-          item.filename,
-          item.challengeId,
-          item.authorPseudo ?? pseudo
-        );
-        registerUploadResult(photo);
-        if (item.challengeId) markChallengeCompleted(item.challengeId);
-        removeFromQueue(item.id);
-      } catch {
-        break;
+
+    try {
+      for (const item of queue) {
+        try {
+          const blob = dataUrlToBlob(item.dataUrl);
+          const photo = await service.upload(
+            blob,
+            item.filename,
+            item.challengeId,
+            item.authorPseudo ?? pseudo
+          );
+          registerUploadResult(photo);
+          if (item.challengeId) markChallengeCompleted(item.challengeId);
+          removeFromQueue(item.id);
+          refreshQueueCount();
+        } catch {
+          break;
+        }
       }
+    } finally {
+      refreshQueueCount();
+      refreshCompleted();
+      setIsFlushingQueue(false);
     }
-    setPendingCount(loadQueue().length);
-    refreshCompleted();
-  }
+  }, [refreshQueueCount, registerUploadResult, refreshCompleted]);
+
+  useEffect(() => {
+    void flushQueue();
+    const interval = setInterval(() => void flushQueue(), 15000);
+    return () => clearInterval(interval);
+  }, [flushQueue]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -183,6 +227,7 @@ export default function UploadPage() {
       registerUploadResult(photo);
       if (challengeId) markChallengeCompleted(challengeId);
       refreshCompleted();
+      triggerSuccessBanner();
       setStatus("success");
       reset();
     } catch (err) {
@@ -197,8 +242,8 @@ export default function UploadPage() {
         ...(authorPseudo ? { authorPseudo } : {}),
       };
       addToQueue(item);
-      setPendingCount(loadQueue().length);
-      setStatus("error");
+      refreshQueueCount();
+      setStatus("idle");
     }
   }
 
@@ -212,6 +257,7 @@ export default function UploadPage() {
   }
 
   const hasChallenges = challenges.length > 0;
+  const isUploading = status === "uploading";
 
   return (
     <PseudoGate>
@@ -231,13 +277,22 @@ export default function UploadPage() {
         <header className="text-center space-y-2">
           <p className="text-5xl sm:text-6xl">🎉</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow">
-            Partage tes photos de la soirée !
+            Partage tes photos en direct !
           </h1>
           <p className="text-purple-200 text-sm sm:text-base">
             Prends une photo (ou choisis-en une) et elle apparaîtra sur le
             grand écran 📸
           </p>
         </header>
+
+        <UploadStatusBanner
+          isUploading={isUploading}
+          isFlushingQueue={isFlushingQueue}
+          queueCount={queueCount}
+          successVisible={successVisible}
+          successLeaving={successLeaving}
+          successLabel="✅ Envoyée !"
+        />
 
         {hasChallenges && (
           <ChallengePicker
@@ -314,12 +369,6 @@ export default function UploadPage() {
                 📷 Ta photo est en attente de validation par l&apos;organisateur
               </p>
             )}
-          {status === "success" &&
-            (!moderationEnabled || !lastUploadPending) && (
-              <p className="inline-block rounded-full bg-green-400/15 text-green-300 font-medium px-4 py-2 ring-1 ring-green-400/30">
-                Photo envoyée 🎊
-              </p>
-            )}
           {moderationEnabled &&
             waitingModerationCount > 0 &&
             status !== "success" &&
@@ -331,17 +380,6 @@ export default function UploadPage() {
                   : `${waitingModerationCount} photos en attente de validation par l'organisateur`}
               </p>
             )}
-          {status === "error" && (
-            <p className="rounded-2xl bg-orange-400/15 text-orange-200 font-medium px-4 py-3 ring-1 ring-orange-400/30">
-              Pas de réseau pour le moment, ta photo est en attente et sera
-              envoyée automatiquement dès que possible.
-            </p>
-          )}
-          {pendingCount > 0 && (
-            <p className="text-sm text-purple-300">
-              {pendingCount} photo(s) en attente d&apos;envoi...
-            </p>
-          )}
         </div>
       </div>
 

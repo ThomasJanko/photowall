@@ -15,6 +15,7 @@ import {
 } from "@/lib/pollMinimized";
 import { hasVotedPoll, markPollVoted } from "@/lib/pollVoted";
 import type { Poll } from "@/lib/types/poll";
+import { useToast } from "@/components/ToastProvider";
 
 export type PollScreenId = "home" | "wall";
 
@@ -34,11 +35,11 @@ function msUntilResultsExpiry(
 /** Modal sondage repliable — résultats éphémères après clôture. */
 export function PollModal({ screen }: PollModalProps) {
   const { config } = useEventConfig();
+  const { showToast } = useToast();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [open, setOpen] = useState(false);
   const [voted, setVoted] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [resultsCountdown, setResultsCountdown] = useState<number | null>(
     null
   );
@@ -119,7 +120,6 @@ export function PollModal({ screen }: PollModalProps) {
 
     return subscribePollEvents({
       onNew: (p) => {
-        setError(null);
         setResultsCountdown(null);
         applyPoll(p, true);
       },
@@ -177,13 +177,15 @@ export function PollModal({ screen }: PollModalProps) {
   async function handleVote(optionId: string) {
     if (!poll || busy || !isActive) return;
     setBusy(true);
-    setError(null);
     try {
       await votePoll(poll.id, optionId);
       markPollVoted(poll.id);
       setVoted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Vote impossible");
+      showToast(
+        err instanceof Error ? err.message : "Vote impossible",
+        "error"
+      );
     } finally {
       setBusy(false);
     }
@@ -285,9 +287,6 @@ export function PollModal({ screen }: PollModalProps) {
               </p>
             )}
 
-            {error && (
-              <p className="mt-3 text-sm text-orange-300">{error}</p>
-            )}
           </div>
         </div>
       )}

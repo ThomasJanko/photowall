@@ -17,6 +17,8 @@ import { AdminPollTab } from "@/components/AdminPollTab";
 import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { AdminChallengesTab } from "@/components/AdminChallengesTab";
 import { QuickNav } from "@/components/QuickNav";
+import { useToast } from "@/components/ToastProvider";
+import { emitToast } from "@/lib/toastBus";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import {
   getMessagesLastSeen,
@@ -99,6 +101,7 @@ function AdminTabButton({
 
 export default function AdminPage() {
   const { config } = useEventConfig();
+  const { showToast } = useToast();
   const [auth, setAuth] = useState<AuthState>("checking");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -232,7 +235,7 @@ export default function AdminPage() {
     setPhotos([]);
     setSelected(new Set());
     setZoomedPhoto(null);
-    if (message) alert(message);
+    if (message) emitToast(message, "error");
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -308,10 +311,11 @@ export default function AdminPage() {
         next.delete(id);
         return next;
       });
+      showToast("Photo masquée du mur", "success");
     } catch (err) {
       if (onAdminError(err)) return;
       console.error(err);
-      alert("Erreur lors de la suppression");
+      showToast("Erreur lors de la suppression", "error");
     }
   }
 
@@ -321,10 +325,11 @@ export default function AdminPage() {
     try {
       const blob = await getPhotoService().exportPhotos(ids);
       downloadBlob(blob, "photos.zip");
+      showToast("Téléchargement lancé", "success");
     } catch (err) {
       if (onAdminError(err)) return;
       console.error(err);
-      alert("Erreur lors du téléchargement");
+      showToast("Erreur lors du téléchargement", "error");
     } finally {
       setBusy(false);
     }
@@ -345,10 +350,11 @@ export default function AdminPage() {
       await getPhotoService().hidePhotos(ids);
       setPhotos((prev) => prev.filter((p) => !selected.has(p.id)));
       setSelected(new Set());
+      showToast(`${ids.length} photo(s) masquée(s)`, "success");
     } catch (err) {
       if (onAdminError(err)) return;
       console.error(err);
-      alert("Erreur lors de la suppression en masse");
+      showToast("Erreur lors de la suppression en masse", "error");
     } finally {
       setBusy(false);
     }

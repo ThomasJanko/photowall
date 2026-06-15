@@ -1,3 +1,5 @@
+import { emitToast } from "./toastBus";
+
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
@@ -97,7 +99,7 @@ export async function adminFetch(
 
 export function handleAdminError(err: unknown): boolean {
   if (err instanceof AdminUnauthorizedError) {
-    alert(err.message);
+    emitToast(err.message, "error");
     return true;
   }
   return false;

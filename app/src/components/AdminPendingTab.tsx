@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
+import { useToast } from "@/components/ToastProvider";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -30,6 +31,7 @@ export function AdminPendingTab({
   onUnauthorized,
   onCountChange,
 }: AdminPendingTabProps) {
+  const { showToast } = useToast();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -81,10 +83,11 @@ export function AdminPendingTab({
         onCountChange?.(next.length);
         return next;
       });
+      showToast("Photo approuvée — visible sur le mur", "success");
     } catch (err) {
       if (onUnauthorized(err)) return;
       console.error(err);
-      alert("Approbation impossible");
+      showToast("Approbation impossible", "error");
     } finally {
       setBusyId(null);
     }
@@ -103,10 +106,11 @@ export function AdminPendingTab({
         onCountChange?.(next.length);
         return next;
       });
+      showToast("Photo refusée", "success");
     } catch (err) {
       if (onUnauthorized(err)) return;
       console.error(err);
-      alert("Refus impossible");
+      showToast("Refus impossible", "error");
     } finally {
       setBusyId(null);
     }

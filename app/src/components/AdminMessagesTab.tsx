@@ -7,6 +7,7 @@ import {
   fetchPrivateMessageMedia,
   listPrivateMessages,
 } from "@/lib/privateMessages";
+import { useToast } from "@/components/ToastProvider";
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -34,14 +35,15 @@ interface MessageMediaProps {
 }
 
 function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps) {
+  const { showToast } = useToast();
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let revoked = false;
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
 
     fetchPrivateMessageMedia(filename)
       .then((blob) => {
@@ -51,7 +53,8 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
       .catch((err) => {
         if (revoked) return;
         if (onUnauthorized(err)) return;
-        setError("Impossible de charger le média");
+        setLoadFailed(true);
+        showToast("Impossible de charger le média", "error");
       })
       .finally(() => {
         if (!revoked) setLoading(false);
@@ -64,7 +67,7 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
         return null;
       });
     };
-  }, [filename, onUnauthorized]);
+  }, [filename, onUnauthorized, showToast]);
 
   async function handleDownload() {
     try {
@@ -72,15 +75,15 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
       downloadBlob(blob, filename);
     } catch (err) {
       if (onUnauthorized(err)) return;
-      alert("Téléchargement impossible");
+      showToast("Téléchargement impossible", "error");
     }
   }
 
   if (loading) {
     return <p className="text-sm text-purple-300">Chargement du média…</p>;
   }
-  if (error) {
-    return <p className="text-sm text-orange-300">{error}</p>;
+  if (loadFailed) {
+    return <p className="text-sm text-purple-400">Média indisponible</p>;
   }
   if (!blobUrl) return null;
 
@@ -119,6 +122,7 @@ export function AdminMessagesTab({
   onUnauthorized,
   onCountChange,
 }: AdminMessagesTabProps) {
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -146,9 +150,10 @@ export function AdminMessagesTab({
         onCountChange?.(0);
         return next;
       });
+      showToast("Message supprimé", "success");
     } catch (err) {
       if (onUnauthorized(err)) return;
-      alert("Erreur lors de la suppression");
+      showToast("Erreur lors de la suppression", "error");
     } finally {
       setBusyId(null);
     }

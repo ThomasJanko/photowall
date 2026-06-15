@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import QRCode from "qrcode";
 import { QuickNav } from "@/components/QuickNav";
+import { useToast } from "@/components/ToastProvider";
 import { buildBackNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 
@@ -16,15 +17,17 @@ function resolveAppUrl(): string {
 
 export default function QrPage() {
   const isAdmin = useIsAdmin();
+  const { showToast } = useToast();
   const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [targetUrl, setTargetUrl] = useState("");
 
   useEffect(() => {
     const base = resolveAppUrl();
     if (!base) {
-      setError("URL de l'application introuvable.");
+      showToast("URL de l'application introuvable.", "error");
+      setFailed(true);
       return;
     }
 
@@ -39,9 +42,10 @@ export default function QrPage() {
       .then(setQrDataUrl)
       .catch((err) => {
         console.error(err);
-        setError("Impossible de générer le QR code.");
+        setFailed(true);
+        showToast("Impossible de générer le QR code.", "error");
       });
-  }, []);
+  }, [showToast]);
 
   return (
     <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center gap-8 p-6 text-center">
@@ -50,8 +54,10 @@ export default function QrPage() {
       </h1>
 
       <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-2xl ring-4 ring-white/20">
-        {error ? (
-          <p className="text-red-600 text-lg max-w-sm">{error}</p>
+        {failed ? (
+          <p className="text-purple-600 text-lg max-w-sm">
+            QR code indisponible
+          </p>
         ) : qrDataUrl ? (
           <img
             src={qrDataUrl}

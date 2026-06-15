@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
@@ -8,6 +8,7 @@ import { buildBackNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { fetchLeaderboard, type LeaderboardEntry } from "@/lib/leaderboardApi";
 import { getPhotoService } from "@/lib/photoService";
+import { useToast } from "@/components/ToastProvider";
 
 function PlayerPodium({
   entry,
@@ -57,7 +58,8 @@ export default function ClassementPage() {
   const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
+  const toastShownRef = useRef(false);
 
   const enabled = config.features.leaderboard === true;
 
@@ -68,11 +70,14 @@ export default function ClassementPage() {
       fetchLeaderboard()
         .then((list) => {
           setEntries(list);
-          setError(null);
+          toastShownRef.current = false;
         })
         .catch((err) => {
           console.error(err);
-          setError("Impossible de charger le classement");
+          if (!toastShownRef.current) {
+            showToast("Impossible de charger le classement", "error");
+            toastShownRef.current = true;
+          }
         })
         .finally(() => setLoading(false));
     }
@@ -85,7 +90,7 @@ export default function ClassementPage() {
       clearInterval(interval);
       unsub?.();
     };
-  }, [enabled]);
+  }, [enabled, showToast]);
 
   if (!enabled) {
     return (
@@ -119,9 +124,6 @@ export default function ClassementPage() {
 
         {loading && (
           <p className="text-center text-purple-300">Chargement…</p>
-        )}
-        {error && (
-          <p className="text-center text-orange-300">{error}</p>
         )}
 
         {!loading && entries.length === 0 && (

@@ -7,6 +7,7 @@ import { QuickNav } from "@/components/QuickNav";
 import { buildBackNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { submitPrivateMessage } from "@/lib/privateMessages";
+import { useToast } from "@/components/ToastProvider";
 import {
   MAX_PRIVATE_TEXT,
   MAX_VIDEO_DURATION_SEC,
@@ -14,16 +15,17 @@ import {
   type ValidatedPrivateMedia,
 } from "@/lib/validatePrivateMedia";
 
-type Status = "idle" | "validating" | "sending" | "success" | "error";
+type Status = "idle" | "validating" | "sending";
 
 export default function MessagePage() {
   const isAdmin = useIsAdmin();
+  const { showToast } = useToast();
   const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
   const [text, setText] = useState("");
   const [media, setMedia] = useState<ValidatedPrivateMedia | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const photoGalleryRef = useRef<HTMLInputElement>(null);
@@ -46,7 +48,7 @@ export default function MessagePage() {
   function resetForm() {
     setText("");
     clearMedia();
-    setErrorMsg(null);
+    setValidationError(null);
     setStatus("idle");
   }
 
@@ -55,7 +57,7 @@ export default function MessagePage() {
     if (!file) return;
 
     setStatus("validating");
-    setErrorMsg(null);
+    setValidationError(null);
     clearMedia();
 
     try {
@@ -64,8 +66,8 @@ export default function MessagePage() {
       setPreviewUrl(URL.createObjectURL(validated.blob));
       setStatus("idle");
     } catch (err) {
-      setStatus("error");
-      setErrorMsg(
+      setStatus("idle");
+      setValidationError(
         err instanceof Error ? err.message : "Fichier non valide"
       );
       if (photoInputRef.current) photoInputRef.current.value = "";
@@ -80,12 +82,12 @@ export default function MessagePage() {
     const trimmed = text.trim();
 
     if (!trimmed && !media) {
-      setErrorMsg("Écris un message ou ajoute une photo/vidéo");
+      setValidationError("Écris un message ou ajoute une photo/vidéo");
       return;
     }
 
     setStatus("sending");
-    setErrorMsg(null);
+    setValidationError(null);
 
     try {
       await submitPrivateMessage(
@@ -94,13 +96,14 @@ export default function MessagePage() {
         media?.filename
       );
       resetForm();
-      setStatus("success");
+      showToast("Merci, ton message a bien été transmis 💕", "success");
     } catch (err) {
-      setStatus("error");
-      setErrorMsg(
+      setStatus("idle");
+      showToast(
         err instanceof Error
           ? err.message
-          : "Erreur réseau — vérifie ta connexion et réessaie"
+          : "Erreur réseau — vérifie ta connexion et réessaie",
+        "error"
       );
     }
   }
@@ -135,20 +138,7 @@ export default function MessagePage() {
           </p>
         </header>
 
-        {status === "success" ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-            <p className="rounded-2xl bg-green-400/15 text-green-200 font-medium px-6 py-4 ring-1 ring-green-400/30">
-              Merci, ton message a bien été transmis 💕
-            </p>
-            <Link
-              href="/"
-              className="rounded-full bg-white/10 text-white font-semibold px-6 py-3 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
-            >
-              ← Retour à l&apos;accueil
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="message-text" className="sr-only">
                 Ton message
@@ -272,9 +262,9 @@ export default function MessagePage() {
               </p>
             </div>
 
-            {errorMsg && (
+            {validationError && (
               <p className="rounded-2xl bg-orange-400/15 text-orange-200 text-sm font-medium px-4 py-3 ring-1 ring-orange-400/30">
-                {errorMsg}
+                {validationError}
               </p>
             )}
 
@@ -286,7 +276,13 @@ export default function MessagePage() {
               {status === "sending" ? "Envoi… ⏳" : "Envoyer 💕"}
             </button>
           </form>
-        )}
+
+        <Link
+          href="/"
+          className="rounded-full bg-white/10 text-white font-semibold px-6 py-3 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform text-center"
+        >
+          ← Retour à l&apos;accueil
+        </Link>
       </div>
 
       <QuickNav links={navLinks} position="bottom-left" />

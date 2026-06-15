@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { sendAnnouncement } from "@/lib/announcementApi";
+import { useToast } from "@/components/ToastProvider";
 
 const SUGGESTIONS = [
   { text: "Le gâteau arrive !", emoji: "🎂" },
@@ -15,10 +16,10 @@ interface AdminAnnounceTabProps {
 }
 
 export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
+  const { showToast } = useToast();
   const [text, setText] = useState("");
   const [emoji, setEmoji] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -26,19 +27,17 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
     if (!trimmed) return;
 
     setBusy(true);
-    setSent(false);
     try {
       await sendAnnouncement({
         text: trimmed,
         emoji: emoji.trim() || undefined,
       });
-      setSent(true);
+      showToast("Annonce envoyée sur le mur", "success");
       setText("");
       setEmoji("");
-      setTimeout(() => setSent(false), 3000);
     } catch (err) {
       if (onUnauthorized(err)) return;
-      alert(err instanceof Error ? err.message : "Envoi échoué");
+      showToast(err instanceof Error ? err.message : "Envoi échoué", "error");
     } finally {
       setBusy(false);
     }
@@ -47,7 +46,6 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
   function applySuggestion(s: (typeof SUGGESTIONS)[number]) {
     setText(s.text);
     setEmoji(s.emoji);
-    setSent(false);
   }
 
   return (
@@ -101,11 +99,6 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
           >
             {busy ? "Envoi…" : "Envoyer l'annonce"}
           </button>
-          {sent && (
-            <span className="text-sm text-green-300 font-medium">
-              ✓ Annonce envoyée
-            </span>
-          )}
         </div>
       </form>
     </div>
