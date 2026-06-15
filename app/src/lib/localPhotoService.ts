@@ -7,8 +7,7 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 /**
- * Implémentation "réseau local" : parle à server/index.ts (Express + Socket.io).
- * Utilisée quand NEXT_PUBLIC_BACKEND=local (par défaut).
+ * Implémentation locale : parle à server/index.ts (Express + Socket.io).
  */
 export class LocalPhotoService implements PhotoService {
   private socket: Socket;

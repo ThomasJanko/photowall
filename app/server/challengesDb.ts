@@ -1,11 +1,10 @@
-import path from "path";
-import fs from "fs";
 import crypto from "crypto";
 import { eventConfig } from "../src/config/event";
+import { createJsonStore } from "./jsonStore";
 
 /** Stockage JSON des défis photo (data/challenges.json). */
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DB_FILE = path.join(DATA_DIR, "challenges.json");
+
+const challengeStore = createJsonStore<ChallengeRow[]>("challenges.json", []);
 
 export interface ChallengeRow {
   id: string;
@@ -13,30 +12,6 @@ export interface ChallengeRow {
   emoji?: string;
   active: boolean;
   createdAt: number;
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function readAll(): ChallengeRow[] {
-  ensureDataDir();
-  if (!fs.existsSync(DB_FILE)) {
-    const seeded = seedFromEventConfig();
-    writeAll(seeded);
-    return seeded;
-  }
-  try {
-    const raw = fs.readFileSync(DB_FILE, "utf-8");
-    return raw.trim() ? (JSON.parse(raw) as ChallengeRow[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeAll(rows: ChallengeRow[]) {
-  ensureDataDir();
-  fs.writeFileSync(DB_FILE, JSON.stringify(rows, null, 2), "utf-8");
 }
 
 /** Migration initiale depuis src/config/event.ts. */
@@ -49,6 +24,19 @@ function seedFromEventConfig(): ChallengeRow[] {
     active: true,
     createdAt: now + i,
   }));
+}
+
+function readAll(): ChallengeRow[] {
+  if (!challengeStore.exists()) {
+    const seeded = seedFromEventConfig();
+    challengeStore.write(seeded);
+    return seeded;
+  }
+  return challengeStore.read();
+}
+
+function writeAll(rows: ChallengeRow[]) {
+  challengeStore.write(rows);
 }
 
 export function listChallenges(): ChallengeRow[] {

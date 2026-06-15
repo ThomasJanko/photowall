@@ -1,26 +1,18 @@
-import path from "path";
-import fs from "fs";
 import {
   eventConfig as defaultEventConfig,
   type EventConfig,
   type EventTheme,
   type FeatureFlags,
 } from "../src/config/event";
+import { createJsonStore } from "./jsonStore";
 
 /** Persistance JSON de la config événement (surcharge src/config/event.ts). */
-const DATA_DIR = path.join(__dirname, "..", "data");
-const CONFIG_FILE = path.join(DATA_DIR, "event-config.json");
+const configStore = createJsonStore<Partial<EventConfig>>(
+  "event-config.json",
+  {}
+);
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function writeConfigFile(config: EventConfig) {
-  ensureDataDir();
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
-}
 
 /** Fusionne un partial avec une config de base (ne remplace pas les sous-objets entiers). */
 function mergeConfig(
@@ -147,16 +139,12 @@ export function validatePartialConfig(
  * avec les défauts de src/config/event.ts.
  */
 export function getConfig(): EventConfig {
-  ensureDataDir();
-  if (!fs.existsSync(CONFIG_FILE)) {
-    writeConfigFile(defaultEventConfig);
+  if (!configStore.exists()) {
+    configStore.write(defaultEventConfig);
     return { ...defaultEventConfig };
   }
   try {
-    const raw = fs.readFileSync(CONFIG_FILE, "utf-8");
-    const stored = raw.trim()
-      ? (JSON.parse(raw) as Partial<EventConfig>)
-      : {};
+    const stored = configStore.read();
     return mergeConfig(stored, defaultEventConfig);
   } catch {
     return { ...defaultEventConfig };
@@ -172,13 +160,13 @@ export function updateConfig(partial: Partial<EventConfig>): EventConfig {
   const mergedErr = validatePartialConfig(merged);
   if (mergedErr) throw new Error(mergedErr);
 
-  writeConfigFile(merged);
+  configStore.write(merged);
   return merged;
 }
 
 /** Réinitialise aux valeurs par défaut du code. */
 export function resetConfig(): EventConfig {
-  writeConfigFile(defaultEventConfig);
+  configStore.write(defaultEventConfig);
   return { ...defaultEventConfig };
 }
 

@@ -1,6 +1,5 @@
-import path from "path";
-import fs from "fs";
 import { getReactionEmojis } from "./configDb";
+import { createJsonStore } from "./jsonStore";
 
 /**
  * Stockage simple en fichier JSON (pas de dépendance native).
@@ -8,10 +7,7 @@ import { getReactionEmojis } from "./configDb";
  * Lecture/écriture synchrones : volumes faibles, pas de souci de perf.
  */
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DB_FILE = path.join(DATA_DIR, "photos.json");
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const photoStore = createJsonStore<PhotoRow[]>("photos.json", []);
 
 export type PhotoStatus = "pending" | "approved";
 
@@ -39,23 +35,17 @@ function emptyReactions(): Record<string, number> {
 }
 
 function readAll(): PhotoRow[] {
-  if (!fs.existsSync(DB_FILE)) return [];
-  try {
-    const raw = fs.readFileSync(DB_FILE, "utf-8");
-    const rows = raw.trim() ? (JSON.parse(raw) as PhotoRow[]) : [];
-    // Migration douce : reactions et status absents sur les anciennes lignes
-    return rows.map((r) => ({
-      ...r,
-      reactions: r.reactions ?? emptyReactions(),
-      status: r.status ?? "approved",
-    }));
-  } catch {
-    return [];
-  }
+  const rows = photoStore.read();
+  // Migration douce : reactions et status absents sur les anciennes lignes
+  return rows.map((r) => ({
+    ...r,
+    reactions: r.reactions ?? emptyReactions(),
+    status: r.status ?? "approved",
+  }));
 }
 
 function writeAll(rows: PhotoRow[]) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(rows, null, 2), "utf-8");
+  photoStore.write(rows);
 }
 
 export function insertPhoto(

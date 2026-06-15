@@ -34,17 +34,11 @@ export function adminAuthHeaders(): Record<string, string> {
 }
 
 function loginUrl(): string {
-  const backend = process.env.NEXT_PUBLIC_BACKEND ?? "local";
-  return backend === "supabase"
-    ? "/api/admin/login"
-    : `${SERVER_URL}/api/admin/login`;
+  return `${SERVER_URL}/api/admin/login`;
 }
 
 function verifyUrl(): string {
-  const backend = process.env.NEXT_PUBLIC_BACKEND ?? "local";
-  return backend === "supabase"
-    ? "/api/admin/verify"
-    : `${SERVER_URL}/api/admin/verify`;
+  return `${SERVER_URL}/api/admin/verify`;
 }
 
 /** Envoie le code admin au serveur et stocke le token reçu. */

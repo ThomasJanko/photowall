@@ -1,11 +1,5 @@
-import path from "path";
-import fs from "fs";
 import crypto from "crypto";
-
-const DATA_DIR = path.join(__dirname, "..", "data");
-const TIMELINE_FILE = path.join(DATA_DIR, "timeline.json");
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+import { createJsonStore } from "./jsonStore";
 
 export interface TimelineEraRow {
   id: string;
@@ -49,23 +43,19 @@ function emptyStore(): TimelineStore {
   return { eras: [], entries: [] };
 }
 
+const timelineStore = createJsonStore<TimelineStore>("timeline.json", emptyStore());
+
 function readStore(): TimelineStore {
-  if (!fs.existsSync(TIMELINE_FILE)) return emptyStore();
-  try {
-    const raw = fs.readFileSync(TIMELINE_FILE, "utf-8");
-    const parsed = raw.trim() ? (JSON.parse(raw) as TimelineStore) : emptyStore();
-    return {
-      eras: parsed.eras ?? [],
-      entries: parsed.entries ?? [],
-      page: parsed.page,
-    };
-  } catch {
-    return emptyStore();
-  }
+  const parsed = timelineStore.read();
+  return {
+    eras: parsed.eras ?? [],
+    entries: parsed.entries ?? [],
+    page: parsed.page,
+  };
 }
 
 function writeStore(store: TimelineStore) {
-  fs.writeFileSync(TIMELINE_FILE, JSON.stringify(store, null, 2), "utf-8");
+  timelineStore.write(store);
 }
 
 export function listTimelineEras(): TimelineEraRow[] {

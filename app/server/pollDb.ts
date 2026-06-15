@@ -1,10 +1,9 @@
-import path from "path";
-import fs from "fs";
 import crypto from "crypto";
+import { createJsonStore } from "./jsonStore";
 
 /** Stockage JSON des sondages (data/polls.json). */
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DB_FILE = path.join(DATA_DIR, "polls.json");
+
+const pollStore = createJsonStore<PollRow[]>("polls.json", []);
 
 export type PollStatus = "draft" | "active" | "closed";
 
@@ -24,23 +23,12 @@ export interface PollRow {
   closedAt?: number;
 }
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
 function readAll(): PollRow[] {
-  if (!fs.existsSync(DB_FILE)) return [];
-  try {
-    const raw = fs.readFileSync(DB_FILE, "utf-8");
-    return raw.trim() ? (JSON.parse(raw) as PollRow[]) : [];
-  } catch {
-    return [];
-  }
+  return pollStore.read();
 }
 
 function writeAll(rows: PollRow[]) {
-  ensureDataDir();
-  fs.writeFileSync(DB_FILE, JSON.stringify(rows, null, 2), "utf-8");
+  pollStore.write(rows);
 }
 
 /** Passe un sondage en clôturé avec horodatage. */

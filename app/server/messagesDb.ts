@@ -1,10 +1,12 @@
-import path from "path";
-import fs from "fs";
 import crypto from "crypto";
+import { createJsonStore } from "./jsonStore";
 
 /** Stockage JSON séparé du mur public — messages privés organisateurs uniquement. */
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DB_FILE = path.join(DATA_DIR, "private-messages.json");
+
+const messageStore = createJsonStore<PrivateMessageRow[]>(
+  "private-messages.json",
+  []
+);
 
 export type PrivateMediaType = "image" | "video" | null;
 
@@ -17,18 +19,11 @@ export interface PrivateMessageRow {
 }
 
 function readAll(): PrivateMessageRow[] {
-  if (!fs.existsSync(DB_FILE)) return [];
-  try {
-    const raw = fs.readFileSync(DB_FILE, "utf-8");
-    return raw.trim() ? (JSON.parse(raw) as PrivateMessageRow[]) : [];
-  } catch {
-    return [];
-  }
+  return messageStore.read();
 }
 
 function writeAll(rows: PrivateMessageRow[]) {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DB_FILE, JSON.stringify(rows, null, 2), "utf-8");
+  messageStore.write(rows);
 }
 
 export function insertPrivateMessage(

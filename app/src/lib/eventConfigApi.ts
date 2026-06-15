@@ -6,9 +6,6 @@ const SERVER_URL =
 
 /** Charge la config depuis l'API (fallback sur les défauts du code). */
 export async function fetchEventConfig(): Promise<EventConfig> {
-  const backend = process.env.NEXT_PUBLIC_BACKEND ?? "local";
-  if (backend !== "local") return defaultEventConfig;
-
   try {
     const res = await fetch(`${SERVER_URL}/api/config`);
     if (!res.ok) return defaultEventConfig;
