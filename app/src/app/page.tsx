@@ -17,6 +17,13 @@ import { useIsAdmin } from "@/lib/useIsAdmin";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
 import { getGuestPseudo } from "@/lib/guestPseudo";
 import {
+  applyPhotoFilterToBlob,
+  DEFAULT_PHOTO_FILTER_ID,
+  getPhotoFilter,
+  VIGNETTE_OVERLAY_CLASS,
+} from "@/lib/photoFilters";
+import { PhotoFilterPicker } from "@/components/PhotoFilterPicker";
+import {
   getCompletedChallengeIds,
   markChallengeCompleted,
 } from "@/lib/challengesCompleted";
@@ -64,6 +71,9 @@ export default function UploadPage() {
     null
   );
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [selectedFilterId, setSelectedFilterId] = useState(
+    DEFAULT_PHOTO_FILTER_ID
+  );
   const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
   const [waitingModerationCount, setWaitingModerationCount] = useState(0);
   const [approvedNotice, setApprovedNotice] = useState(false);
@@ -201,6 +211,7 @@ export default function UploadPage() {
       });
       setPendingBlob(compressed);
       setPreviewUrl(URL.createObjectURL(compressed));
+      setSelectedFilterId(DEFAULT_PHOTO_FILTER_ID);
       setStatus("idle");
     } catch (err) {
       console.error(err);
@@ -217,9 +228,19 @@ export default function UploadPage() {
     const authorPseudo = getGuestPseudo() ?? undefined;
     const service = getPhotoService();
 
+    let blobToUpload = pendingBlob;
+    try {
+      blobToUpload = await applyPhotoFilterToBlob(
+        pendingBlob,
+        selectedFilterId
+      );
+    } catch {
+      // fallback : original
+    }
+
     try {
       const photo = await service.upload(
-        pendingBlob,
+        blobToUpload,
         filename,
         challengeId,
         authorPseudo
@@ -232,7 +253,7 @@ export default function UploadPage() {
       reset();
     } catch (err) {
       console.error(err);
-      const dataUrl = await blobToDataUrl(pendingBlob);
+      const dataUrl = await blobToDataUrl(blobToUpload);
       const item: QueueItem = {
         id: generateId(),
         dataUrl,
@@ -249,6 +270,7 @@ export default function UploadPage() {
 
   function reset() {
     setPendingBlob(null);
+    setSelectedFilterId(DEFAULT_PHOTO_FILTER_ID);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -258,6 +280,10 @@ export default function UploadPage() {
 
   const hasChallenges = challenges.length > 0;
   const isUploading = status === "uploading";
+  const activeFilter = getPhotoFilter(selectedFilterId);
+  const previewFilterStyle = activeFilter.css
+    ? { filter: activeFilter.css }
+    : undefined;
 
   return (
     <PseudoGate>
@@ -322,10 +348,21 @@ export default function UploadPage() {
                 {challenges.find((c) => c.id === selectedChallengeId)?.label}
               </p>
             )}
-            <img
-              src={previewUrl}
-              alt="Aperçu"
-              className="w-full aspect-square object-cover rounded-3xl shadow-2xl ring-4 ring-white/20"
+            <div className="relative w-full aspect-square overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/20">
+              <img
+                src={previewUrl}
+                alt="Aperçu"
+                className="h-full w-full object-cover"
+                style={previewFilterStyle}
+              />
+              {activeFilter.vignette && (
+                <span className={VIGNETTE_OVERLAY_CLASS} aria-hidden />
+              )}
+            </div>
+            <PhotoFilterPicker
+              previewUrl={previewUrl}
+              selectedId={selectedFilterId}
+              onSelect={setSelectedFilterId}
             />
             <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button
