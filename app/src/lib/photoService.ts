@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
 
 /**
  * Interface commune aux deux backends (local et online).
@@ -75,11 +75,16 @@ export interface PhotoService {
 
   /** Frise chronologique (/timeline). */
   listTimelineEras?(): Promise<TimelineEra[]>;
+  listTimelinePageSettings?(): Promise<TimelinePageSettings>;
   listTimelineEntries?(): Promise<TimelineEntry[]>;
   addTimelineEntry?(data: AddTimelineEntryInput): Promise<TimelineEntry>;
   onNewTimelineEntry?(callback: (entry: TimelineEntry) => void): () => void;
   onTimelineErasUpdated?(callback: (eras: TimelineEra[]) => void): () => void;
-  saveTimelineEras?(eras: TimelineEra[]): Promise<TimelineEra[]>;
+  onTimelinePageUpdated?(callback: (page: TimelinePageSettings) => void): () => void;
+  saveTimelineEras?(
+    eras: TimelineEra[],
+    page?: TimelinePageSettings
+  ): Promise<TimelineEra[]>;
   removeTimelineEntry?(id: string): Promise<void>;
   listPendingTimelineEntries?(): Promise<TimelineEntry[]>;
   approveTimelineEntry?(id: string): Promise<TimelineEntry>;

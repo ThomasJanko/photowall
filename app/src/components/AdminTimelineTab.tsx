@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getPhotoService } from "@/lib/photoService";
-import type { TimelineEra, TimelineEntry } from "@/lib/types";
+import type { TimelineEra, TimelineEntry, TimelinePageSettings } from "@/lib/types";
+import { DEFAULT_TIMELINE_PAGE_SETTINGS } from "@/lib/types";
 import { adminFetch } from "@/lib/adminAuth";
 import { resolveMediaUrl, eraAccentColor } from "@/lib/timelineUtils";
 import { useEventConfig } from "@/components/EventThemeProvider";
@@ -34,6 +35,9 @@ export function AdminTimelineTab({
   const moderation = config.features.moderationRequired === true;
 
   const [eras, setEras] = useState<TimelineEra[]>([]);
+  const [pageSettings, setPageSettings] = useState<TimelinePageSettings>(
+    DEFAULT_TIMELINE_PAGE_SETTINGS
+  );
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [pending, setPending] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,12 +47,14 @@ export function AdminTimelineTab({
   const load = useCallback(async () => {
     const service = getPhotoService();
     try {
-      const [eraList, entryList] = await Promise.all([
+      const [eraList, entryList, page] = await Promise.all([
         service.listTimelineEras?.() ?? [],
         service.listTimelineEntries?.() ?? [],
+        service.listTimelinePageSettings?.() ?? DEFAULT_TIMELINE_PAGE_SETTINGS,
       ]);
       setEras(eraList);
       setEntries(entryList);
+      setPageSettings(page);
 
       if (moderation && service.listPendingTimelineEntries) {
         const p = await service.listPendingTimelineEntries();
@@ -120,7 +126,7 @@ export function AdminTimelineTab({
     if (!service.saveTimelineEras) return;
     setSaving(true);
     try {
-      const saved = await service.saveTimelineEras(eras);
+      const saved = await service.saveTimelineEras(eras, pageSettings);
       setEras(saved);
       showToast("Frise enregistrée", "success");
     } catch (err) {
@@ -187,6 +193,42 @@ export function AdminTimelineTab({
           ))}
         </section>
       )}
+
+      <section className="space-y-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/15">
+        <h2 className="text-lg font-bold text-white">En-tête de la page</h2>
+        <div className="grid gap-3 sm:grid-cols-[4rem_1fr]">
+          <label className="block text-xs text-purple-200">
+            Emoji
+            <input
+              value={pageSettings.emoji}
+              onChange={(e) =>
+                setPageSettings((prev) => ({ ...prev, emoji: e.target.value }))
+              }
+              className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-center text-xl text-white ring-1 ring-white/20"
+            />
+          </label>
+          <label className="block text-xs text-purple-200">
+            Titre
+            <input
+              value={pageSettings.title}
+              onChange={(e) =>
+                setPageSettings((prev) => ({ ...prev, title: e.target.value }))
+              }
+              className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-white ring-1 ring-white/20"
+            />
+          </label>
+        </div>
+        <label className="block text-xs text-purple-200">
+          Sous-titre
+          <input
+            value={pageSettings.subtitle}
+            onChange={(e) =>
+              setPageSettings((prev) => ({ ...prev, subtitle: e.target.value }))
+            }
+            className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-white ring-1 ring-white/20"
+          />
+        </label>
+      </section>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

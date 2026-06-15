@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
-import type { TimelineEra, TimelineEntry } from "@/lib/types";
+import type { TimelineEra, TimelineEntry, TimelinePageSettings } from "@/lib/types";
+import { DEFAULT_TIMELINE_PAGE_SETTINGS } from "@/lib/types";
 import { PseudoGate } from "@/components/PseudoGate";
 import { QuickNav } from "@/components/QuickNav";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
@@ -30,6 +31,9 @@ export default function TimelinePage() {
 
   const [eras, setEras] = useState<TimelineEra[]>([]);
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
+  const [pageSettings, setPageSettings] = useState<TimelinePageSettings>(
+    DEFAULT_TIMELINE_PAGE_SETTINGS
+  );
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -57,12 +61,14 @@ export default function TimelinePage() {
       return;
     }
     try {
-      const [eraList, entryList] = await Promise.all([
+      const [eraList, entryList, page] = await Promise.all([
         service.listTimelineEras(),
         service.listTimelineEntries(),
+        service.listTimelinePageSettings?.() ?? DEFAULT_TIMELINE_PAGE_SETTINGS,
       ]);
       setEras(eraList);
       setEntries(entryList);
+      setPageSettings(page);
     } catch (err) {
       console.error(err);
       showToast("Impossible de charger la frise", "error");
@@ -93,9 +99,14 @@ export default function TimelinePage() {
       setEras(next);
     });
 
+    const unsubPage = service.onTimelinePageUpdated?.((next) => {
+      setPageSettings(next);
+    });
+
     return () => {
       unsubNew?.();
       unsubEras?.();
+      unsubPage?.();
     };
   }, [enabled]);
 
@@ -144,12 +155,12 @@ export default function TimelinePage() {
 
         <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:py-12 lg:mx-0 lg:ml-8 lg:max-w-4xl xl:ml-12 xl:max-w-5xl">
           <header className="mb-10 text-center">
-            <p className="text-4xl mb-2">🕰️</p>
+            <p className="text-4xl mb-2">{pageSettings.emoji}</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow">
-              Notre histoire
+              {pageSettings.title}
             </h1>
             <p className="mt-2 text-purple-200 text-sm sm:text-base">
-              25 ans de souvenirs — et la soirée continue
+              {pageSettings.subtitle}
             </p>
           </header>
 

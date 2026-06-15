@@ -27,9 +27,22 @@ export interface TimelineEntryRow {
   approved: boolean;
 }
 
+export interface TimelinePageSettings {
+  title: string;
+  subtitle: string;
+  emoji: string;
+}
+
+export const DEFAULT_TIMELINE_PAGE_SETTINGS: TimelinePageSettings = {
+  title: "Timeline",
+  subtitle: "25 ans de souvenirs — et la soirée continue",
+  emoji: "🕰️",
+};
+
 interface TimelineStore {
   eras: TimelineEraRow[];
   entries: TimelineEntryRow[];
+  page?: Partial<TimelinePageSettings>;
 }
 
 function emptyStore(): TimelineStore {
@@ -44,6 +57,7 @@ function readStore(): TimelineStore {
     return {
       eras: parsed.eras ?? [],
       entries: parsed.entries ?? [],
+      page: parsed.page,
     };
   } catch {
     return emptyStore();
@@ -56,6 +70,28 @@ function writeStore(store: TimelineStore) {
 
 export function listTimelineEras(): TimelineEraRow[] {
   return readStore().eras.slice().sort((a, b) => a.order - b.order);
+}
+
+export function getTimelinePageSettings(): TimelinePageSettings {
+  const page = readStore().page;
+  return {
+    title: page?.title?.trim() || DEFAULT_TIMELINE_PAGE_SETTINGS.title,
+    subtitle: page?.subtitle?.trim() || DEFAULT_TIMELINE_PAGE_SETTINGS.subtitle,
+    emoji: page?.emoji?.trim() || DEFAULT_TIMELINE_PAGE_SETTINGS.emoji,
+  };
+}
+
+export function saveTimelinePageSettings(
+  settings: TimelinePageSettings
+): TimelinePageSettings {
+  const store = readStore();
+  store.page = {
+    title: settings.title.trim(),
+    subtitle: settings.subtitle.trim(),
+    emoji: settings.emoji.trim(),
+  };
+  writeStore(store);
+  return getTimelinePageSettings();
 }
 
 export function saveTimelineEras(eras: TimelineEraRow[]): TimelineEraRow[] {

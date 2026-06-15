@@ -50,6 +50,19 @@ export interface TimelineEra {
   color?: string;
 }
 
+/** En-tête configurable de la page /timeline. */
+export interface TimelinePageSettings {
+  title: string;
+  subtitle: string;
+  emoji: string;
+}
+
+export const DEFAULT_TIMELINE_PAGE_SETTINGS: TimelinePageSettings = {
+  title: "Timeline",
+  subtitle: "25 ans de souvenirs — et la soirée continue",
+  emoji: "🕰️",
+};
+
 /** Souvenir ajouté par un invité sur la frise. */
 export interface TimelineEntry {
   id: string;

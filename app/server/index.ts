@@ -57,8 +57,11 @@ import {
   insertTimelineEntry,
   approveTimelineEntry,
   deleteTimelineEntry,
+  getTimelinePageSettings,
+  saveTimelinePageSettings,
   type TimelineEraRow,
   type TimelineEntryRow,
+  type TimelinePageSettings,
 } from "./timelineDb";
 import {
   createAdminToken,
@@ -263,6 +266,23 @@ function eraRowFromPublic(
       : {}),
     ...(photo_filename ? { photo_filename } : {}),
     ...(era.color?.match(/^#[0-9a-fA-F]{6}$/) ? { color: era.color } : {}),
+  };
+}
+
+function parseTimelinePageSettings(raw: unknown): TimelinePageSettings | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as {
+    title?: unknown;
+    subtitle?: unknown;
+    emoji?: unknown;
+  };
+  if (typeof item.title !== "string" || !item.title.trim()) return null;
+  if (typeof item.subtitle !== "string" || !item.subtitle.trim()) return null;
+  if (typeof item.emoji !== "string" || !item.emoji.trim()) return null;
+  return {
+    title: item.title.trim().slice(0, 120),
+    subtitle: item.subtitle.trim().slice(0, 300),
+    emoji: item.emoji.trim().slice(0, 8),
   };
 }
 
@@ -804,6 +824,10 @@ app.get("/api/timeline/eras", (_req, res) => {
   res.json(listTimelineEras().map(toPublicTimelineEra));
 });
 
+app.get("/api/timeline/page", (_req, res) => {
+  res.json(getTimelinePageSettings());
+});
+
 app.get("/api/timeline/entries", (_req, res) => {
   res.json(listApprovedTimelineEntries().map(toPublicTimelineEntry));
 });
@@ -893,8 +917,14 @@ app.put("/api/timeline/eras", requireAdmin, (req, res) => {
   }
 
   const saved = saveTimelineEras(eras).map(toPublicTimelineEra);
+  let page = getTimelinePageSettings();
+  const parsedPage = parseTimelinePageSettings(req.body?.page);
+  if (parsedPage) {
+    page = saveTimelinePageSettings(parsedPage);
+    io.emit("timeline:page", page);
+  }
   io.emit("timeline:eras", saved);
-  res.json(saved);
+  res.json({ eras: saved, page });
 });
 
 app.post(

@@ -1,4 +1,5 @@
-import type { Photo, ReactionEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
+import type { Photo, ReactionEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
+import { DEFAULT_TIMELINE_PAGE_SETTINGS } from "./types";
 import type { PhotoService } from "./photoService";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -253,6 +254,10 @@ export class SupabasePhotoService implements PhotoService {
     return [];
   }
 
+  async listTimelinePageSettings(): Promise<TimelinePageSettings> {
+    return DEFAULT_TIMELINE_PAGE_SETTINGS;
+  }
+
   async listTimelineEntries(): Promise<TimelineEntry[]> {
     return [];
   }
@@ -269,7 +274,14 @@ export class SupabasePhotoService implements PhotoService {
     return () => {};
   }
 
-  async saveTimelineEras(_eras: TimelineEra[]): Promise<TimelineEra[]> {
+  onTimelinePageUpdated(_callback: (page: TimelinePageSettings) => void): () => void {
+    return () => {};
+  }
+
+  async saveTimelineEras(
+    _eras: TimelineEra[],
+    _page?: TimelinePageSettings
+  ): Promise<TimelineEra[]> {
     throw new Error("Timeline admin non disponible en mode Supabase");
   }
 

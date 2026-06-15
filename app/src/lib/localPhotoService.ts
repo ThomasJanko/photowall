@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, AddTimelineEntryInput } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -190,6 +190,12 @@ export class LocalPhotoService implements PhotoService {
     return res.json();
   }
 
+  async listTimelinePageSettings(): Promise<TimelinePageSettings> {
+    const res = await fetch(`${SERVER_URL}/api/timeline/page`);
+    if (!res.ok) throw new Error(`Chargement en-tête frise échoué (${res.status})`);
+    return res.json();
+  }
+
   async listTimelineEntries(): Promise<TimelineEntry[]> {
     const res = await fetch(`${SERVER_URL}/api/timeline/entries`);
     if (!res.ok) throw new Error(`Chargement souvenirs échoué (${res.status})`);
@@ -221,13 +227,22 @@ export class LocalPhotoService implements PhotoService {
     return () => this.socket.off("timeline:eras", callback);
   }
 
-  async saveTimelineEras(eras: TimelineEra[]): Promise<TimelineEra[]> {
+  onTimelinePageUpdated(callback: (page: TimelinePageSettings) => void): () => void {
+    this.socket.on("timeline:page", callback);
+    return () => this.socket.off("timeline:page", callback);
+  }
+
+  async saveTimelineEras(
+    eras: TimelineEra[],
+    page?: TimelinePageSettings
+  ): Promise<TimelineEra[]> {
     const res = await adminFetch(`${SERVER_URL}/api/timeline/eras`, {
       method: "PUT",
-      body: JSON.stringify({ eras }),
+      body: JSON.stringify({ eras, ...(page ? { page } : {}) }),
     });
     if (!res.ok) throw new Error(`Sauvegarde frise échouée (${res.status})`);
-    return res.json();
+    const data = (await res.json()) as TimelineEra[] | { eras: TimelineEra[] };
+    return Array.isArray(data) ? data : data.eras;
   }
 
   async removeTimelineEntry(id: string): Promise<void> {
