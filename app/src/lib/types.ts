@@ -37,6 +37,14 @@ export interface AnnouncementEvent {
   text: string;
   emoji?: string;
   durationMs: number;
+  /** Horodatage serveur au moment de l'envoi (sync temps restant). */
+  startedAt?: number;
+}
+
+/** Annonce active avec temps restant (GET /api/announcement/current). */
+export interface CurrentAnnouncement extends AnnouncementEvent {
+  startedAt: number;
+  remainingMs: number;
 }
 
 /** Bloc structurant de la frise chronologique (/timeline). */

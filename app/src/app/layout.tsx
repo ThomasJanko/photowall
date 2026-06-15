@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { EventThemeProvider } from "@/components/EventThemeProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { NewPhotoPopup } from "@/components/NewPhotoPopup";
+import { NewAnnouncementPopup } from "@/components/NewAnnouncementPopup";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
         <EventThemeProvider>
           <ToastProvider>
             <NewPhotoPopup />
+            <NewAnnouncementPopup />
             {children}
           </ToastProvider>
         </EventThemeProvider>

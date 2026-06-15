@@ -1,4 +1,4 @@
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, CurrentAnnouncement, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
 /**
@@ -32,6 +32,9 @@ export interface PhotoService {
   /** `true` = connecté, `false` = déconnecté ou reconnexion en cours. */
   onConnectionChange(callback: (connected: boolean) => void): () => void;
   onAnnouncement(callback: (event: AnnouncementEvent) => void): () => void;
+
+  /** Annonce encore active côté serveur (rejoin /wall en retard). */
+  getCurrentAnnouncement(): Promise<CurrentAnnouncement | null>;
 
   hidePhoto(id: string): Promise<void>;
   hidePhotos(ids: string[]): Promise<void>;

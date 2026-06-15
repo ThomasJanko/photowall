@@ -11,6 +11,11 @@ const SUGGESTIONS = [
   { text: "On passe à la piste de danse !", emoji: "💃" },
 ] as const;
 
+/** Durée par défaut du bandeau sur /wall (secondes). */
+const DEFAULT_DURATION_SEC = 8;
+const MIN_DURATION_SEC = 3;
+const MAX_DURATION_SEC = 30;
+
 interface AdminAnnounceTabProps {
   onUnauthorized: (err: unknown) => boolean;
 }
@@ -19,6 +24,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
   const { showToast } = useToast();
   const [text, setText] = useState("");
   const [emoji, setEmoji] = useState("");
+  const [durationSec, setDurationSec] = useState(DEFAULT_DURATION_SEC);
   const [busy, setBusy] = useState(false);
 
   async function handleSend(e: React.FormEvent) {
@@ -31,6 +37,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
       await sendAnnouncement({
         text: trimmed,
         emoji: emoji.trim() || undefined,
+        durationMs: durationSec * 1000,
       });
       showToast("Annonce envoyée sur le mur", "success");
       setText("");
@@ -51,8 +58,9 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
   return (
     <div className="max-w-lg space-y-6 pb-8">
       <p className="text-sm text-purple-200">
-        L&apos;annonce s&apos;affiche en bandeau sur /wall pendant ~8 secondes,
-        en temps réel pour tous les invités connectés.
+        L&apos;annonce s&apos;affiche en bandeau sur /wall pendant la durée
+        choisie. Les invités hors du mur voient un popup «&nbsp;Nouvelle
+        annonce&nbsp;» et peuvent y accéder même s&apos;ils arrivent en retard.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -87,6 +95,26 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
             value={emoji}
             onChange={(e) => setEmoji(e.target.value.slice(0, 8))}
             placeholder="🎂"
+            className="w-24 rounded-xl bg-white/10 px-4 py-2 text-white text-center ring-1 ring-white/20"
+          />
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-sm text-purple-200">
+            Durée d&apos;affichage sur /wall (secondes)
+          </span>
+          <input
+            type="number"
+            min={MIN_DURATION_SEC}
+            max={MAX_DURATION_SEC}
+            value={durationSec}
+            onChange={(e) => {
+              const n = Number.parseInt(e.target.value, 10);
+              if (Number.isNaN(n)) return;
+              setDurationSec(
+                Math.min(MAX_DURATION_SEC, Math.max(MIN_DURATION_SEC, n))
+              );
+            }}
             className="w-24 rounded-xl bg-white/10 px-4 py-2 text-white text-center ring-1 ring-white/20"
           />
         </label>

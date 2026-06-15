@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent, AnnouncementEvent, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
+import type { Photo, ReactionEvent, AnnouncementEvent, CurrentAnnouncement, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -132,6 +132,13 @@ export class LocalPhotoService implements PhotoService {
   onAnnouncement(callback: (event: AnnouncementEvent) => void): () => void {
     this.socket.on("announcement:new", callback);
     return () => this.socket.off("announcement:new", callback);
+  }
+
+  async getCurrentAnnouncement(): Promise<CurrentAnnouncement | null> {
+    const res = await fetch(`${SERVER_URL}/api/announcement/current`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as CurrentAnnouncement | null;
+    return data;
   }
 
   async hidePhoto(id: string): Promise<void> {

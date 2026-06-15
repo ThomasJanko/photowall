@@ -14,6 +14,7 @@ import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi
 import { QuickNav } from "@/components/QuickNav";
 import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
 import type { AnnouncementEvent } from "@/lib/types";
+import { announcementRemainingMs } from "@/lib/announcementUtils";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -254,7 +255,10 @@ export default function WallPage() {
     }
   }
 
-  function showAnnouncement(payload: AnnouncementEvent) {
+  const showAnnouncement = useCallback((payload: AnnouncementEvent) => {
+    const remainingMs = announcementRemainingMs(payload);
+    if (remainingMs <= 0) return;
+
     clearAnnouncementTimers();
     setAnnouncementLeaving(false);
     setAnnouncement(payload);
@@ -265,8 +269,8 @@ export default function WallPage() {
         setAnnouncement(null);
         setAnnouncementLeaving(false);
       }, ANNOUNCEMENT_EXIT_MS);
-    }, payload.durationMs);
-  }
+    }, remainingMs);
+  }, []);
 
   function applyReactions(photoId: string, reactions: Record<string, number>) {
     const update = (list: Photo[]) =>
@@ -378,7 +382,7 @@ export default function WallPage() {
 
     const unsubConnection = service.onConnectionChange?.(setConnected);
 
-    const unsubAnnouncement = service.onAnnouncement?.(showAnnouncement);
+    const unsubAnnouncement = service.onAnnouncement(showAnnouncement);
 
     return () => {
       unsubNew();
@@ -386,10 +390,18 @@ export default function WallPage() {
       unsubReaction?.();
       unsubChallengeVote?.();
       unsubConnection?.();
-      unsubAnnouncement?.();
+      unsubAnnouncement();
       clearAnnouncementTimers();
     };
-  }, []);
+  }, [showAnnouncement]);
+
+  useEffect(() => {
+    void getPhotoService()
+      .getCurrentAnnouncement()
+      .then((current) => {
+        if (current) showAnnouncement(current);
+      });
+  }, [showAnnouncement]);
 
   useEffect(() => {
     if (!spotlight) return;

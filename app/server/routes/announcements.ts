@@ -1,10 +1,29 @@
 import { Router } from "express";
 import { getIo } from "../io";
 import { requireAdmin } from "../middleware/requireAdmin";
+import {
+  saveCurrentAnnouncement,
+  getCurrentAnnouncement,
+} from "../announcementDb";
 
-const DEFAULT_ANNOUNCEMENT_MS = 20000;
+const DEFAULT_ANNOUNCEMENT_MS = 8_000;
 
 const router = Router();
+
+router.get("/current", (_req, res) => {
+  const row = getCurrentAnnouncement();
+  if (!row) {
+    return res.json(null);
+  }
+  const remainingMs = row.durationMs - (Date.now() - row.startedAt);
+  res.json({
+    text: row.text,
+    emoji: row.emoji,
+    durationMs: row.durationMs,
+    startedAt: row.startedAt,
+    remainingMs,
+  });
+});
 
 router.post("/", requireAdmin, (req, res) => {
   const rawText = req.body?.text;
@@ -22,10 +41,17 @@ router.post("/", requireAdmin, (req, res) => {
     durationMs = Math.min(Math.round(req.body.durationMs), 30_000);
   }
 
-  const payload = {
+  const row = saveCurrentAnnouncement({
     text: rawText.trim().slice(0, 200),
     emoji,
     durationMs,
+  });
+
+  const payload = {
+    text: row.text,
+    emoji: row.emoji,
+    durationMs: row.durationMs,
+    startedAt: row.startedAt,
   };
 
   getIo().emit("announcement:new", payload);
