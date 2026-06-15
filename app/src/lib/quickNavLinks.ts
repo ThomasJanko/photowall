@@ -1,49 +1,48 @@
 import type { QuickNavLink } from "@/components/QuickNav";
 import type { FeatureFlags } from "@/config/event";
-import { withAdminLink } from "./useIsAdmin";
 
-/** Liens invités optionnels selon les feature flags. */
-export function buildGuestNavLinks(
+/**
+ * Liens QuickNav pour la page courante : toutes les destinations actives
+ * (feature flags + admin), sauf la page en cours.
+ */
+export function buildNavLinks(
+  pathname: string,
   features: FeatureFlags,
-  isAdmin: boolean,
-  extra: QuickNavLink[] = []
+  isAdmin: boolean
 ): QuickNavLink[] {
-  const links: QuickNavLink[] = [...extra];
+  const links: QuickNavLink[] = [];
 
-  const optional: QuickNavLink[] = [
-    { href: "/wall", label: "Mur", icon: "🖼️" },
-    ...(features.privateMessages
-      ? [{ href: "/message", label: "Message privé", icon: "💌" }]
-      : []),
-    ...(features.qrPage ? [{ href: "/qr", label: "QR code", icon: "📱" }] : []),
-    ...(features.countdown
-      ? [{ href: "/countdown", label: "Compte à rebours", icon: "⏳" }]
-      : []),
-    ...(features.retrospective && isAdmin
-      ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
-      : []),
-    ...(features.leaderboard
-      ? [{ href: "/classement", label: "Classement", icon: "🏆" }]
-      : []),
-    ...(features.timeline
-      ? [{ href: "/timeline", label: "Frise", icon: "🕰️" }]
-      : []),
-  ];
-
-  for (const item of optional) {
-    if (!links.some((l) => l.href === item.href)) links.push(item);
+  if (pathname !== "/") {
+    links.push({ href: "/", label: "Accueil", icon: "🏠" });
+  }
+  if (pathname !== "/wall") {
+    links.push({ href: "/wall", label: "Mur", icon: "🖼️" });
+  }
+  if (features.privateMessages && pathname !== "/message") {
+    links.push({ href: "/message", label: "Message privé", icon: "💌" });
+  }
+  if (features.qrPage && pathname !== "/qr") {
+    links.push({ href: "/qr", label: "QR code", icon: "📱" });
+  }
+  if (features.countdown && pathname !== "/countdown") {
+    links.push({ href: "/countdown", label: "Compte à rebours", icon: "⏳" });
+  }
+  if (features.leaderboard && pathname !== "/classement") {
+    links.push({ href: "/classement", label: "Classement", icon: "🏆" });
+  }
+  if (features.timeline && pathname !== "/timeline") {
+    links.push({ href: "/timeline", label: "Frise", icon: "🕰️" });
+  }
+  if (
+    features.retrospective &&
+    isAdmin &&
+    pathname !== "/retrospective"
+  ) {
+    links.push({ href: "/retrospective", label: "Rétrospective", icon: "🎬" });
+  }
+  if (isAdmin && pathname !== "/admin") {
+    links.push({ href: "/admin", label: "Admin", icon: "🔧" });
   }
 
-  return withAdminLink(links, isAdmin);
-}
-
-/** Liens minimaux retour accueil + mur (+ admin si connecté). */
-export function buildBackNavLinks(isAdmin: boolean): QuickNavLink[] {
-  return withAdminLink(
-    [
-      { href: "/", label: "Accueil", icon: "🏠" },
-      { href: "/wall", label: "Mur", icon: "🖼️" },
-    ],
-    isAdmin
-  );
+  return links;
 }

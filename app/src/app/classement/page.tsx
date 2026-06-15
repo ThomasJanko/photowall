@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { QuickNav } from "@/components/QuickNav";
 import { useEventConfig } from "@/components/EventThemeProvider";
-import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 import { fetchLeaderboard, type LeaderboardEntry } from "@/lib/leaderboardApi";
 import { getPhotoService } from "@/lib/photoService";
 import { useToast } from "@/components/ToastProvider";
@@ -53,9 +54,13 @@ function PlayerPodium({
 }
 
 export default function ClassementPage() {
+  const pathname = usePathname();
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
-  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
+  );
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();

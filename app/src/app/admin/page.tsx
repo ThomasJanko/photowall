@@ -21,6 +21,9 @@ import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { buildNavLinks } from "@/lib/quickNavLinks";
+import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 import {
   getMessagesLastSeen,
   listPrivateMessages,
@@ -32,11 +35,6 @@ const SERVER_URL =
 
 type AuthState = "checking" | "guest" | "authed";
 type AdminTab = "photos" | "pending" | "messages" | "poll" | "challenges" | "timeline" | "config" | "announce";
-
-const ADMIN_NAV_LINKS = [
-  { href: "/", label: "Accueil", icon: "🏠" },
-  { href: "/wall", label: "Mur", icon: "🖼️" },
-] as const;
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -101,7 +99,9 @@ function AdminTabButton({
 }
 
 export default function AdminPage() {
+  const pathname = usePathname();
   const { config } = useEventConfig();
+  const isAdmin = useIsAdmin();
   const { showToast } = useToast();
   const [auth, setAuth] = useState<AuthState>("checking");
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -121,17 +121,9 @@ export default function AdminPage() {
   const showPendingTab =
     config.features.moderationRequired || pendingCount > 0;
 
-  const adminNavLinks = useMemo(
-    () => [
-      ...ADMIN_NAV_LINKS,
-      ...(config.features.retrospective
-        ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" as const }]
-        : []),
-      ...(config.features.timeline
-        ? [{ href: "/timeline", label: "Frise", icon: "🕰️" as const }]
-        : []),
-    ],
-    [config.features.retrospective, config.features.timeline]
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
   );
 
   const showTimelineTab = config.features.timeline === true;
@@ -670,7 +662,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <QuickNav links={adminNavLinks} position="bottom-left" variant="dark" />
+      <QuickNav links={navLinks} position="bottom-left" variant="dark" />
     </AdminShell>
   );
 }

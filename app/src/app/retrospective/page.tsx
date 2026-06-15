@@ -5,9 +5,10 @@ import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { QuickNav } from "@/components/QuickNav";
-import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { useEventConfig } from "@/components/EventThemeProvider";
+import { usePathname } from "next/navigation";
 import { computeRetrospectiveStats } from "@/lib/retrospectiveStats";
 import { buildRetrospectiveScenes } from "@/lib/retrospectiveScenes";
 import { RetrospectiveShow } from "@/components/retrospective/RetrospectiveShow";
@@ -71,10 +72,14 @@ function VolumeControl({
 }
 
 export default function RetrospectivePage() {
+  const pathname = usePathname();
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
   const [accessChecked, setAccessChecked] = useState(false);
-  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
+  );
 
   const allowed = config.features.retrospective && isAdmin;
 

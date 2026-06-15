@@ -4,8 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
-import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 
 const TARGET_FALLBACK = "2026-07-18T00:00:00";
 
@@ -84,9 +85,13 @@ function CelebrationConfetti() {
 }
 
 export default function CountdownPage() {
+  const pathname = usePathname();
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
-  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
+  );
   const targetDate = new Date(
     process.env.NEXT_PUBLIC_TARGET_DATE ??
       config.countdownTarget ??

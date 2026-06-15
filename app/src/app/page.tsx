@@ -12,8 +12,9 @@ import { PollModal } from "@/components/PollModal";
 import { ChallengePicker } from "@/components/ChallengePicker";
 import { PseudoGate } from "@/components/PseudoGate";
 import { UploadStatusBanner } from "@/components/UploadStatusBanner";
-import { buildGuestNavLinks } from "@/lib/quickNavLinks";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
 import { getGuestPseudo } from "@/lib/guestPseudo";
 import {
@@ -50,11 +51,12 @@ const SUCCESS_BANNER_MS = 3000;
 const SUCCESS_FADE_START_MS = 2200;
 
 export default function UploadPage() {
+  const pathname = usePathname();
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
   const navLinks = useMemo(
-    () => buildGuestNavLinks(config.features, isAdmin),
-    [config.features, isAdmin]
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
   );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);

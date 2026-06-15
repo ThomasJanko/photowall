@@ -4,8 +4,10 @@ import { useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { QuickNav } from "@/components/QuickNav";
-import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useEventConfig } from "@/components/EventThemeProvider";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 import { submitPrivateMessage } from "@/lib/privateMessages";
 import { useToast } from "@/components/ToastProvider";
 import {
@@ -18,9 +20,14 @@ import {
 type Status = "idle" | "validating" | "sending";
 
 export default function MessagePage() {
+  const pathname = usePathname();
+  const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
   const { showToast } = useToast();
-  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
+  );
   const [text, setText] = useState("");
   const [media, setMedia] = useState<ValidatedPrivateMedia | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

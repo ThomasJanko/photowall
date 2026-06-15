@@ -9,8 +9,9 @@ import { PseudoGate } from "@/components/PseudoGate";
 import { QuickNav } from "@/components/QuickNav";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
-import { buildGuestNavLinks } from "@/lib/quickNavLinks";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
 import {
   TimelineEraCard,
@@ -20,14 +21,15 @@ import { AddTimelineMemoryModal } from "@/components/timeline/AddTimelineMemoryM
 import { TimelineImageLightbox } from "@/components/timeline/TimelineImageLightbox";
 
 export default function TimelinePage() {
+  const pathname = usePathname();
   const { config, accent } = useEventConfig();
   const isAdmin = useIsAdmin();
   const { showToast } = useToast();
   const enabled = config.features.timeline === true;
 
   const navLinks = useMemo(
-    () => buildGuestNavLinks(config.features, isAdmin),
-    [config.features, isAdmin]
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
   );
 
   const [eras, setEras] = useState<TimelineEra[]>([]);

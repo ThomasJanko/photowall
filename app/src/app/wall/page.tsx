@@ -12,7 +12,9 @@ import { PhotoLightbox, type Floater } from "@/components/PhotoLightbox";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
 import { QuickNav } from "@/components/QuickNav";
-import { withAdminLink, useIsAdmin } from "@/lib/useIsAdmin";
+import { useIsAdmin } from "@/lib/useIsAdmin";
+import { buildNavLinks } from "@/lib/quickNavLinks";
+import { usePathname } from "next/navigation";
 import type { AnnouncementEvent } from "@/lib/types";
 import { announcementRemainingMs } from "@/lib/announcementUtils";
 
@@ -125,6 +127,7 @@ function FloatersOverlay({ floaters }: { readonly floaters: Floater[] }) {
 }
 
 export default function WallPage() {
+  const pathname = usePathname();
   const { config, accent } = useEventConfig();
   const isAdmin = useIsAdmin();
   const {
@@ -220,28 +223,8 @@ export default function WallPage() {
   }, []);
 
   const navLinks = useMemo(
-    () =>
-      withAdminLink(
-        [
-          ...(features.countdown
-            ? [{ href: "/countdown", label: "Compte à rebours", icon: "⏳" }]
-            : []),
-          ...(features.retrospective && isAdmin
-            ? [{ href: "/retrospective", label: "Rétrospective", icon: "🎬" }]
-            : []),
-          ...(features.leaderboard
-            ? [{ href: "/classement", label: "Classement", icon: "🏆" }]
-            : []),
-          ...(features.qrPage
-            ? [{ href: "/qr", label: "QR code", icon: "📱" }]
-            : []),
-          ...(features.privateMessages
-            ? [{ href: "/message", label: "Message privé", icon: "💌" }]
-            : []),
-        ],
-        isAdmin
-      ),
-    [features, isAdmin]
+    () => buildNavLinks(pathname, features, isAdmin),
+    [pathname, features, isAdmin]
   );
 
   function clearAnnouncementTimers() {

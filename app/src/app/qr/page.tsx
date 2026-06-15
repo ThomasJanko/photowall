@@ -4,8 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import QRCode from "qrcode";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
-import { buildBackNavLinks } from "@/lib/quickNavLinks";
+import { useEventConfig } from "@/components/EventThemeProvider";
+import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
+import { usePathname } from "next/navigation";
 
 /** URL de base sans slash final. */
 function resolveAppUrl(): string {
@@ -16,9 +18,14 @@ function resolveAppUrl(): string {
 }
 
 export default function QrPage() {
+  const pathname = usePathname();
+  const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
   const { showToast } = useToast();
-  const navLinks = useMemo(() => buildBackNavLinks(isAdmin), [isAdmin]);
+  const navLinks = useMemo(
+    () => buildNavLinks(pathname, config.features, isAdmin),
+    [pathname, config.features, isAdmin]
+  );
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [targetUrl, setTargetUrl] = useState("");
