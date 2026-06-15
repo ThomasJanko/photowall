@@ -13,6 +13,8 @@ export interface Photo {
   challengeId?: string;
   authorPseudo?: string;
   challengeVotes?: { success: number; fail: number };
+  /** Modération : "pending" jusqu'à validation admin (mode local). */
+  status?: "pending" | "approved";
 }
 
 export interface ChallengeVoteEvent {

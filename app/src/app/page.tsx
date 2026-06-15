@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
+import type { Photo } from "@/lib/types";
 import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
@@ -27,6 +28,12 @@ import {
   removeFromQueue,
   type QueueItem,
 } from "@/lib/uploadQueue";
+import {
+  addMyPendingPhoto,
+  countMyPendingPhotos,
+  getMyPendingPhotoIds,
+  removeMyPendingPhoto,
+} from "@/lib/myPendingPhotos";
 
 type Status = "idle" | "compressing" | "uploading" | "success" | "error";
 
@@ -46,12 +53,59 @@ export default function UploadPage() {
   );
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [challenges, setChallenges] = useState<PublicChallenge[]>([]);
+  const [waitingModerationCount, setWaitingModerationCount] = useState(0);
+  const [approvedNotice, setApprovedNotice] = useState(false);
+  const [lastUploadPending, setLastUploadPending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const moderationEnabled = config.features.moderationRequired === true;
+
+  const refreshModerationCount = useCallback(() => {
+    setWaitingModerationCount(countMyPendingPhotos());
+  }, []);
 
   useEffect(() => {
     setCompletedIds(getCompletedChallengeIds());
     fetchActiveChallenges().then(setChallenges).catch(() => setChallenges([]));
-  }, []);
+    refreshModerationCount();
+  }, [refreshModerationCount]);
+
+  useEffect(() => {
+    if (!moderationEnabled) return;
+
+    let approvedTimer: ReturnType<typeof setTimeout> | null = null;
+    const service = getPhotoService();
+    const unsub = service.onNewPhoto((photo) => {
+      if (!getMyPendingPhotoIds().includes(photo.id)) return;
+      removeMyPendingPhoto(photo.id);
+      refreshModerationCount();
+      setApprovedNotice(true);
+      if (approvedTimer) clearTimeout(approvedTimer);
+      approvedTimer = setTimeout(() => setApprovedNotice(false), 6000);
+    });
+
+    return () => {
+      unsub();
+      if (approvedTimer) clearTimeout(approvedTimer);
+    };
+  }, [moderationEnabled, refreshModerationCount]);
+
+  const registerUploadResult = useCallback(
+    (photo: Photo) => {
+      if (!moderationEnabled) {
+        setLastUploadPending(false);
+        return;
+      }
+      if (photo.status === "pending") {
+        addMyPendingPhoto(photo.id);
+        refreshModerationCount();
+        setLastUploadPending(true);
+      } else {
+        setLastUploadPending(false);
+      }
+    },
+    [moderationEnabled, refreshModerationCount]
+  );
 
   const refreshCompleted = useCallback(() => {
     setCompletedIds(getCompletedChallengeIds());
@@ -74,12 +128,13 @@ export default function UploadPage() {
     for (const item of queue) {
       try {
         const blob = dataUrlToBlob(item.dataUrl);
-        await service.upload(
+        const photo = await service.upload(
           blob,
           item.filename,
           item.challengeId,
           item.authorPseudo ?? pseudo
         );
+        registerUploadResult(photo);
         if (item.challengeId) markChallengeCompleted(item.challengeId);
         removeFromQueue(item.id);
       } catch {
@@ -119,7 +174,13 @@ export default function UploadPage() {
     const service = getPhotoService();
 
     try {
-      await service.upload(pendingBlob, filename, challengeId, authorPseudo);
+      const photo = await service.upload(
+        pendingBlob,
+        filename,
+        challengeId,
+        authorPseudo
+      );
+      registerUploadResult(photo);
       if (challengeId) markChallengeCompleted(challengeId);
       refreshCompleted();
       setStatus("success");
@@ -146,6 +207,7 @@ export default function UploadPage() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    setLastUploadPending(false);
     setTimeout(() => setStatus("idle"), 2000);
   }
 
@@ -240,11 +302,35 @@ export default function UploadPage() {
         )}
 
         <div className="min-h-6 w-full space-y-2 text-center" aria-live="polite">
-          {status === "success" && (
+          {moderationEnabled && approvedNotice && (
             <p className="inline-block rounded-full bg-green-400/15 text-green-300 font-medium px-4 py-2 ring-1 ring-green-400/30">
-              Photo envoyée 🎊
+              ✅ Ta photo est en ligne sur le mur !
             </p>
           )}
+          {status === "success" &&
+            moderationEnabled &&
+            lastUploadPending && (
+              <p className="inline-block rounded-full bg-amber-400/15 text-amber-200 font-medium px-4 py-2 ring-1 ring-amber-400/30">
+                📷 Ta photo est en attente de validation par l&apos;organisateur
+              </p>
+            )}
+          {status === "success" &&
+            (!moderationEnabled || !lastUploadPending) && (
+              <p className="inline-block rounded-full bg-green-400/15 text-green-300 font-medium px-4 py-2 ring-1 ring-green-400/30">
+                Photo envoyée 🎊
+              </p>
+            )}
+          {moderationEnabled &&
+            waitingModerationCount > 0 &&
+            status !== "success" &&
+            !approvedNotice && (
+              <p className="text-sm text-amber-200/90">
+                📷{" "}
+                {waitingModerationCount === 1
+                  ? "Ta photo est en attente de validation par l'organisateur"
+                  : `${waitingModerationCount} photos en attente de validation par l'organisateur`}
+              </p>
+            )}
           {status === "error" && (
             <p className="rounded-2xl bg-orange-400/15 text-orange-200 font-medium px-4 py-3 ring-1 ring-orange-400/30">
               Pas de réseau pour le moment, ta photo est en attente et sera

@@ -7,23 +7,31 @@ const BUCKET = "photos";
 const TABLE = "photos";
 
 /**
- * Implémentation "en ligne" : Supabase Storage (photos) + Postgres (métadonnées)
- * + Realtime (notifications de nouvelles photos).
+ * Implémentation "en ligne" : Supabase Storage + Postgres + Realtime.
  *
- * SETUP REQUIS (à faire une fois dans le dashboard Supabase) :
- * 1. Créer un bucket Storage public nommé "photos"
- * 2. Créer une table "photos" :
- *    id uuid primary key default gen_random_uuid(),
- *    url text not null,
- *    created_at timestamptz default now(),
- *    hidden boolean default false,
- *    reactions jsonb default '{}'::jsonb
- * 3. Activer Realtime sur la table "photos" (Replication > photos)
- *    + REPLICA IDENTITY FULL pour recevoir payload.old dans les UPDATE :
- *    alter table photos replica identity full;
- * 4. Renseigner NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local
- * 5. npm install @supabase/supabase-js
+ * MODÉRATION : non implémentée côté Supabase. Toutes les photos ont
+ * `status: "approved"`. Le suivi « en attente de validation » (localStorage
+ * my-pending-photos) est réservé au mode local (localPhotoService).
  */
+
+/** Supabase : pas de modération — toujours approuvé. */
+function toPhoto(row: {
+  id: string;
+  url: string;
+  created_at: string;
+  reactions?: Record<string, number>;
+  challenge_id?: string;
+}): Photo {
+  return {
+    id: row.id,
+    url: row.url,
+    createdAt: new Date(row.created_at).getTime(),
+    reactions: row.reactions ?? {},
+    status: "approved",
+    ...(row.challenge_id ? { challengeId: row.challenge_id } : {}),
+  };
+}
+
 export class SupabasePhotoService implements PhotoService {
   private client: any;
 
@@ -68,13 +76,7 @@ export class SupabasePhotoService implements PhotoService {
 
     if (error) throw error;
 
-    return {
-      id: data.id,
-      url: data.url,
-      createdAt: new Date(data.created_at).getTime(),
-      reactions: data.reactions ?? {},
-      ...(data.challenge_id ? { challengeId: data.challenge_id } : {}),
-    };
+    return toPhoto(data);
   }
 
   async listPhotos(): Promise<Photo[]> {
@@ -86,13 +88,7 @@ export class SupabasePhotoService implements PhotoService {
 
     if (error) throw error;
 
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      url: row.url,
-      createdAt: new Date(row.created_at).getTime(),
-      reactions: row.reactions ?? {},
-      ...(row.challenge_id ? { challengeId: row.challenge_id } : {}),
-    }));
+    return (data ?? []).map((row: any) => toPhoto(row));
   }
 
   onNewPhoto(callback: (photo: Photo) => void): () => void {
@@ -103,15 +99,7 @@ export class SupabasePhotoService implements PhotoService {
         { event: "INSERT", schema: "public", table: TABLE },
         (payload: any) => {
           if (payload.new.hidden) return;
-          callback({
-            id: payload.new.id,
-            url: payload.new.url,
-            createdAt: new Date(payload.new.created_at).getTime(),
-            reactions: payload.new.reactions ?? {},
-            ...(payload.new.challenge_id
-              ? { challengeId: payload.new.challenge_id }
-              : {}),
-          });
+          callback(toPhoto(payload.new));
         }
       )
       .subscribe();
