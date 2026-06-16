@@ -48,6 +48,7 @@ import {
   removeMyPendingPhoto,
 } from "@/lib/myPendingPhotos";
 import { useUploadQueueStatus } from "@/lib/useUploadQueueStatus";
+import { deferCallback } from "@/lib/deferCallback";
 
 type Status = "idle" | "compressing" | "uploading" | "success" | "error";
 
@@ -76,7 +77,9 @@ export default function UploadPage() {
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(
     null
   );
-  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [completedIds, setCompletedIds] = useState<string[]>(() =>
+    getCompletedChallengeIds()
+  );
   const [selectedFilterId, setSelectedFilterId] = useState(
     DEFAULT_PHOTO_FILTER_ID
   );
@@ -93,11 +96,12 @@ export default function UploadPage() {
   }, []);
 
   useEffect(() => {
-    setCompletedIds(getCompletedChallengeIds());
-    fetchActiveChallenges()
-      .then(setChallenges)
-      .catch(() => setChallenges([]));
-    refreshModerationCount();
+    deferCallback(() => {
+      fetchActiveChallenges()
+        .then(setChallenges)
+        .catch(() => setChallenges([]));
+      refreshModerationCount();
+    });
   }, [refreshModerationCount]);
 
   useEffect(() => {
@@ -202,7 +206,7 @@ export default function UploadPage() {
   }, [refreshQueueCount, registerUploadResult, refreshCompleted]);
 
   useEffect(() => {
-    void flushQueue();
+    deferCallback(() => void flushQueue());
     const interval = setInterval(() => void flushQueue(), 15000);
     return () => clearInterval(interval);
   }, [flushQueue]);
@@ -307,7 +311,7 @@ export default function UploadPage() {
 
         {config.features.confetti && <ConfettiBackground />}
 
-        <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6">
+        <div className="relative flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 md:max-w-lg">
           <header className="space-y-2 text-center">
             <p className="text-5xl sm:text-6xl">🎉</p>
             <h1 className="text-2xl font-bold text-white drop-shadow sm:text-3xl">

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getPhotoService } from "@/lib/photoService";
 import type { AnnouncementEvent } from "@/lib/types";
 import { X } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 /** Durée d'affichage du popup hors /wall (fixe, comme les autres popups ~10s). */
 const POPUP_VISIBLE_MS = 10_000;
@@ -46,7 +47,7 @@ export function NewAnnouncementPopup() {
 
   useEffect(() => {
     if (hidden) {
-      dismiss();
+      deferCallback(dismiss);
       return;
     }
 

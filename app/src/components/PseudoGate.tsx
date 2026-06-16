@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   getGuestPseudo,
   setGuestPseudo,
@@ -11,15 +11,21 @@ interface PseudoGateProps {
   children: React.ReactNode;
 }
 
+function subscribePseudo() {
+  return () => {};
+}
+
 /** Modale pseudo au premier visit (localStorage guest:pseudo). */
 export function PseudoGate({ children }: PseudoGateProps) {
-  const [ready, setReady] = useState(false);
+  const hasStoredPseudo = useSyncExternalStore(
+    subscribePseudo,
+    () => !!getGuestPseudo(),
+    () => false
+  );
+  const [submitted, setSubmitted] = useState(false);
+  const ready = hasStoredPseudo || submitted;
   const [pseudo, setPseudo] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setReady(!!getGuestPseudo());
-  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +35,7 @@ export function PseudoGate({ children }: PseudoGateProps) {
       return;
     }
     setGuestPseudo(valid);
-    setReady(true);
+    setSubmitted(true);
     setError(null);
   }
 

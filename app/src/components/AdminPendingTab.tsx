@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { useToast } from "@/components/ToastProvider";
+import { deferCallback } from "@/lib/deferCallback";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -58,7 +59,7 @@ export function AdminPendingTab({
   }, [onCountChange, onUnauthorized]);
 
   useEffect(() => {
-    refresh();
+    deferCallback(() => void refresh());
     const interval = setInterval(refresh, 12_000);
     const service = getPhotoService();
     const unsub = service.onPendingPhoto?.(() => {

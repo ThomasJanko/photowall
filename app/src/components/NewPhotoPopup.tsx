@@ -6,6 +6,7 @@ import { getPhotoService } from "@/lib/photoService";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import type { Photo } from "@/lib/types";
 import { X } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -49,7 +50,7 @@ export function NewPhotoPopup() {
 
   useEffect(() => {
     if (hidden) {
-      dismiss();
+      deferCallback(dismiss);
       return;
     }
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { loadQueue } from "./uploadQueue";
+import { deferCallback } from "./deferCallback";
 
 const QUEUE_POLL_MS = 4000;
 
@@ -14,7 +15,7 @@ export function useUploadQueueStatus() {
   }, []);
 
   useEffect(() => {
-    refreshQueueCount();
+    deferCallback(refreshQueueCount);
     const interval = setInterval(refreshQueueCount, QUEUE_POLL_MS);
     return () => clearInterval(interval);
   }, [refreshQueueCount]);

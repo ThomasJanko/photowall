@@ -6,14 +6,24 @@ import prettier from "eslint-config-prettier";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
+    "node_modules/**",
     "next-env.d.ts",
+    "data/**",
+    "public/uploads/**",
   ]),
+  {
+    files: ["src/**/*.{js,jsx,ts,tsx}", "server/**/*.{js,ts}", "scripts/**/*.{js,ts}"],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   prettier,
 ]);
 

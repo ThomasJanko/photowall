@@ -41,6 +41,9 @@ export interface PhotoLightboxProps {
   reactionEmojis?: string[];
   features: { reactions: boolean };
   floaters: Floater[];
+  onReact?: (photoId: string, emoji: string) => void;
+  myReactions?: ReadonlySet<string>;
+  reactionCooldowns?: ReadonlySet<string>;
   /** z-index Tailwind class suffix, default 50 */
   zIndexClass?: string;
   /** spotlight-pop-in on first open (queue) vs static (manual viewer) */
@@ -55,6 +58,9 @@ export function PhotoLightbox({
   reactionEmojis = [],
   features,
   floaters,
+  onReact,
+  myReactions,
+  reactionCooldowns,
   zIndexClass = "z-50",
   animate = true,
 }: PhotoLightboxProps) {
@@ -88,17 +94,46 @@ export function PhotoLightbox({
           />
           {features.reactions && (
             <div className="absolute bottom-2 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:bottom-3 md:gap-2">
-              {reactionEmojis.map((emoji) => (
-                <span
-                  key={emoji}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-white ring-1 ring-white/20 backdrop-blur-sm md:gap-1.5 md:px-3 md:py-1.5"
-                >
-                  <span className="text-base md:text-xl">{emoji}</span>
-                  <span className="text-xs tabular-nums md:text-base">
-                    {photo.reactions?.[emoji] ?? 0}
-                  </span>
-                </span>
-              ))}
+              {reactionEmojis.map((emoji) => {
+                const key = `${photo.id}:${emoji}`;
+                const mine = myReactions?.has(key) ?? false;
+                const coolingDown = reactionCooldowns?.has(key) ?? false;
+                return (
+                  <button
+                    type="button"
+                    key={emoji}
+                    onClick={
+                      onReact ? () => onReact(photo.id, emoji) : undefined
+                    }
+                    disabled={onReact ? coolingDown : undefined}
+                    title={
+                      onReact
+                        ? mine
+                          ? "Retirer ma réaction"
+                          : "Réagir"
+                        : undefined
+                    }
+                    className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 ring-1 backdrop-blur-sm transition-transform md:gap-1.5 md:px-3 md:py-1.5 ${
+                      onReact
+                        ? `cursor-pointer active:scale-90 disabled:opacity-40 ${
+                            mine
+                              ? "bg-pink-500/50 text-white ring-pink-300/60"
+                              : "bg-black/60 text-white ring-white/20"
+                          }`
+                        : "bg-black/60 text-white ring-white/20"
+                    }`}
+                  >
+                    <span className="text-base md:text-xl">{emoji}</span>
+                    <span
+                      className={`text-xs tabular-nums md:text-base ${
+                        mine ? "font-semibold" : ""
+                      }`}
+                    >
+                      {photo.reactions?.[emoji] ?? 0}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
           {features.reactions && (

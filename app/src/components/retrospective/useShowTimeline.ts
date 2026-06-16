@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Scene } from "@/lib/retrospectiveScenes";
+import { deferCallback } from "@/lib/deferCallback";
 
 const TRANSITION_MS = 600;
 
@@ -60,10 +61,12 @@ export function useShowTimeline({ scenes, active }: UseShowTimelineOptions) {
   useEffect(() => {
     if (!active) {
       clearTimers();
-      setSceneIndex(0);
-      setPaused(false);
-      setFinished(false);
-      setVisible(true);
+      deferCallback(() => {
+        setSceneIndex(0);
+        setPaused(false);
+        setFinished(false);
+        setVisible(true);
+      });
     }
   }, [active, clearTimers]);
 

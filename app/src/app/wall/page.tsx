@@ -702,6 +702,9 @@ export default function WallPage() {
           reactionEmojis={[...reactionEmojis]}
           features={features}
           floaters={floaters}
+          onReact={handleReact}
+          myReactions={myReactions}
+          reactionCooldowns={cooldowns}
           zIndexClass="z-50"
           animate
         />
@@ -719,6 +722,9 @@ export default function WallPage() {
           reactionEmojis={[...reactionEmojis]}
           features={features}
           floaters={floaters}
+          onReact={handleReact}
+          myReactions={myReactions}
+          reactionCooldowns={cooldowns}
           zIndexClass="z-[60]"
           animate={false}
         />

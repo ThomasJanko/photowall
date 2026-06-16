@@ -5,6 +5,7 @@ import { compressImage } from "@/lib/compressImage";
 import { getGuestPseudo } from "@/lib/guestPseudo";
 import type { TimelineEra } from "@/lib/types";
 import { Camera } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 const MAX_TEXT = 500;
 
@@ -37,12 +38,14 @@ export function AddTimelineMemoryModal({
 
   useEffect(() => {
     if (!open) return;
-    setText("");
-    setEraId("");
-    setPhotoBlob(null);
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
+    deferCallback(() => {
+      setText("");
+      setEraId("");
+      setPhotoBlob(null);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     });
   }, [open]);
 

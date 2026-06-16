@@ -9,6 +9,7 @@ import {
 } from "@/lib/privateMessages";
 import { useToast } from "@/components/ToastProvider";
 import { Download } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -47,8 +48,10 @@ function MessageMedia({
 
   useEffect(() => {
     let revoked = false;
-    setLoading(true);
-    setLoadFailed(false);
+    deferCallback(() => {
+      setLoading(true);
+      setLoadFailed(false);
+    });
 
     fetchPrivateMessageMedia(filename)
       .then((blob) => {

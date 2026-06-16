@@ -8,6 +8,7 @@ import { useEventConfig } from "@/components/EventThemeProvider";
 import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { usePathname } from "next/navigation";
+import { deferCallback } from "@/lib/deferCallback";
 
 /** URL de base sans slash final. */
 function resolveAppUrl(): string {
@@ -31,27 +32,29 @@ export default function QrPage() {
   const [targetUrl, setTargetUrl] = useState("");
 
   useEffect(() => {
-    const base = resolveAppUrl();
-    if (!base) {
-      showToast("URL de l'application introuvable.", "error");
-      setFailed(true);
-      return;
-    }
-
-    const url = `${base}/`;
-    setTargetUrl(url);
-
-    QRCode.toDataURL(url, {
-      width: 600,
-      margin: 2,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then(setQrDataUrl)
-      .catch((err) => {
-        console.error(err);
+    deferCallback(() => {
+      const base = resolveAppUrl();
+      if (!base) {
+        showToast("URL de l'application introuvable.", "error");
         setFailed(true);
-        showToast("Impossible de générer le QR code.", "error");
-      });
+        return;
+      }
+
+      const url = `${base}/`;
+      setTargetUrl(url);
+
+      QRCode.toDataURL(url, {
+        width: 600,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+      })
+        .then(setQrDataUrl)
+        .catch((err) => {
+          console.error(err);
+          setFailed(true);
+          showToast("Impossible de générer le QR code.", "error");
+        });
+    });
   }, [showToast]);
 
   return (

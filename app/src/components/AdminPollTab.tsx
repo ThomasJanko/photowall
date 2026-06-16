@@ -13,6 +13,7 @@ import { updateEventConfigApi } from "@/lib/eventConfigApi";
 import type { PollScreens } from "@/config/event";
 import type { Poll } from "@/lib/types/poll";
 import { Plus, X } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 const SCREEN_LABELS: Record<keyof PollScreens, string> = {
   home: "Accueil (/)",
@@ -36,10 +37,12 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
-    setScreens(config.pollScreens);
-    setResultsSeconds(
-      Math.round((config.pollResultsDurationMs ?? 60_000) / 1000)
-    );
+    deferCallback(() => {
+      setScreens(config.pollScreens);
+      setResultsSeconds(
+        Math.round((config.pollResultsDurationMs ?? 60_000) / 1000)
+      );
+    });
   }, [config.pollScreens, config.pollResultsDurationMs]);
 
   useEffect(() => {

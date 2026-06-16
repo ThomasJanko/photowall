@@ -11,6 +11,7 @@ import { useEventConfig } from "@/components/EventThemeProvider";
 import { usePathname } from "next/navigation";
 import { computeRetrospectiveStats } from "@/lib/retrospectiveStats";
 import { buildRetrospectiveScenes } from "@/lib/retrospectiveScenes";
+import { deferCallback } from "@/lib/deferCallback";
 import { RetrospectiveShow } from "@/components/retrospective/RetrospectiveShow";
 import { fetchActiveChallenges } from "@/lib/challengesApi";
 import { Play } from "lucide-react";
@@ -84,7 +85,7 @@ export default function RetrospectivePage() {
   const allowed = config.features.retrospective && isAdmin;
 
   useEffect(() => {
-    setAccessChecked(true);
+    deferCallback(() => setAccessChecked(true));
   }, []);
 
   const [photos, setPhotos] = useState<Photo[] | null>(null);

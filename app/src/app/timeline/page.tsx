@@ -17,6 +17,7 @@ import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { usePathname } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
+import { deferCallback } from "@/lib/deferCallback";
 import {
   TimelineEraCard,
   TimelineUnassignedEntries,
@@ -90,10 +91,10 @@ export default function TimelinePage() {
 
   useEffect(() => {
     if (!enabled) {
-      setLoading(false);
+      deferCallback(() => setLoading(false));
       return;
     }
-    void loadData();
+    deferCallback(() => void loadData());
   }, [enabled, loadData]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Link2 } from "lucide-react";
@@ -47,10 +47,12 @@ export function QuickNav({
   variant = "light",
 }: QuickNavProps) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;

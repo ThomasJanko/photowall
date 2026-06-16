@@ -13,6 +13,7 @@ import { resolveMediaUrl, eraAccentColor } from "@/lib/timelineUtils";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { useToast } from "@/components/ToastProvider";
 import { Camera, Clock, Plus } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
@@ -78,7 +79,7 @@ export function AdminTimelineTab({
   }, [moderation, onPendingCountChange, onUnauthorized, showToast]);
 
   useEffect(() => {
-    load();
+    deferCallback(() => void load());
     const service = getPhotoService();
     const unsubPending = service.onPendingTimelineEntry?.(() => load());
     return () => unsubPending?.();

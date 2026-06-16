@@ -9,6 +9,7 @@ import {
   type AdminChallenge,
 } from "@/lib/challengesApi";
 import { Plus } from "lucide-react";
+import { deferCallback } from "@/lib/deferCallback";
 
 interface AdminChallengesTabProps {
   onUnauthorized: (err: unknown) => boolean;
@@ -38,7 +39,7 @@ export function AdminChallengesTab({
   }, [onUnauthorized]);
 
   useEffect(() => {
-    load();
+    deferCallback(() => void load());
   }, [load]);
 
   async function handleAdd(e: React.FormEvent) {

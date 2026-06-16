@@ -15,6 +15,7 @@ import {
 import { applyThemeToDocument } from "@/lib/applyEventTheme";
 import { fetchEventConfig } from "@/lib/eventConfigApi";
 import { getTimeTheme } from "@/lib/timeTheme";
+import { deferCallback } from "@/lib/deferCallback";
 
 const THEME_REFRESH_MS = 5 * 60_000;
 
@@ -79,13 +80,15 @@ export function EventThemeProvider({
 
   useEffect(() => {
     if (!loaded) return;
-    if (!config.features.timeBasedTheme) {
+    deferCallback(() => {
+      if (!config.features.timeBasedTheme) {
+        applyTheme(config);
+        return;
+      }
       applyTheme(config);
-      return;
-    }
-    const tick = () => applyTheme(config);
-    tick();
-    const interval = setInterval(tick, THEME_REFRESH_MS);
+    });
+    if (!config.features.timeBasedTheme) return;
+    const interval = setInterval(() => applyTheme(config), THEME_REFRESH_MS);
     return () => clearInterval(interval);
   }, [loaded, config, applyTheme]);
 
