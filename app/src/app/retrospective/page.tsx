@@ -18,8 +18,7 @@ import { Play } from "lucide-react";
 // ============================================================================
 const MUSIC_SRC = "/music/retrospective.mp3";
 const MUSIC_VOLUME = 0.5;
-const CLOSING_MESSAGE =
-  "Merci d'avoir fêté ces 25 ans avec nous ❤️";
+const CLOSING_MESSAGE = "Merci d'avoir fêté ces 25 ans avec nous ❤️";
 // ============================================================================
 
 const SERVER_URL =
@@ -55,7 +54,7 @@ function VolumeControl({
         type="button"
         onClick={onToggleMute}
         title={muted ? "Remettre le son" : "Couper le son"}
-        className="shrink-0 text-white/70 hover:text-white active:scale-95 transition-transform"
+        className="shrink-0 text-white/70 transition-transform hover:text-white active:scale-95"
       >
         {muted || volume === 0 ? "🔇" : "🔊"}
       </button>
@@ -158,7 +157,7 @@ export default function RetrospectivePage() {
   if (!accessChecked) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-black">
-        <p className="text-purple-200 text-xl">Chargement...</p>
+        <p className="text-xl text-purple-200">Chargement...</p>
       </main>
     );
   }
@@ -166,14 +165,16 @@ export default function RetrospectivePage() {
   if (!allowed) {
     return (
       <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-2xl font-bold text-white">🔒 Réservé à l&apos;organisateur</p>
+        <p className="text-2xl font-bold text-white">
+          🔒 Réservé à l&apos;organisateur
+        </p>
         <p className="max-w-sm text-purple-200">
-          La rétrospective n&apos;est accessible qu&apos;aux personnes connectées à
-          l&apos;administration.
+          La rétrospective n&apos;est accessible qu&apos;aux personnes
+          connectées à l&apos;administration.
         </p>
         <Link
           href="/wall"
-          className="rounded-full bg-white/10 text-purple-100 font-semibold px-6 py-3 ring-1 ring-white/25 active:scale-95 transition-transform"
+          className="rounded-full bg-white/10 px-6 py-3 font-semibold text-purple-100 ring-1 ring-white/25 transition-transform active:scale-95"
         >
           ← Retour au mur
         </Link>
@@ -187,16 +188,16 @@ export default function RetrospectivePage() {
 
       {photos === null && (
         <div className="flex min-h-dvh items-center justify-center">
-          <p className="text-purple-200 text-xl">Chargement des photos...</p>
+          <p className="text-xl text-purple-200">Chargement des photos...</p>
         </div>
       )}
 
       {photos !== null && count === 0 && (
         <div className="flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
-          <p className="text-white text-2xl">Aucune photo à afficher 😢</p>
+          <p className="text-2xl text-white">Aucune photo à afficher 😢</p>
           <Link
             href="/wall"
-            className="rounded-full bg-white/10 text-purple-100 font-semibold px-6 py-3 ring-1 ring-white/25 active:scale-95 transition-transform"
+            className="rounded-full bg-white/10 px-6 py-3 font-semibold text-purple-100 ring-1 ring-white/25 transition-transform active:scale-95"
           >
             ← Retour au mur
           </Link>
@@ -205,10 +206,10 @@ export default function RetrospectivePage() {
 
       {photos !== null && count > 0 && !started && (
         <div className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-8 p-6 text-center">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white drop-shadow-lg">
+          <h1 className="text-4xl font-extrabold text-white drop-shadow-lg sm:text-6xl md:text-7xl">
             🎬 Rétrospective de la soirée
           </h1>
-          <p className="text-purple-200 text-lg sm:text-xl max-w-lg">
+          <p className="max-w-lg text-lg text-purple-200 sm:text-xl">
             {count} photo{count > 1 ? "s" : ""} · show awards · musique 🎵
           </p>
           <VolumeControl
@@ -223,9 +224,12 @@ export default function RetrospectivePage() {
           <button
             type="button"
             onClick={handleStart}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-linear-to-r from-pink-500 to-purple-500 text-white font-bold px-10 py-5 text-xl sm:text-2xl shadow-xl shadow-pink-900/40 active:scale-95 transition-transform"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-10 py-5 text-xl font-bold text-white shadow-xl shadow-pink-900/40 transition-transform active:scale-95 sm:text-2xl"
           >
-            <Play className="h-6 w-6 shrink-0 fill-current sm:h-7 sm:w-7" aria-hidden />
+            <Play
+              className="h-6 w-6 shrink-0 fill-current sm:h-7 sm:w-7"
+              aria-hidden
+            />
             Lancer la rétrospective
           </button>
           <Link

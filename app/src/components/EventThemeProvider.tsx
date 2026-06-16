@@ -47,7 +47,11 @@ export function useEventTheme(): { accent: string } {
  * Charge GET /api/config au montage (fallback offline sur event.ts),
  * applique les CSS variables du thème.
  */
-export function EventThemeProvider({ children }: { readonly children: ReactNode }) {
+export function EventThemeProvider({
+  children,
+}: {
+  readonly children: ReactNode;
+}) {
   const [config, setConfig] = useState<EventConfig>(defaultEventConfig);
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(defaultEventConfig.theme.accent);

@@ -35,7 +35,11 @@ interface MessageMediaProps {
   onUnauthorized: (err: unknown) => boolean;
 }
 
-function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps) {
+function MessageMedia({
+  filename,
+  mediaType,
+  onUnauthorized,
+}: MessageMediaProps) {
   const { showToast } = useToast();
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +98,7 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
         <img
           src={blobUrl}
           alt=""
-          className="max-h-64 w-full rounded-xl object-contain bg-black/20"
+          className="max-h-64 w-full rounded-xl bg-black/20 object-contain"
         />
       ) : (
         <video
@@ -106,7 +110,7 @@ function MessageMedia({ filename, mediaType, onUnauthorized }: MessageMediaProps
       <button
         type="button"
         onClick={handleDownload}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-purple-100 ring-1 ring-white/20 transition-transform active:scale-95"
       >
         <Download className="h-3.5 w-3.5 shrink-0" aria-hidden />
         Télécharger
@@ -162,12 +166,12 @@ export function AdminMessagesTab({
   }
 
   if (loading) {
-    return <p className="text-center text-purple-200 mt-10">Chargement…</p>;
+    return <p className="mt-10 text-center text-purple-200">Chargement…</p>;
   }
 
   if (messages.length === 0) {
     return (
-      <p className="text-center text-purple-300 mt-10">
+      <p className="mt-10 text-center text-purple-300">
         Aucun message privé pour le moment 💌
       </p>
     );
@@ -188,14 +192,14 @@ export function AdminMessagesTab({
               type="button"
               onClick={() => handleDelete(msg.id)}
               disabled={busyId === msg.id}
-              className="cursor-pointer rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50 active:scale-95 transition-transform"
+              className="cursor-pointer rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold text-white transition-transform active:scale-95 disabled:opacity-50"
             >
               Supprimer
             </button>
           </div>
 
           {msg.text && (
-            <p className="mb-3 whitespace-pre-wrap text-white leading-relaxed">
+            <p className="mb-3 leading-relaxed whitespace-pre-wrap text-white">
               {msg.text}
             </p>
           )}

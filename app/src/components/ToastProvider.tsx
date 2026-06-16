@@ -9,7 +9,11 @@ import {
   useState,
 } from "react";
 import { X } from "lucide-react";
-import { emitToast, registerToastHandler, type ToastType } from "@/lib/toastBus";
+import {
+  emitToast,
+  registerToastHandler,
+  type ToastType,
+} from "@/lib/toastBus";
 
 /** Durée avant disparition automatique (ms). */
 const TOAST_DISMISS_MS = 4000;
@@ -121,7 +125,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => dismissToast(toast.id)}
-              className="shrink-0 cursor-pointer rounded-full px-1.5 py-0.5 text-white/70 hover:text-white active:scale-95 transition-transform"
+              className="shrink-0 cursor-pointer rounded-full px-1.5 py-0.5 text-white/70 transition-transform hover:text-white active:scale-95"
               aria-label="Fermer"
             >
               <X className="h-4 w-4" aria-hidden />

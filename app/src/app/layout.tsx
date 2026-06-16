@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scrollbar-none overflow-x-hidden`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full scrollbar-none overflow-x-hidden antialiased`}
     >
-      <body className="min-h-full flex flex-col scrollbar-none overflow-x-hidden">
+      <body className="flex min-h-full scrollbar-none flex-col overflow-x-hidden">
         <EventThemeProvider>
           <ToastProvider>
             <NewPhotoPopup />

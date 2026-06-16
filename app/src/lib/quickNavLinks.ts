@@ -38,7 +38,11 @@ export function buildNavLinks(
     links.push({ href: "/qr", label: "QR code", icon: QrCode });
   }
   if (features.countdown && pathname !== "/countdown") {
-    links.push({ href: "/countdown", label: "Compte à rebours", icon: Hourglass });
+    links.push({
+      href: "/countdown",
+      label: "Compte à rebours",
+      icon: Hourglass,
+    });
   }
   if (features.leaderboard && pathname !== "/classement") {
     links.push({ href: "/classement", label: "Classement", icon: Trophy });
@@ -46,12 +50,12 @@ export function buildNavLinks(
   if (features.timeline && pathname !== "/timeline") {
     links.push({ href: "/timeline", label: "Frise", icon: History });
   }
-  if (
-    features.retrospective &&
-    isAdmin &&
-    pathname !== "/retrospective"
-  ) {
-    links.push({ href: "/retrospective", label: "Rétrospective", icon: Clapperboard });
+  if (features.retrospective && isAdmin && pathname !== "/retrospective") {
+    links.push({
+      href: "/retrospective",
+      label: "Rétrospective",
+      icon: Clapperboard,
+    });
   }
   if (isAdmin && pathname !== "/admin") {
     links.push({ href: "/admin", label: "Admin", icon: ShieldCheck });

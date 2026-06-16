@@ -32,6 +32,8 @@ export function CountUp({
   }, [target, durationMs]);
 
   return (
-    <span className={`tabular-nums ${className}`}>{value.toLocaleString("fr-FR")}</span>
+    <span className={`tabular-nums ${className}`}>
+      {value.toLocaleString("fr-FR")}
+    </span>
   );
 }

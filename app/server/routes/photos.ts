@@ -102,7 +102,9 @@ router.post("/:id/challenge-vote", (req, res) => {
     return res.status(404).json({ error: "Photo introuvable" });
   }
   if (!existing.challenge_id) {
-    return res.status(400).json({ error: "Cette photo n'est pas liée à un défi" });
+    return res
+      .status(400)
+      .json({ error: "Cette photo n'est pas liée à un défi" });
   }
 
   const updated = voteChallenge(id, vote, action);
@@ -154,10 +156,7 @@ router.post("/export", requireAdmin, (req, res) => {
   }
 
   res.setHeader("Content-Type", "application/zip");
-  res.setHeader(
-    "Content-Disposition",
-    'attachment; filename="photos.zip"'
-  );
+  res.setHeader("Content-Disposition", 'attachment; filename="photos.zip"');
 
   const archive = new ZipArchive({ zlib: { level: 5 } });
   archive.on("error", (err: Error) => {

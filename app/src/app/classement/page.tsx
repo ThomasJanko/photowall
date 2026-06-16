@@ -38,15 +38,15 @@ function PlayerPodium({
     >
       <span className="text-3xl sm:text-4xl">{medals[rank]}</span>
       <div
-        className={`flex w-full flex-col items-center justify-end rounded-t-2xl bg-linear-to-t from-pink-600/80 to-purple-500/60 ring-2 ring-white/25 shadow-xl ${heights[size]} px-3 pb-3 pt-4`}
+        className={`flex w-full flex-col items-center justify-end rounded-t-2xl bg-linear-to-t from-pink-600/80 to-purple-500/60 shadow-xl ring-2 ring-white/25 ${heights[size]} px-3 pt-4 pb-3`}
       >
-        <p className="truncate w-full text-center text-sm sm:text-base font-bold text-white">
+        <p className="w-full truncate text-center text-sm font-bold text-white sm:text-base">
           {entry.pseudo}
         </p>
-        <p className="text-2xl sm:text-3xl font-black text-amber-300 tabular-nums">
+        <p className="text-2xl font-black text-amber-300 tabular-nums sm:text-3xl">
           {entry.points}
         </p>
-        <p className="text-[10px] sm:text-xs text-purple-200">
+        <p className="text-[10px] text-purple-200 sm:text-xs">
           pt{entry.points !== 1 ? "s" : ""}
         </p>
       </div>
@@ -100,11 +100,13 @@ export default function ClassementPage() {
 
   if (!enabled) {
     return (
-      <main className="event-gradient-bg min-h-dvh flex flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-2xl text-white font-bold">Classement non disponible</p>
+      <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
+        <p className="text-2xl font-bold text-white">
+          Classement non disponible
+        </p>
         <Link
           href="/"
-          className="rounded-full bg-white/10 text-purple-100 px-6 py-3 ring-1 ring-white/20"
+          className="rounded-full bg-white/10 px-6 py-3 text-purple-100 ring-1 ring-white/20"
         >
           ← Retour
         </Link>
@@ -119,18 +121,16 @@ export default function ClassementPage() {
   return (
     <main className="event-gradient-bg min-h-dvh p-6 pb-24">
       <div className="mx-auto max-w-2xl space-y-8">
-        <header className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+        <header className="space-y-2 text-center">
+          <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
             🏆 Classement des défis
           </h1>
-          <p className="text-purple-200 text-sm">
+          <p className="text-sm text-purple-200">
             +1 point par défi réussi (plus de votes ✅ que ❌)
           </p>
         </header>
 
-        {loading && (
-          <p className="text-center text-purple-300">Chargement…</p>
-        )}
+        {loading && <p className="text-center text-purple-300">Chargement…</p>}
 
         {!loading && entries.length === 0 && (
           <p className="text-center text-purple-300">
@@ -163,7 +163,9 @@ export default function ClassementPage() {
                   <span className="w-8 text-center font-bold text-purple-300 tabular-nums">
                     {i + 1}
                   </span>
-                  <span className="font-semibold text-white">{entry.pseudo}</span>
+                  <span className="font-semibold text-white">
+                    {entry.pseudo}
+                  </span>
                 </span>
                 <span className="font-bold text-amber-300 tabular-nums">
                   {entry.points} pt{entry.points !== 1 ? "s" : ""}
@@ -176,7 +178,7 @@ export default function ClassementPage() {
         <div className="text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-purple-300 hover:text-purple-200 underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-purple-300 underline-offset-4 hover:text-purple-200 hover:underline"
           >
             <Camera className="h-4 w-4 shrink-0" aria-hidden />
             Relever un défi

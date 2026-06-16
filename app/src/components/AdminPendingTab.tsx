@@ -117,23 +117,23 @@ export function AdminPendingTab({
   }
 
   if (loading) {
-    return <p className="text-center text-purple-200 py-8">Chargement…</p>;
+    return <p className="py-8 text-center text-purple-200">Chargement…</p>;
   }
 
   if (photos.length === 0) {
     return (
-      <p className="text-center text-purple-200 py-8">
+      <p className="py-8 text-center text-purple-200">
         Aucune photo en attente de validation.
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
       {photos.map((photo) => (
         <div
           key={photo.id}
-          className="rounded-xl overflow-hidden bg-white/5 ring-1 ring-white/10 shadow-lg"
+          className="overflow-hidden rounded-xl bg-white/5 shadow-lg ring-1 ring-white/10"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -141,14 +141,16 @@ export function AdminPendingTab({
             alt=""
             className="aspect-square w-full object-cover"
           />
-          <div className="p-3 space-y-2">
-            <p className="text-xs text-purple-300">{formatDate(photo.createdAt)}</p>
+          <div className="space-y-2 p-3">
+            <p className="text-xs text-purple-300">
+              {formatDate(photo.createdAt)}
+            </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => handleApprove(photo.id)}
                 disabled={busyId === photo.id}
-                className="flex-1 cursor-pointer rounded-lg bg-emerald-600/80 px-2 py-2 text-xs font-semibold text-white disabled:opacity-50 active:scale-95 transition-transform"
+                className="flex-1 cursor-pointer rounded-lg bg-emerald-600/80 px-2 py-2 text-xs font-semibold text-white transition-transform active:scale-95 disabled:opacity-50"
               >
                 ✅ Approuver
               </button>
@@ -156,7 +158,7 @@ export function AdminPendingTab({
                 type="button"
                 onClick={() => handleReject(photo.id)}
                 disabled={busyId === photo.id}
-                className="flex-1 cursor-pointer rounded-lg bg-red-600/70 px-2 py-2 text-xs font-semibold text-white disabled:opacity-50 active:scale-95 transition-transform"
+                className="flex-1 cursor-pointer rounded-lg bg-red-600/70 px-2 py-2 text-xs font-semibold text-white transition-transform active:scale-95 disabled:opacity-50"
               >
                 🚫 Refuser
               </button>

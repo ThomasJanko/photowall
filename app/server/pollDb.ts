@@ -73,8 +73,7 @@ export function getDisplayPoll(resultsVisibleMs: number): PollRow | null {
   const closed = readAll()
     .filter((p) => p.status === "closed")
     .sort(
-      (a, b) =>
-        (b.closedAt ?? b.createdAt) - (a.closedAt ?? a.createdAt)
+      (a, b) => (b.closedAt ?? b.createdAt) - (a.closedAt ?? a.createdAt)
     )[0];
   if (!closed) return null;
 

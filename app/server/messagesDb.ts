@@ -58,7 +58,9 @@ export function getPrivateMessageByFilename(
   return readAll().find((r) => r.mediaFilename === filename);
 }
 
-export function deletePrivateMessage(id: string): PrivateMessageRow | undefined {
+export function deletePrivateMessage(
+  id: string
+): PrivateMessageRow | undefined {
   const rows = readAll();
   const idx = rows.findIndex((r) => r.id === id);
   if (idx === -1) return undefined;

@@ -4,7 +4,12 @@ import type { EventTheme } from "@/config/event";
 /** Couleurs de fond / accent appliquées via CSS variables sur :root. */
 export type ThemeColors = Pick<
   EventTheme,
-  "gradientFrom" | "gradientVia" | "gradientTo" | "accent" | "primary" | "secondary"
+  | "gradientFrom"
+  | "gradientVia"
+  | "gradientTo"
+  | "accent"
+  | "primary"
+  | "secondary"
 >;
 
 /** Style inline pour le dégradé événement (utilise les CSS variables). */

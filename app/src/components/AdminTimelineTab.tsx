@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getPhotoService } from "@/lib/photoService";
-import type { TimelineEra, TimelineEntry, TimelinePageSettings } from "@/lib/types";
+import type {
+  TimelineEra,
+  TimelineEntry,
+  TimelinePageSettings,
+} from "@/lib/types";
 import { DEFAULT_TIMELINE_PAGE_SETTINGS } from "@/lib/types";
 import { adminFetch } from "@/lib/adminAuth";
 import { resolveMediaUrl, eraAccentColor } from "@/lib/timelineUtils";
@@ -81,9 +85,7 @@ export function AdminTimelineTab({
   }, [load]);
 
   function updateEra(id: string, patch: Partial<TimelineEra>) {
-    setEras((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
-    );
+    setEras((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   }
 
   function moveEra(id: string, dir: -1 | 1) {
@@ -179,7 +181,7 @@ export function AdminTimelineTab({
     <div className="space-y-8 pb-8">
       {moderation && pending.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-amber-200 inline-flex items-center gap-2">
+          <h2 className="inline-flex items-center gap-2 text-lg font-bold text-amber-200">
             <Clock className="h-5 w-5 shrink-0" aria-hidden />
             Souvenirs à valider ({pending.length})
           </h2>
@@ -238,9 +240,7 @@ export function AdminTimelineTab({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() =>
-                setEras((prev) => [...prev, newEra(prev.length)])
-              }
+              onClick={() => setEras((prev) => [...prev, newEra(prev.length)])}
               className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20"
             >
               <Plus className="h-4 w-4 shrink-0" aria-hidden />
@@ -258,7 +258,7 @@ export function AdminTimelineTab({
         </div>
 
         {eras.length === 0 && (
-          <p className="text-purple-300 text-sm">
+          <p className="text-sm text-purple-300">
             Aucune période — ajoutez-en pour construire la frise.
           </p>
         )}
@@ -266,13 +266,34 @@ export function AdminTimelineTab({
         {eras.map((era, index) => (
           <div
             key={era.id}
-            className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/15 space-y-3"
-            style={{ borderLeftColor: eraAccentColor(era.color, index), borderLeftWidth: 4 }}
+            className="space-y-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/15"
+            style={{
+              borderLeftColor: eraAccentColor(era.color, index),
+              borderLeftWidth: 4,
+            }}
           >
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => moveEra(era.id, -1)} className="text-sm px-2">↑</button>
-              <button type="button" onClick={() => moveEra(era.id, 1)} className="text-sm px-2">↓</button>
-              <button type="button" onClick={() => removeEra(era.id)} className="text-sm text-red-300 ml-auto">Supprimer</button>
+              <button
+                type="button"
+                onClick={() => moveEra(era.id, -1)}
+                className="px-2 text-sm"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => moveEra(era.id, 1)}
+                className="px-2 text-sm"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => removeEra(era.id)}
+                className="ml-auto text-sm text-red-300"
+              >
+                Supprimer
+              </button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-xs text-purple-200">
@@ -287,7 +308,9 @@ export function AdminTimelineTab({
                 Période
                 <input
                   value={era.period}
-                  onChange={(e) => updateEra(era.id, { period: e.target.value })}
+                  onChange={(e) =>
+                    updateEra(era.id, { period: e.target.value })
+                  }
                   className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-white ring-1 ring-white/20"
                 />
               </label>
@@ -296,7 +319,9 @@ export function AdminTimelineTab({
               Description
               <textarea
                 value={era.description ?? ""}
-                onChange={(e) => updateEra(era.id, { description: e.target.value })}
+                onChange={(e) =>
+                  updateEra(era.id, { description: e.target.value })
+                }
                 rows={3}
                 className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-white ring-1 ring-white/20"
               />
@@ -341,7 +366,9 @@ export function AdminTimelineTab({
           Souvenirs publiés ({entries.length})
         </h2>
         {entries.length === 0 ? (
-          <p className="text-sm text-purple-300">Aucun souvenir invité pour l&apos;instant.</p>
+          <p className="text-sm text-purple-300">
+            Aucun souvenir invité pour l&apos;instant.
+          </p>
         ) : (
           entries.map((entry) => (
             <EntryAdminRow
@@ -372,7 +399,7 @@ function EntryAdminRow({
 }) {
   return (
     <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-      <p className="text-sm text-purple-50 whitespace-pre-wrap">{entry.text}</p>
+      <p className="text-sm whitespace-pre-wrap text-purple-50">{entry.text}</p>
       {entry.photoUrl && (
         <img
           src={resolveMediaUrl(entry.photoUrl)}

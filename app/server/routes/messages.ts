@@ -27,9 +27,7 @@ function toPublicPrivateMessage(row: PrivateMessageRow) {
 router.post("/", (req, res) => {
   privateUpload.single("media")(req, res, (err) => {
     if (err) {
-      return res
-        .status(400)
-        .json({ error: err.message || "Fichier invalide" });
+      return res.status(400).json({ error: err.message || "Fichier invalide" });
     }
 
     const rawText = req.body?.text;

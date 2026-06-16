@@ -159,8 +159,8 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
   return (
     <div className="max-w-lg space-y-6 pb-8">
       <p className="text-sm text-purple-200">
-        Question → vote → résultats à la clôture → disparition automatique.
-        Les invités ne voient pas les chiffres avant la fin.
+        Question → vote → résultats à la clôture → disparition automatique. Les
+        invités ne voient pas les chiffres avant la fin.
       </p>
 
       <fieldset className="space-y-2 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -174,11 +174,9 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
             min={10}
             max={300}
             value={resultsSeconds}
-            onChange={(e) =>
-              setResultsSeconds(Number(e.target.value) || 60)
-            }
+            onChange={(e) => setResultsSeconds(Number(e.target.value) || 60)}
             onBlur={() => handleResultsDurationChange(resultsSeconds)}
-            className="w-20 rounded-lg bg-white/10 px-2 py-1 text-center ring-1 ring-white/20 focus:outline-none focus:ring-pink-400"
+            className="w-20 rounded-lg bg-white/10 px-2 py-1 text-center ring-1 ring-white/20 focus:ring-pink-400 focus:outline-none"
           />
           <span className="text-purple-300">secondes</span>
         </label>
@@ -222,7 +220,7 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
               type="button"
               onClick={handleClose}
               disabled={busy}
-              className="cursor-pointer rounded-full bg-red-600/90 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 active:scale-95 transition-transform"
+              className="cursor-pointer rounded-full bg-red-600/90 px-4 py-2 text-sm font-semibold text-white transition-transform active:scale-95 disabled:opacity-50"
             >
               Clôturer
             </button>
@@ -241,7 +239,7 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
               value={question}
               onChange={(e) => setQuestion(e.target.value.slice(0, 200))}
               placeholder="Ex: Quelle chanson pour ouvrir le bal ?"
-              className="w-full rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-purple-400 ring-1 ring-white/20 focus:outline-none focus:ring-pink-400"
+              className="w-full rounded-xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/20 placeholder:text-purple-400 focus:ring-pink-400 focus:outline-none"
             />
           </label>
 
@@ -252,15 +250,17 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
                 <input
                   type="text"
                   value={opt}
-                  onChange={(e) => updateOption(i, e.target.value.slice(0, 100))}
+                  onChange={(e) =>
+                    updateOption(i, e.target.value.slice(0, 100))
+                  }
                   placeholder={`Option ${i + 1}`}
-                  className="min-w-0 flex-1 rounded-xl bg-white/10 px-4 py-2.5 text-white placeholder:text-purple-400 ring-1 ring-white/20 focus:outline-none focus:ring-pink-400"
+                  className="min-w-0 flex-1 rounded-xl bg-white/10 px-4 py-2.5 text-white ring-1 ring-white/20 placeholder:text-purple-400 focus:ring-pink-400 focus:outline-none"
                 />
                 {options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(i)}
-                    className="cursor-pointer shrink-0 rounded-lg bg-white/10 px-3 text-purple-200 ring-1 ring-white/20 active:scale-95 transition-transform"
+                    className="shrink-0 cursor-pointer rounded-lg bg-white/10 px-3 text-purple-200 ring-1 ring-white/20 transition-transform active:scale-95"
                     aria-label="Supprimer l'option"
                   >
                     <X className="h-4 w-4" aria-hidden />
@@ -281,7 +281,7 @@ export function AdminPollTab({ onUnauthorized }: AdminPollTabProps) {
           <button
             type="submit"
             disabled={!canLaunch}
-            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
+            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "Lancement…" : "Lancer le sondage"}
           </button>

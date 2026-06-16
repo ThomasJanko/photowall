@@ -40,12 +40,12 @@ export function PseudoGate({ children }: PseudoGateProps) {
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm rounded-2xl bg-purple-950/95 p-6 ring-1 ring-white/20 shadow-2xl space-y-4"
+          className="w-full max-w-sm space-y-4 rounded-2xl bg-purple-950/95 p-6 shadow-2xl ring-1 ring-white/20"
         >
-          <h2 className="text-xl font-bold text-white text-center">
+          <h2 className="text-center text-xl font-bold text-white">
             Comment t&apos;appelles-tu ?
           </h2>
-          <p className="text-sm text-purple-200 text-center">
+          <p className="text-center text-sm text-purple-200">
             Ton pseudo apparaît au classement des défis photo 🎯
           </p>
           <input
@@ -55,12 +55,14 @@ export function PseudoGate({ children }: PseudoGateProps) {
             placeholder="Ex: Thomas"
             autoFocus
             maxLength={20}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-purple-400 ring-1 ring-white/20 focus:outline-none focus:ring-pink-400"
+            className="w-full rounded-xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/20 placeholder:text-purple-400 focus:ring-pink-400 focus:outline-none"
           />
-          {error && <p className="text-sm text-orange-300 text-center">{error}</p>}
+          {error && (
+            <p className="text-center text-sm text-orange-300">{error}</p>
+          )}
           <button
             type="submit"
-            className="w-full cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 py-3 font-bold text-white active:scale-95 transition-transform"
+            className="w-full cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 py-3 font-bold text-white transition-transform active:scale-95"
           >
             C&apos;est parti !
           </button>

@@ -1,4 +1,14 @@
-import type { Photo, ReactionEvent, AnnouncementEvent, CurrentAnnouncement, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
+import type {
+  Photo,
+  ReactionEvent,
+  AnnouncementEvent,
+  CurrentAnnouncement,
+  ChallengeVoteEvent,
+  TimelineEra,
+  TimelineEntry,
+  TimelinePageSettings,
+  AddTimelineEntryInput,
+} from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
 /**
@@ -51,7 +61,9 @@ export interface PhotoService {
   addTimelineEntry(data: AddTimelineEntryInput): Promise<TimelineEntry>;
   onNewTimelineEntry(callback: (entry: TimelineEntry) => void): () => void;
   onTimelineErasUpdated(callback: (eras: TimelineEra[]) => void): () => void;
-  onTimelinePageUpdated(callback: (page: TimelinePageSettings) => void): () => void;
+  onTimelinePageUpdated(
+    callback: (page: TimelinePageSettings) => void
+  ): () => void;
   saveTimelineEras(
     eras: TimelineEra[],
     page?: TimelinePageSettings

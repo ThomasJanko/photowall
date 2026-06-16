@@ -49,7 +49,9 @@ function configToForm(cfg: EventConfig): FormState {
 export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
   const { refreshConfig } = useEventConfig();
   const { showToast } = useToast();
-  const [form, setForm] = useState<FormState>(() => configToForm(defaultEventConfig));
+  const [form, setForm] = useState<FormState>(() =>
+    configToForm(defaultEventConfig)
+  );
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -164,19 +166,19 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
   }
 
   if (loading) {
-    return <p className="text-center text-purple-200 mt-10">Chargement…</p>;
+    return <p className="mt-10 text-center text-purple-200">Chargement…</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl space-y-8 pb-8">
-      <p className="rounded-xl bg-amber-400/10 text-amber-200 text-sm px-4 py-3 ring-1 ring-amber-400/25">
+      <p className="rounded-xl bg-amber-400/10 px-4 py-3 text-sm text-amber-200 ring-1 ring-amber-400/25">
         Les pages déjà ouvertes (mur, accueil, etc.) doivent être rechargées
-        pour appliquer textes, thème et feature flags. Pas de mise à jour
-        temps réel sur la config.
+        pour appliquer textes, thème et feature flags. Pas de mise à jour temps
+        réel sur la config.
       </p>
 
       {validationError && (
-        <p className="rounded-xl bg-orange-400/15 text-orange-200 text-sm px-4 py-3 ring-1 ring-orange-400/30">
+        <p className="rounded-xl bg-orange-400/15 px-4 py-3 text-sm text-orange-200 ring-1 ring-orange-400/30">
           {validationError}
         </p>
       )}
@@ -184,7 +186,9 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
       <fieldset className="space-y-3">
         <legend className="text-lg font-bold text-white">Général</legend>
         <label className="block space-y-1">
-          <span className="text-sm text-purple-200">Nom de l&apos;événement</span>
+          <span className="text-sm text-purple-200">
+            Nom de l&apos;événement
+          </span>
           <input
             value={form.eventName}
             onChange={(e) =>
@@ -194,7 +198,9 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-sm text-purple-200">Message d&apos;attente (/wall)</span>
+          <span className="text-sm text-purple-200">
+            Message d&apos;attente (/wall)
+          </span>
           <textarea
             value={form.welcomeMessage}
             onChange={(e) =>
@@ -205,7 +211,9 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-sm text-purple-200">Texte célébration (/countdown)</span>
+          <span className="text-sm text-purple-200">
+            Texte célébration (/countdown)
+          </span>
           <input
             value={form.celebrationText}
             onChange={(e) =>
@@ -234,8 +242,8 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
                 onChange={(e) => setThemeField(key, e.target.value)}
                 className="h-9 w-12 cursor-pointer rounded border-0 bg-transparent"
               />
-              <span className="text-xs text-purple-200 flex-1">{label}</span>
-              <span className="text-xs text-purple-300 font-mono">
+              <span className="flex-1 text-xs text-purple-200">{label}</span>
+              <span className="font-mono text-xs text-purple-300">
                 {form.theme[key]}
               </span>
             </label>
@@ -323,11 +331,13 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
       </fieldset>
 
       <fieldset className="space-y-2">
-        <legend className="text-lg font-bold text-white mb-2">Fonctionnalités</legend>
+        <legend className="mb-2 text-lg font-bold text-white">
+          Fonctionnalités
+        </legend>
         {(Object.keys(FEATURE_LABELS) as (keyof FeatureFlags)[]).map((key) => (
           <label
             key={key}
-            className="flex items-center gap-3 cursor-pointer text-purple-100"
+            className="flex cursor-pointer items-center gap-3 text-purple-100"
           >
             <input
               type="checkbox"
@@ -344,7 +354,7 @@ export function AdminConfigTab({ onUnauthorized }: AdminConfigTabProps) {
         <button
           type="submit"
           disabled={busy}
-          className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow disabled:opacity-50 active:scale-95 transition-transform"
+          className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow transition-transform active:scale-95 disabled:opacity-50"
         >
           {busy ? "Enregistrement…" : "Enregistrer"}
         </button>

@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
-import type { TimelineEra, TimelineEntry, TimelinePageSettings } from "@/lib/types";
+import type {
+  TimelineEra,
+  TimelineEntry,
+  TimelinePageSettings,
+} from "@/lib/types";
 import { DEFAULT_TIMELINE_PAGE_SETTINGS } from "@/lib/types";
 import { PseudoGate } from "@/components/PseudoGate";
 import { QuickNav } from "@/components/QuickNav";
@@ -139,7 +143,7 @@ export default function TimelinePage() {
 
   if (!enabled) {
     return (
-      <main className="event-gradient-bg min-h-dvh flex flex-col items-center justify-center gap-6 p-6 text-center">
+      <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
         <p className="text-4xl">🕰️</p>
         <h1 className="text-2xl font-bold text-white">Frise non disponible</h1>
         <p className="max-w-sm text-purple-200">
@@ -157,16 +161,16 @@ export default function TimelinePage() {
 
   return (
     <PseudoGate>
-      <main className="relative min-h-dvh event-gradient-bg pb-28">
+      <main className="event-gradient-bg relative min-h-dvh pb-28">
         {config.features.confetti && <ConfettiBackground accent={accent} />}
 
         <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:py-12 lg:mx-0 lg:ml-8 lg:max-w-4xl xl:ml-12 xl:max-w-5xl">
           <header className="mb-10 text-center">
-            <p className="text-4xl mb-2">{pageSettings.emoji}</p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow">
+            <p className="mb-2 text-4xl">{pageSettings.emoji}</p>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow sm:text-4xl">
               {pageSettings.title}
             </h1>
-            <p className="mt-2 text-purple-200 text-sm sm:text-base">
+            <p className="mt-2 text-sm text-purple-200 sm:text-base">
               {pageSettings.subtitle}
             </p>
           </header>
@@ -180,7 +184,7 @@ export default function TimelinePage() {
           ) : (
             <div className="relative">
               <div
-                className="pointer-events-none absolute left-[1.15rem] top-0 bottom-0 w-0.5 bg-white/15"
+                className="pointer-events-none absolute top-0 bottom-0 left-[1.15rem] w-0.5 bg-white/15"
                 aria-hidden
               />
               {eras.map((era, index) => (
@@ -203,7 +207,7 @@ export default function TimelinePage() {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-pink-900/40 active:scale-95 transition-transform"
+          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-pink-900/40 transition-transform active:scale-95"
         >
           ✨ Ajouter un souvenir
         </button>

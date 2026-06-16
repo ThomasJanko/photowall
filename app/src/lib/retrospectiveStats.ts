@@ -203,8 +203,7 @@ export function computeChallengeRetrospectiveStats(
 
   const leaderboardTop3 = [...byPseudo.values()]
     .sort(
-      (a, b) =>
-        b.points - a.points || a.pseudo.localeCompare(b.pseudo, "fr")
+      (a, b) => b.points - a.points || a.pseudo.localeCompare(b.pseudo, "fr")
     )
     .slice(0, 3);
 

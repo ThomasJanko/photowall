@@ -1,5 +1,15 @@
 import { io, type Socket } from "socket.io-client";
-import type { Photo, ReactionEvent, AnnouncementEvent, CurrentAnnouncement, ChallengeVoteEvent, TimelineEra, TimelineEntry, TimelinePageSettings, AddTimelineEntryInput } from "./types";
+import type {
+  Photo,
+  ReactionEvent,
+  AnnouncementEvent,
+  CurrentAnnouncement,
+  ChallengeVoteEvent,
+  TimelineEra,
+  TimelineEntry,
+  TimelinePageSettings,
+  AddTimelineEntryInput,
+} from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
 
@@ -44,7 +54,8 @@ export class LocalPhotoService implements PhotoService {
 
   async listPhotos(): Promise<Photo[]> {
     const res = await fetch(`${SERVER_URL}/api/photos`);
-    if (!res.ok) throw new Error(`Chargement des photos échoué (${res.status})`);
+    if (!res.ok)
+      throw new Error(`Chargement des photos échoué (${res.status})`);
     return res.json();
   }
 
@@ -89,11 +100,14 @@ export class LocalPhotoService implements PhotoService {
     vote: "success" | "fail",
     action: "add" | "remove"
   ): Promise<void> {
-    const res = await fetch(`${SERVER_URL}/api/photos/${photoId}/challenge-vote`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vote, action }),
-    });
+    const res = await fetch(
+      `${SERVER_URL}/api/photos/${photoId}/challenge-vote`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vote, action }),
+      }
+    );
     if (!res.ok) throw new Error(`Vote défi échoué (${res.status})`);
   }
 
@@ -154,7 +168,8 @@ export class LocalPhotoService implements PhotoService {
       method: "DELETE",
       body: JSON.stringify({ ids }),
     });
-    if (!res.ok) throw new Error(`Suppression en masse échouée (${res.status})`);
+    if (!res.ok)
+      throw new Error(`Suppression en masse échouée (${res.status})`);
   }
 
   async exportPhotos(ids: string[]): Promise<Blob> {
@@ -168,7 +183,10 @@ export class LocalPhotoService implements PhotoService {
 
   async listPendingPhotos(): Promise<Photo[]> {
     const res = await adminFetch(`${SERVER_URL}/api/photos/pending`);
-    if (!res.ok) throw new Error(`Chargement des photos en attente échoué (${res.status})`);
+    if (!res.ok)
+      throw new Error(
+        `Chargement des photos en attente échoué (${res.status})`
+      );
     return res.json();
   }
 
@@ -198,7 +216,8 @@ export class LocalPhotoService implements PhotoService {
 
   async listTimelinePageSettings(): Promise<TimelinePageSettings> {
     const res = await fetch(`${SERVER_URL}/api/timeline/page`);
-    if (!res.ok) throw new Error(`Chargement en-tête frise échoué (${res.status})`);
+    if (!res.ok)
+      throw new Error(`Chargement en-tête frise échoué (${res.status})`);
     return res.json();
   }
 
@@ -233,7 +252,9 @@ export class LocalPhotoService implements PhotoService {
     return () => this.socket.off("timeline:eras", callback);
   }
 
-  onTimelinePageUpdated(callback: (page: TimelinePageSettings) => void): () => void {
+  onTimelinePageUpdated(
+    callback: (page: TimelinePageSettings) => void
+  ): () => void {
     this.socket.on("timeline:page", callback);
     return () => this.socket.off("timeline:page", callback);
   }
@@ -255,7 +276,8 @@ export class LocalPhotoService implements PhotoService {
     const res = await adminFetch(`${SERVER_URL}/api/timeline/entries/${id}`, {
       method: "DELETE",
     });
-    if (!res.ok) throw new Error(`Suppression souvenir échouée (${res.status})`);
+    if (!res.ok)
+      throw new Error(`Suppression souvenir échouée (${res.status})`);
   }
 
   async listPendingTimelineEntries(): Promise<TimelineEntry[]> {
@@ -267,9 +289,12 @@ export class LocalPhotoService implements PhotoService {
   }
 
   async approveTimelineEntry(id: string): Promise<TimelineEntry> {
-    const res = await adminFetch(`${SERVER_URL}/api/timeline/entries/${id}/approve`, {
-      method: "POST",
-    });
+    const res = await adminFetch(
+      `${SERVER_URL}/api/timeline/entries/${id}/approve`,
+      {
+        method: "POST",
+      }
+    );
     if (!res.ok) throw new Error(`Validation souvenir échouée (${res.status})`);
     return res.json();
   }

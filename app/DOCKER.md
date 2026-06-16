@@ -62,10 +62,10 @@ docker compose down
 
 Volume nommé `app-data`, monté sur `/app/data` dans le conteneur :
 
-| Fichier / dossier      | Contenu                          |
-|------------------------|----------------------------------|
-| `data/photos.json`     | Métadonnées des photos           |
-| `data/uploads/`        | Fichiers images uploadés         |
+| Fichier / dossier  | Contenu                  |
+| ------------------ | ------------------------ |
+| `data/photos.json` | Métadonnées des photos   |
+| `data/uploads/`    | Fichiers images uploadés |
 
 Les photos **survivent** à un `docker compose down` ou un rebuild de l'image.
 
@@ -129,12 +129,12 @@ nativement le dossier `data/`, sans configuration réseau inter-containers.
 
 ## Dépannage
 
-| Problème | Piste |
-|----------|-------|
+| Problème                                | Piste                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
 | Photos ne s'affichent pas sur téléphone | Vérifier `NEXT_PUBLIC_SERVER_URL` (IP publique, pas `localhost`) puis rebuild |
-| Upload échoue | Port 4000 ouvert ? Pare-feu VPS ? |
-| Conteneur unhealthy | `docker compose logs app` — attendre ~40s au premier démarrage |
-| Données perdues | Vérifier que le volume existe : `docker volume ls` |
+| Upload échoue                           | Port 4000 ouvert ? Pare-feu VPS ?                                             |
+| Conteneur unhealthy                     | `docker compose logs app` — attendre ~40s au premier démarrage                |
+| Données perdues                         | Vérifier que le volume existe : `docker volume ls`                            |
 
 ## Script npm équivalent (hors Docker)
 

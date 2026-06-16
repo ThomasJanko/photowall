@@ -32,7 +32,7 @@ export function ChallengeBadge({
         <Target className="h-3 w-3 shrink-0" aria-hidden />
       )}
       <span
-        className={`font-semibold leading-tight ${floating ? "truncate" : ""}`}
+        className={`leading-tight font-semibold ${floating ? "truncate" : ""}`}
       >
         {label}
       </span>

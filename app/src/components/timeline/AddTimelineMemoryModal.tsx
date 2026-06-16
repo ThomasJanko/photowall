@@ -96,23 +96,25 @@ export function AddTimelineMemoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <form
         onSubmit={handleSubmit}
-        className="scrollbar-none w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-linear-to-b from-purple-950 to-purple-900 p-6 ring-1 ring-white/20 shadow-2xl"
+        className="max-h-[90dvh] w-full max-w-md scrollbar-none overflow-y-auto rounded-t-3xl bg-linear-to-b from-purple-950 to-purple-900 p-6 shadow-2xl ring-1 ring-white/20 sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold text-white mb-1">Ajouter un souvenir</h2>
-        <p className="text-sm text-purple-200 mb-4">
+        <h2 className="mb-1 text-xl font-bold text-white">
+          Ajouter un souvenir
+        </h2>
+        <p className="mb-4 text-sm text-purple-200">
           Partage une anecdote ou un message pour la frise
           {moderationEnabled ? " (validation organisateur)" : ""}.
         </p>
 
-        <label className="block text-sm font-medium text-purple-100 mb-1">
+        <label className="mb-1 block text-sm font-medium text-purple-100">
           Ton message
         </label>
         <textarea
@@ -121,14 +123,14 @@ export function AddTimelineMemoryModal({
           rows={4}
           maxLength={MAX_TEXT}
           placeholder="Raconte un souvenir..."
-          className="w-full rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-purple-300/50 ring-1 ring-white/20 focus:outline-none focus:ring-pink-400/50"
+          className="w-full rounded-xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/20 placeholder:text-purple-300/50 focus:ring-pink-400/50 focus:outline-none"
           required
         />
         <p className="mt-1 text-right text-xs text-purple-400 tabular-nums">
           {text.length}/{MAX_TEXT}
         </p>
 
-        <label className="mt-4 block text-sm font-medium text-purple-100 mb-1">
+        <label className="mt-4 mb-1 block text-sm font-medium text-purple-100">
           Période (optionnel)
         </label>
         <select
@@ -157,7 +159,7 @@ export function AddTimelineMemoryModal({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-sm font-semibold text-purple-100 ring-1 ring-white/20 active:scale-[0.98] transition-transform"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-sm font-semibold text-purple-100 ring-1 ring-white/20 transition-transform active:scale-[0.98]"
           >
             <Camera className="h-4 w-4 shrink-0" aria-hidden />
             {previewUrl ? "Changer la photo" : "Ajouter une photo (optionnel)"}

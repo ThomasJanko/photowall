@@ -37,14 +37,8 @@ export function RetrospectiveShow({
   closingMessage,
   active,
 }: RetrospectiveShowProps) {
-  const {
-    currentScene,
-    paused,
-    visible,
-    finished,
-    togglePause,
-    skipScene,
-  } = useShowTimeline({ scenes, active });
+  const { currentScene, paused, visible, finished, togglePause, skipScene } =
+    useShowTimeline({ scenes, active });
 
   const sceneProps = {
     stats,
@@ -88,11 +82,11 @@ export function RetrospectiveShow({
   const isSlideshow = currentScene?.type === "slideshow";
 
   return (
-    <div className="relative min-h-dvh w-full bg-black overflow-hidden">
+    <div className="relative min-h-dvh w-full overflow-hidden bg-black">
       <div
         className={`relative min-h-dvh w-full transition-opacity duration-500 ${
           visible ? "opacity-100" : "opacity-0"
-        } ${isSlideshow ? "" : "flex items-center justify-center event-gradient-bg"}`}
+        } ${isSlideshow ? "" : "event-gradient-bg flex items-center justify-center"}`}
       >
         {renderScene()}
       </div>
@@ -103,7 +97,7 @@ export function RetrospectiveShow({
             type="button"
             onClick={togglePause}
             aria-label={paused ? "Reprendre" : "Pause"}
-            className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm transition-transform hover:text-white active:scale-95"
           >
             {paused ? (
               <Play className="h-4 w-4 fill-current" aria-hidden />
@@ -115,13 +109,13 @@ export function RetrospectiveShow({
             type="button"
             onClick={skipScene}
             aria-label="Scène suivante"
-            className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/20 backdrop-blur-sm transition-transform hover:text-white active:scale-95"
           >
             <SkipForward className="h-4 w-4" aria-hidden />
           </button>
           <Link
             href="/wall"
-            className="rounded-full bg-black/50 px-4 py-2 text-sm text-white/80 ring-1 ring-white/20 backdrop-blur-sm hover:text-white active:scale-95 transition-transform"
+            className="rounded-full bg-black/50 px-4 py-2 text-sm text-white/80 ring-1 ring-white/20 backdrop-blur-sm transition-transform hover:text-white active:scale-95"
           >
             Quitter
           </Link>
@@ -130,10 +124,12 @@ export function RetrospectiveShow({
 
       {finished && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-black/90">
-          <p className="text-3xl sm:text-5xl font-bold text-white">Merci pour cette soirée ✨</p>
+          <p className="text-3xl font-bold text-white sm:text-5xl">
+            Merci pour cette soirée ✨
+          </p>
           <Link
             href="/wall"
-            className="rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-8 py-4 text-lg font-bold text-white shadow-xl active:scale-95 transition-transform"
+            className="rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-8 py-4 text-lg font-bold text-white shadow-xl transition-transform active:scale-95"
           >
             Retour au mur
           </Link>

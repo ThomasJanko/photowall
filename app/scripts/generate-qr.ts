@@ -14,7 +14,9 @@ const url = process.argv[2];
 
 if (!url) {
   console.error("Usage: npx tsx scripts/generate-qr.ts <url>");
-  console.error("Exemple: npx tsx scripts/generate-qr.ts http://192.168.1.50:3000");
+  console.error(
+    "Exemple: npx tsx scripts/generate-qr.ts http://192.168.1.50:3000"
+  );
   process.exit(1);
 }
 

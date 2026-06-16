@@ -22,8 +22,7 @@ export function NewAnnouncementPopup() {
   const [visible, setVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const hidden =
-    pathname === "/wall" || pathname.startsWith("/admin");
+  const hidden = pathname === "/wall" || pathname.startsWith("/admin");
 
   function clearDismissTimer() {
     if (dismissTimerRef.current) {
@@ -77,7 +76,7 @@ export function NewAnnouncementPopup() {
             dismiss();
             router.push("/wall");
           }}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.98] transition-transform"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-[0.98]"
         >
           {announcement.emoji ? (
             <span
@@ -94,7 +93,7 @@ export function NewAnnouncementPopup() {
               📢
             </span>
           )}
-          <span className="text-sm font-semibold leading-tight line-clamp-3">
+          <span className="line-clamp-3 text-sm leading-tight font-semibold">
             Nouvelle annonce !
           </span>
         </button>
@@ -102,7 +101,7 @@ export function NewAnnouncementPopup() {
           type="button"
           onClick={dismiss}
           aria-label="Fermer"
-          className="shrink-0 rounded-full p-1.5 text-white/80 hover:bg-white/10 active:scale-90 transition-transform"
+          className="shrink-0 rounded-full p-1.5 text-white/80 transition-transform hover:bg-white/10 active:scale-90"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>

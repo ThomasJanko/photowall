@@ -55,34 +55,34 @@ export default function QrPage() {
   }, [showToast]);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center gap-8 p-6 text-center">
-      <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
+    <main className="event-gradient-bg relative flex min-h-dvh flex-col items-center justify-center gap-8 overflow-hidden p-6 text-center">
+      <h1 className="text-2xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl">
         📱 Scanne pour participer au mur de souvenirs !
       </h1>
 
-      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-2xl ring-4 ring-white/20">
+      <div className="rounded-3xl bg-white p-6 shadow-2xl ring-4 ring-white/20 sm:p-8">
         {failed ? (
-          <p className="text-purple-600 text-lg max-w-sm">
+          <p className="max-w-sm text-lg text-purple-600">
             QR code indisponible
           </p>
         ) : qrDataUrl ? (
           <img
             src={qrDataUrl}
             alt="QR code d'accès au mur de photos"
-            className="w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px]"
+            className="h-[80vmin] max-h-[600px] w-[80vmin] max-w-[600px]"
           />
         ) : (
           <div
-            className="flex w-[80vmin] h-[80vmin] max-w-[600px] max-h-[600px] items-center justify-center"
+            className="flex h-[80vmin] max-h-[600px] w-[80vmin] max-w-[600px] items-center justify-center"
             aria-busy="true"
           >
-            <p className="text-purple-400 text-lg">Génération du QR code...</p>
+            <p className="text-lg text-purple-400">Génération du QR code...</p>
           </div>
         )}
       </div>
 
       {targetUrl && (
-        <p className="max-w-xl break-all text-purple-100 text-sm sm:text-lg font-mono">
+        <p className="max-w-xl font-mono text-sm break-all text-purple-100 sm:text-lg">
           {targetUrl}
         </p>
       )}

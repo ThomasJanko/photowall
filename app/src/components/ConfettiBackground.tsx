@@ -25,11 +25,7 @@ const CONFETTI_PIECES = Array.from({ length: 18 }, (_, i) => ({
  * Pluie de confettis CSS en continu, purement décorative.
  * `accent` teinte 1 confetti sur 3 pour suivre la palette du moment.
  */
-export function ConfettiBackground({
-  accent,
-}: {
-  readonly accent?: string;
-}) {
+export function ConfettiBackground({ accent }: { readonly accent?: string }) {
   return (
     <div
       aria-hidden

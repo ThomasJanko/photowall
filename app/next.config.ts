@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: process.env.ALLOWED_ORIGINS?.split(",") ?? [],
   env: {
     TARGET_DATE: process.env.TARGET_DATE,
-  }
+  },
 };
 
 export default nextConfig;

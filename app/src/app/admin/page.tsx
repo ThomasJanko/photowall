@@ -46,7 +46,15 @@ const SERVER_URL =
   process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
 
 type AuthState = "checking" | "guest" | "authed";
-type AdminTab = "photos" | "pending" | "messages" | "poll" | "challenges" | "timeline" | "config" | "announce";
+type AdminTab =
+  | "photos"
+  | "pending"
+  | "messages"
+  | "poll"
+  | "challenges"
+  | "timeline"
+  | "config"
+  | "announce";
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http")) return url;
@@ -65,7 +73,7 @@ function downloadBlob(blob: Blob, filename: string) {
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative min-h-dvh overflow-hidden event-gradient-bg p-4 pb-28">
+    <main className="event-gradient-bg relative min-h-dvh overflow-hidden p-4 pb-28">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-pink-500/15 blur-3xl"
@@ -130,8 +138,7 @@ export default function AdminPage() {
   const [timelinePendingCount, setTimelinePendingCount] = useState(0);
   const [newMessageCount, setNewMessageCount] = useState(0);
 
-  const showPendingTab =
-    config.features.moderationRequired || pendingCount > 0;
+  const showPendingTab = config.features.moderationRequired || pendingCount > 0;
 
   const navLinks = useMemo(
     () => buildNavLinks(pathname, config.features, isAdmin),
@@ -144,10 +151,7 @@ export default function AdminPage() {
     config.features.moderationRequired &&
     timelinePendingCount > 0;
 
-  const displayedPhotos = useMemo(
-    () => photos.slice().reverse(),
-    [photos]
-  );
+  const displayedPhotos = useMemo(() => photos.slice().reverse(), [photos]);
 
   const allSelected =
     displayedPhotos.length > 0 &&
@@ -203,9 +207,7 @@ export default function AdminPage() {
       listPrivateMessages()
         .then((msgs) => {
           const lastSeen = getMessagesLastSeen();
-          setNewMessageCount(
-            msgs.filter((m) => m.createdAt > lastSeen).length
-          );
+          setNewMessageCount(msgs.filter((m) => m.createdAt > lastSeen).length);
         })
         .catch(() => {});
     }
@@ -279,9 +281,7 @@ export default function AdminPage() {
       setFailCount(0);
     } catch (err) {
       setFailCount((c) => c + 1);
-      setLoginError(
-        err instanceof Error ? err.message : "Code incorrect"
-      );
+      setLoginError(err instanceof Error ? err.message : "Code incorrect");
       if (failCount + 1 >= 3) {
         setTimeout(() => setFailCount(0), 5000);
       }
@@ -388,7 +388,7 @@ export default function AdminPage() {
   if (auth === "checking") {
     return (
       <AdminShell>
-        <p className="text-center text-purple-200 mt-20">Vérification...</p>
+        <p className="mt-20 text-center text-purple-200">Vérification...</p>
       </AdminShell>
     );
   }
@@ -397,10 +397,10 @@ export default function AdminPage() {
     return (
       <AdminShell>
         <div className="mx-auto flex min-h-[70dvh] max-w-sm flex-col items-center justify-center gap-6">
-          <h1 className="text-2xl font-bold text-white text-center">
+          <h1 className="text-center text-2xl font-bold text-white">
             Administration
           </h1>
-          <p className="text-purple-200 text-center text-sm">
+          <p className="text-center text-sm text-purple-200">
             Entre le code admin pour accéder à la modération.
           </p>
           <form onSubmit={handleLogin} className="w-full space-y-4">
@@ -410,15 +410,17 @@ export default function AdminPage() {
               onChange={(e) => setLoginCode(e.target.value)}
               placeholder="Code admin"
               autoComplete="current-password"
-              className="w-full rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-purple-300 ring-1 ring-white/20 backdrop-blur-sm focus:outline-none focus:ring-pink-400"
+              className="w-full rounded-xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/20 backdrop-blur-sm placeholder:text-purple-300 focus:ring-pink-400 focus:outline-none"
             />
             {loginError && (
-              <p className="text-sm text-orange-300 text-center">{loginError}</p>
+              <p className="text-center text-sm text-orange-300">
+                {loginError}
+              </p>
             )}
             <button
               type="submit"
               disabled={loginBusy || !loginCode.trim()}
-              className="w-full cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 py-3 font-bold text-white shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
+              className="w-full cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 py-3 font-bold text-white shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loginBusy ? "Connexion..." : "Se connecter"}
             </button>
@@ -435,7 +437,7 @@ export default function AdminPage() {
     <AdminShell>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Administration</h1>
+          <h1 className="mb-1 text-2xl font-bold text-white">Administration</h1>
           <p className="text-purple-200">
             {activeTab === "photos"
               ? `${photos.length} photo(s) actuellement sur le mur`
@@ -450,96 +452,95 @@ export default function AdminPage() {
                       : activeTab === "timeline"
                         ? "Frise chronologique"
                         : activeTab === "announce"
-                    ? "Annonce live sur le mur"
-                    : "Configuration de l'événement"}
+                          ? "Annonce live sur le mur"
+                          : "Configuration de l'événement"}
           </p>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          className="cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-purple-100 ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+          className="cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-purple-100 ring-1 ring-white/20 backdrop-blur-sm transition-transform active:scale-95"
         >
           Se déconnecter
         </button>
       </div>
 
-      <div className="scrollbar-none mb-6 -mx-4 overflow-x-auto px-4 py-2">
+      <div className="-mx-4 mb-6 scrollbar-none overflow-x-auto px-4 py-2">
         <div className="flex w-max gap-2 pb-1">
-        <AdminTabButton
-          active={activeTab === "photos"}
-          onClick={() => setActiveTab("photos")}
-        >
-          Photos du mur
-        </AdminTabButton>
-        {showPendingTab && (
           <AdminTabButton
-            active={activeTab === "pending"}
-            onClick={() => setActiveTab("pending")}
-            badge={pendingCount}
+            active={activeTab === "photos"}
+            onClick={() => setActiveTab("photos")}
+          >
+            Photos du mur
+          </AdminTabButton>
+          {showPendingTab && (
+            <AdminTabButton
+              active={activeTab === "pending"}
+              onClick={() => setActiveTab("pending")}
+              badge={pendingCount}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="h-4 w-4 shrink-0" aria-hidden />À valider
+              </span>
+            </AdminTabButton>
+          )}
+          {config.features.privateMessages && (
+            <AdminTabButton
+              active={activeTab === "messages"}
+              onClick={() => setActiveTab("messages")}
+              badge={newMessageCount}
+            >
+              Messages privés
+            </AdminTabButton>
+          )}
+          <AdminTabButton
+            active={activeTab === "announce"}
+            onClick={() => setActiveTab("announce")}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-4 w-4 shrink-0" aria-hidden />
-              À valider
+              <Megaphone className="h-4 w-4 shrink-0" aria-hidden />
+              Annonce
             </span>
           </AdminTabButton>
-        )}
-        {config.features.privateMessages && (
           <AdminTabButton
-            active={activeTab === "messages"}
-            onClick={() => setActiveTab("messages")}
-            badge={newMessageCount}
-          >
-            Messages privés
-          </AdminTabButton>
-        )}
-        <AdminTabButton
-          active={activeTab === "announce"}
-          onClick={() => setActiveTab("announce")}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <Megaphone className="h-4 w-4 shrink-0" aria-hidden />
-            Annonce
-          </span>
-        </AdminTabButton>
-        <AdminTabButton
-          active={activeTab === "poll"}
-          onClick={() => setActiveTab("poll")}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
-            Sondage
-          </span>
-        </AdminTabButton>
-        <AdminTabButton
-          active={activeTab === "challenges"}
-          onClick={() => setActiveTab("challenges")}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <Target className="h-4 w-4 shrink-0" aria-hidden />
-            Défis
-          </span>
-        </AdminTabButton>
-        {showTimelineTab && (
-          <AdminTabButton
-            active={activeTab === "timeline"}
-            onClick={() => setActiveTab("timeline")}
-            badge={showTimelinePending ? timelinePendingCount : undefined}
+            active={activeTab === "poll"}
+            onClick={() => setActiveTab("poll")}
           >
             <span className="inline-flex items-center gap-1.5">
-              <History className="h-4 w-4 shrink-0" aria-hidden />
-              Timeline
+              <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
+              Sondage
             </span>
           </AdminTabButton>
-        )}
-        <AdminTabButton
-          active={activeTab === "config"}
-          onClick={() => setActiveTab("config")}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <Settings className="h-4 w-4 shrink-0" aria-hidden />
-            Configuration
-          </span>
-        </AdminTabButton>
+          <AdminTabButton
+            active={activeTab === "challenges"}
+            onClick={() => setActiveTab("challenges")}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Target className="h-4 w-4 shrink-0" aria-hidden />
+              Défis
+            </span>
+          </AdminTabButton>
+          {showTimelineTab && (
+            <AdminTabButton
+              active={activeTab === "timeline"}
+              onClick={() => setActiveTab("timeline")}
+              badge={showTimelinePending ? timelinePendingCount : undefined}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <History className="h-4 w-4 shrink-0" aria-hidden />
+                Timeline
+              </span>
+            </AdminTabButton>
+          )}
+          <AdminTabButton
+            active={activeTab === "config"}
+            onClick={() => setActiveTab("config")}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Settings className="h-4 w-4 shrink-0" aria-hidden />
+              Configuration
+            </span>
+          </AdminTabButton>
         </div>
       </div>
 
@@ -568,110 +569,110 @@ export default function AdminPage() {
         />
       ) : (
         <>
-      {config.features.adminBulkActions && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={toggleSelectAll}
-            disabled={displayedPhotos.length === 0 || busy}
-            className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow ring-1 ring-white/20 backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
-          >
-            {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
-          </button>
-          {hasSelection && (
-            <p className="text-sm text-purple-200">
-              {selectedCount} photo(s) sélectionnée(s)
-            </p>
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {displayedPhotos.map((photo) => {
-          const isSelected = selected.has(photo.id);
-          return (
-            <div
-              key={photo.id}
-              className={`relative rounded-lg overflow-hidden shadow-lg bg-white/5 ring-2 transition-colors ${
-                isSelected ? "ring-pink-400" : "ring-white/10"
-              }`}
-            >
-              {config.features.adminBulkActions && (
-                <label className="absolute top-1 left-1 z-10 flex cursor-pointer items-center rounded-md bg-black/50 p-1.5 backdrop-blur-sm">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelect(photo.id)}
-                    className="h-4 w-4 cursor-pointer accent-purple-600"
-                    aria-label={`Sélectionner la photo ${photo.id}`}
-                  />
-                </label>
+          {config.features.adminBulkActions && (
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                disabled={displayedPhotos.length === 0 || busy}
+                className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow ring-1 ring-white/20 backdrop-blur-sm transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
+              </button>
+              {hasSelection && (
+                <p className="text-sm text-purple-200">
+                  {selectedCount} photo(s) sélectionnée(s)
+                </p>
               )}
-              <button
-                type="button"
-                onClick={() => setZoomedPhoto(photo)}
-                className="block w-full cursor-pointer"
-                aria-label="Agrandir la photo"
-              >
-                <img
-                  src={resolveUrl(photo.url)}
-                  alt=""
-                  className="w-full aspect-square object-cover transition-transform hover:scale-[1.02]"
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleHide(photo.id)}
-                disabled={busy}
-                className="absolute top-1 right-1 cursor-pointer inline-flex items-center gap-1 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-transform"
-              >
-                <EyeOff className="h-3 w-3 shrink-0" aria-hidden />
-                Masquer
-              </button>
             </div>
-          );
-        })}
-      </div>
+          )}
 
-      {config.features.adminBulkActions && (
-        <div
-          className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 px-4 py-3 shadow-lg backdrop-blur-md"
-          style={{
-            background:
-              "color-mix(in srgb, var(--event-gradient-from) 90%, transparent)",
-          }}
-        >
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3">
-            {hasSelection && (
-              <span className="text-sm text-purple-200">
-                {selectedCount} photo(s) sélectionnée(s)
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={handleBulkExport}
-              disabled={!hasSelection || busy}
-              className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Download className="h-4 w-4 shrink-0" aria-hidden />
-                Télécharger la sélection
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleBulkDelete}
-              disabled={!hasSelection || busy}
-              className="cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 transition-transform"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
-                Supprimer la sélection
-              </span>
-            </button>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {displayedPhotos.map((photo) => {
+              const isSelected = selected.has(photo.id);
+              return (
+                <div
+                  key={photo.id}
+                  className={`relative overflow-hidden rounded-lg bg-white/5 shadow-lg ring-2 transition-colors ${
+                    isSelected ? "ring-pink-400" : "ring-white/10"
+                  }`}
+                >
+                  {config.features.adminBulkActions && (
+                    <label className="absolute top-1 left-1 z-10 flex cursor-pointer items-center rounded-md bg-black/50 p-1.5 backdrop-blur-sm">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(photo.id)}
+                        className="h-4 w-4 cursor-pointer accent-purple-600"
+                        aria-label={`Sélectionner la photo ${photo.id}`}
+                      />
+                    </label>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setZoomedPhoto(photo)}
+                    className="block w-full cursor-pointer"
+                    aria-label="Agrandir la photo"
+                  >
+                    <img
+                      src={resolveUrl(photo.url)}
+                      alt=""
+                      className="aspect-square w-full object-cover transition-transform hover:scale-[1.02]"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleHide(photo.id)}
+                    disabled={busy}
+                    className="absolute top-1 right-1 inline-flex cursor-pointer items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-xs font-semibold text-white shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <EyeOff className="h-3 w-3 shrink-0" aria-hidden />
+                    Masquer
+                  </button>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+
+          {config.features.adminBulkActions && (
+            <div
+              className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 px-4 py-3 shadow-lg backdrop-blur-md"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--event-gradient-from) 90%, transparent)",
+              }}
+            >
+              <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3">
+                {hasSelection && (
+                  <span className="text-sm text-purple-200">
+                    {selectedCount} photo(s) sélectionnée(s)
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleBulkExport}
+                  disabled={!hasSelection || busy}
+                  className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Download className="h-4 w-4 shrink-0" aria-hidden />
+                    Télécharger la sélection
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  disabled={!hasSelection || busy}
+                  className="cursor-pointer rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                    Supprimer la sélection
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -686,7 +687,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setZoomedPhoto(null)}
-            className="absolute top-4 right-4 cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur-sm active:scale-95 transition-transform"
+            className="absolute top-4 right-4 cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur-sm transition-transform active:scale-95"
           >
             <span className="inline-flex items-center gap-2">
               <X className="h-4 w-4 shrink-0" aria-hidden />
@@ -696,7 +697,7 @@ export default function AdminPage() {
           <img
             src={resolveUrl(zoomedPhoto.url)}
             alt=""
-            className="max-h-[92vh] max-w-[96vw] object-contain rounded-lg shadow-2xl"
+            className="max-h-[92vh] max-w-[96vw] rounded-lg object-contain shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

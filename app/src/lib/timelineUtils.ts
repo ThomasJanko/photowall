@@ -10,15 +10,19 @@ export const TIMELINE_ERA_FALLBACK_COLORS = [
   "#f87171",
 ] as const;
 
-export function eraAccentColor(color: string | undefined, index: number): string {
+export function eraAccentColor(
+  color: string | undefined,
+  index: number
+): string {
   if (color?.match(/^#[0-9a-fA-F]{6}$/)) return color;
-  return TIMELINE_ERA_FALLBACK_COLORS[index % TIMELINE_ERA_FALLBACK_COLORS.length];
+  return TIMELINE_ERA_FALLBACK_COLORS[
+    index % TIMELINE_ERA_FALLBACK_COLORS.length
+  ];
 }
 
 export function resolveMediaUrl(url: string): string {
   if (url.startsWith("http")) return url;
-  const base =
-    process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
+  const base = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4000";
   return `${base}${url}`;
 }
 

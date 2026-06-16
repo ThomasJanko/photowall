@@ -139,10 +139,7 @@ export function voteChallenge(
   }
 
   const delta = action === "remove" ? -1 : 1;
-  row.challenge_votes[vote] = Math.max(
-    0,
-    row.challenge_votes[vote] + delta
-  );
+  row.challenge_votes[vote] = Math.max(0, row.challenge_votes[vote] + delta);
   writeAll(rows);
   return row;
 }
@@ -169,7 +166,6 @@ export function computeLeaderboard(): LeaderboardEntry[] {
   return [...byPseudo.entries()]
     .map(([pseudo, data]) => ({ pseudo, ...data }))
     .sort(
-      (a, b) =>
-        b.points - a.points || a.pseudo.localeCompare(b.pseudo, "fr")
+      (a, b) => b.points - a.points || a.pseudo.localeCompare(b.pseudo, "fr")
     );
 }

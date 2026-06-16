@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Link2 } from "lucide-react";
@@ -84,36 +79,34 @@ export function QuickNav({
 
   const menu = open ? (
     <div
-      className={`quicknav-menu scrollbar-none flex max-h-[min(70dvh,calc(100dvh-7rem))] flex-col gap-2 overflow-y-auto overscroll-contain ${
+      className={`quicknav-menu flex max-h-[min(70dvh,calc(100dvh-7rem))] scrollbar-none flex-col gap-2 overflow-y-auto overscroll-contain ${
         isRight ? "items-end" : "items-start"
       }`}
     >
       {links.map((link, index) => {
-        const fromAnchor = isBottom
-          ? links.length - 1 - index
-          : index;
+        const fromAnchor = isBottom ? links.length - 1 - index : index;
         const travel = fromAnchor * ROW_STEP + 8;
         const enterY = isBottom ? `${travel}px` : `-${travel}px`;
 
         const Icon = link.icon ?? Link2;
 
         return (
-        <Link
-          key={link.href}
-          href={link.href}
-          aria-label={link.label}
-          onClick={() => setOpen(false)}
-          className={`quicknav-menu-item quicknav-menu-item-open flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap active:scale-[0.98] ${itemSkin(variant)}`}
-          style={
-            {
-              "--orbit-i": fromAnchor,
-              "--enter-y": enterY,
-            } as CSSProperties
-          }
-        >
-          <Icon className="h-5 w-5 shrink-0" aria-hidden />
-          <span>{link.label}</span>
-        </Link>
+          <Link
+            key={link.href}
+            href={link.href}
+            aria-label={link.label}
+            onClick={() => setOpen(false)}
+            className={`quicknav-menu-item quicknav-menu-item-open flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap active:scale-[0.98] ${itemSkin(variant)}`}
+            style={
+              {
+                "--orbit-i": fromAnchor,
+                "--enter-y": enterY,
+              } as CSSProperties
+            }
+          >
+            <Icon className="h-5 w-5 shrink-0" aria-hidden />
+            <span>{link.label}</span>
+          </Link>
         );
       })}
     </div>

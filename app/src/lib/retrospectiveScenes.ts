@@ -26,9 +26,7 @@ export function buildRetrospectiveScenes(
   stats: RetrospectiveStats,
   photos: Photo[]
 ): Scene[] {
-  const scenes: Scene[] = [
-    { type: "intro", durationMs: 8500 },
-  ];
+  const scenes: Scene[] = [{ type: "intro", durationMs: 8500 }];
 
   if (stats.totalReactions > 0) {
     scenes.push({ type: "starReaction", durationMs: 7500 });

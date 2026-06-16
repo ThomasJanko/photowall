@@ -32,7 +32,7 @@ export function TimelineImageLightbox({
       aria-modal="true"
       aria-label="Photo en plein écran"
       onClick={onClose}
-      className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-4 sm:p-8"
+      className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-sm sm:p-8"
     >
       <button
         type="button"
@@ -45,12 +45,12 @@ export function TimelineImageLightbox({
         src={src}
         alt=""
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl ring-2 ring-white/20"
+        className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl ring-2 ring-white/20"
       />
       {caption && (
         <p
           onClick={(e) => e.stopPropagation()}
-          className="mt-4 max-w-lg whitespace-pre-wrap text-center text-sm text-purple-100"
+          className="mt-4 max-w-lg text-center text-sm whitespace-pre-wrap text-purple-100"
         >
           {caption}
         </p>

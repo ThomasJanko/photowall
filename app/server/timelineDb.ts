@@ -43,7 +43,10 @@ function emptyStore(): TimelineStore {
   return { eras: [], entries: [] };
 }
 
-const timelineStore = createJsonStore<TimelineStore>("timeline.json", emptyStore());
+const timelineStore = createJsonStore<TimelineStore>(
+  "timeline.json",
+  emptyStore()
+);
 
 function readStore(): TimelineStore {
   const parsed = timelineStore.read();
@@ -59,7 +62,9 @@ function writeStore(store: TimelineStore) {
 }
 
 export function listTimelineEras(): TimelineEraRow[] {
-  return readStore().eras.slice().sort((a, b) => a.order - b.order);
+  return readStore()
+    .eras.slice()
+    .sort((a, b) => a.order - b.order);
 }
 
 export function getTimelinePageSettings(): TimelinePageSettings {

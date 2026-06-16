@@ -34,11 +34,11 @@ export function ChallengePicker({
         </p>
       </div>
 
-      <div className="scrollbar-none py-2 max-h-[250px] overflow-y-auto overscroll-contain flex flex-wrap gap-2">
+      <div className="flex max-h-[250px] scrollbar-none flex-wrap gap-2 overflow-y-auto overscroll-contain py-2">
         <button
           type="button"
           onClick={() => onSelect(null)}
-          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-left text-xs sm:text-sm font-medium ring-1 transition-colors active:scale-95 ${
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-left text-xs font-medium ring-1 transition-colors active:scale-95 sm:text-sm ${
             selectedId === null
               ? "bg-pink-500/30 text-white ring-pink-300/60"
               : "bg-white/10 text-purple-100 ring-white/20"
@@ -56,7 +56,7 @@ export function ChallengePicker({
               key={c.id}
               type="button"
               onClick={() => onSelect(c.id)}
-              className={`cursor-pointer rounded-full px-3 py-2 text-left text-xs sm:text-sm font-medium ring-1 transition-colors active:scale-95 ${
+              className={`cursor-pointer rounded-full px-3 py-2 text-left text-xs font-medium ring-1 transition-colors active:scale-95 sm:text-sm ${
                 selected
                   ? "bg-pink-500/30 text-white ring-pink-300/60"
                   : done

@@ -1,0 +1,8 @@
+.next
+out
+build
+node_modules
+data
+public/uploads
+package-lock.json
+next-env.d.ts

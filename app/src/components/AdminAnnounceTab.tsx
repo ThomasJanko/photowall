@@ -69,7 +69,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
             key={s.text}
             type="button"
             onClick={() => applySuggestion(s)}
-            className="cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-xs sm:text-sm text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
+            className="cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-xs text-purple-100 ring-1 ring-white/20 transition-transform active:scale-95 sm:text-sm"
           >
             {s.emoji} {s.text}
           </button>
@@ -84,7 +84,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
             onChange={(e) => setText(e.target.value.slice(0, 200))}
             rows={3}
             placeholder="Ex: Le gâteau arrive !"
-            className="w-full resize-none rounded-xl bg-white/10 px-4 py-3 text-white placeholder:text-purple-300 ring-1 ring-white/20"
+            className="w-full resize-none rounded-xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/20 placeholder:text-purple-300"
             required
           />
         </label>
@@ -95,7 +95,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
             value={emoji}
             onChange={(e) => setEmoji(e.target.value.slice(0, 8))}
             placeholder="🎂"
-            className="w-24 rounded-xl bg-white/10 px-4 py-2 text-white text-center ring-1 ring-white/20"
+            className="w-24 rounded-xl bg-white/10 px-4 py-2 text-center text-white ring-1 ring-white/20"
           />
         </label>
 
@@ -115,7 +115,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
                 Math.min(MAX_DURATION_SEC, Math.max(MIN_DURATION_SEC, n))
               );
             }}
-            className="w-24 rounded-xl bg-white/10 px-4 py-2 text-white text-center ring-1 ring-white/20"
+            className="w-24 rounded-xl bg-white/10 px-4 py-2 text-center text-white ring-1 ring-white/20"
           />
         </label>
 
@@ -123,7 +123,7 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
           <button
             type="submit"
             disabled={busy || !text.trim()}
-            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow disabled:opacity-50 active:scale-95 transition-transform"
+            className="cursor-pointer rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-6 py-3 font-bold text-white shadow transition-transform active:scale-95 disabled:opacity-50"
           >
             {busy ? "Envoi…" : "Envoyer l'annonce"}
           </button>

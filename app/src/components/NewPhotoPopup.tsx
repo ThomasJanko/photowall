@@ -25,8 +25,7 @@ export function NewPhotoPopup() {
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spotlightDurationMs = config.spotlightDurationMs;
 
-  const hidden =
-    pathname === "/wall" || pathname.startsWith("/admin");
+  const hidden = pathname === "/wall" || pathname.startsWith("/admin");
 
   function clearDismissTimer() {
     if (dismissTimerRef.current) {
@@ -80,7 +79,7 @@ export function NewPhotoPopup() {
             dismiss();
             router.push("/wall");
           }}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.98] transition-transform"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left transition-transform active:scale-[0.98]"
         >
           <img
             src={resolveUrl(photo.url)}
@@ -89,7 +88,7 @@ export function NewPhotoPopup() {
             height={56}
             className="h-14 w-14 shrink-0 rounded-xl object-cover ring-2 ring-white/30"
           />
-          <span className="text-sm font-semibold leading-tight">
+          <span className="text-sm leading-tight font-semibold">
             📸 Nouvelle photo !
           </span>
         </button>
@@ -97,7 +96,7 @@ export function NewPhotoPopup() {
           type="button"
           onClick={dismiss}
           aria-label="Fermer"
-          className="shrink-0 rounded-full p-1.5 text-white/80 hover:bg-white/10 active:scale-90 transition-transform"
+          className="shrink-0 rounded-full p-1.5 text-white/80 transition-transform hover:bg-white/10 active:scale-90"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>

@@ -21,14 +21,17 @@ export function AnnouncementBanner({
       }`}
     >
       <div
-        className="relative overflow-hidden border-b border-white/25 shadow-2xl backdrop-blur-md rounded-b-2xl sm:rounded-b-xl"
+        className="relative overflow-hidden rounded-b-2xl border-b border-white/25 shadow-2xl backdrop-blur-md sm:rounded-b-xl"
         style={{
           background:
             "linear-gradient(135deg, var(--event-gradient-from), var(--event-gradient-via), var(--event-gradient-to))",
         }}
       >
         {/* Reflet animé */}
-        <span className="announcement-shimmer pointer-events-none absolute inset-0" aria-hidden />
+        <span
+          className="announcement-shimmer pointer-events-none absolute inset-0"
+          aria-hidden
+        />
 
         <div className="announcement-banner-content relative mx-auto flex max-w-4xl flex-col items-center justify-center gap-1.5 px-4 py-3 sm:flex-row sm:gap-3 sm:px-6 sm:py-4">
           {announcement.emoji && (
@@ -39,7 +42,7 @@ export function AnnouncementBanner({
               {announcement.emoji}
             </span>
           )}
-          <p className="announcement-text text-center text-base font-extrabold leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-xl md:text-2xl [text-wrap:balance]">
+          <p className="announcement-text text-center text-base leading-snug font-extrabold tracking-tight [text-wrap:balance] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-xl md:text-2xl">
             {announcement.text}
           </p>
         </div>

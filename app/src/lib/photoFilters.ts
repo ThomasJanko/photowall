@@ -100,11 +100,7 @@ export async function applyPhotoFilterToBlob(
     }
 
     return await new Promise<Blob>((resolve) => {
-      canvas.toBlob(
-        (result) => resolve(result ?? blob),
-        "image/jpeg",
-        quality
-      );
+      canvas.toBlob((result) => resolve(result ?? blob), "image/jpeg", quality);
     });
   } catch {
     return blob;

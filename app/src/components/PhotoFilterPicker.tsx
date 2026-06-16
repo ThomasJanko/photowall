@@ -35,14 +35,14 @@ function FilterThumbnail({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={`Filtre ${label}`}
-      className={`flex shrink-0 flex-col items-center gap-1.5 active:scale-95 transition-transform ${
+      className={`flex shrink-0 flex-col items-center gap-1.5 transition-transform active:scale-95 ${
         selected ? "opacity-100" : "opacity-85"
       }`}
     >
       <span
         className={`relative h-[60px] w-[60px] overflow-hidden rounded-xl ring-2 transition-shadow ${
           selected
-            ? "ring-pink-400 shadow-lg shadow-pink-500/30"
+            ? "shadow-lg shadow-pink-500/30 ring-pink-400"
             : "ring-white/25"
         }`}
       >
@@ -75,11 +75,11 @@ export function PhotoFilterPicker({
   onSelect,
 }: PhotoFilterPickerProps) {
   return (
-    <div className="w-full -mx-1 px-1">
+    <div className="-mx-1 w-full px-1">
       <p className="mb-2 text-center text-xs font-medium text-purple-200/90">
         Filtres
       </p>
-      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x">
+      <div className="flex touch-pan-x snap-x snap-mandatory scrollbar-none gap-3 overflow-x-auto pb-1">
         {PHOTO_FILTERS.map((f) => (
           <div key={f.id} className="snap-start">
             <FilterThumbnail

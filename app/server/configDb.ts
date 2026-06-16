@@ -68,7 +68,10 @@ function validateTheme(theme: Partial<EventTheme>): string | null {
 export function validatePartialConfig(
   partial: Partial<EventConfig>
 ): string | null {
-  if (partial.eventName !== undefined && typeof partial.eventName !== "string") {
+  if (
+    partial.eventName !== undefined &&
+    typeof partial.eventName !== "string"
+  ) {
     return "eventName invalide";
   }
   if (
@@ -108,7 +111,9 @@ export function validatePartialConfig(
     if (
       !Array.isArray(partial.reactionEmojis) ||
       partial.reactionEmojis.length === 0 ||
-      !partial.reactionEmojis.every((e) => typeof e === "string" && e.length > 0)
+      !partial.reactionEmojis.every(
+        (e) => typeof e === "string" && e.length > 0
+      )
     ) {
       return "reactionEmojis doit être un tableau de strings non vide";
     }

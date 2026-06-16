@@ -41,7 +41,8 @@ router.get("/entries", (_req, res) => {
 router.post("/entries", upload.single("photo"), (req, res) => {
   const text = parseTimelineText(req.body?.text);
   const author = parseAuthorPseudo(req.body?.author);
-  if (!text) return res.status(400).json({ error: "Texte requis (2–500 car.)" });
+  if (!text)
+    return res.status(400).json({ error: "Texte requis (2–500 car.)" });
   if (!author) return res.status(400).json({ error: "Pseudo requis" });
 
   const eraId = parseEraId(req.body?.eraId);

@@ -36,7 +36,10 @@ export async function validatePrivateMedia(
   file: File
 ): Promise<ValidatedPrivateMedia> {
   if (file.type.startsWith("image/")) {
-    const blob = await compressImage(file, { maxDimension: 1600, quality: 0.75 });
+    const blob = await compressImage(file, {
+      maxDimension: 1600,
+      quality: 0.75,
+    });
     return {
       type: "image",
       blob,

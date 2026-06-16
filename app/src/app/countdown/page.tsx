@@ -119,7 +119,12 @@ export default function CountdownPage() {
         ]
       : [
           ...(remaining.days > 0
-            ? [{ label: remaining.days > 1 ? "jours" : "jour", value: String(remaining.days) }]
+            ? [
+                {
+                  label: remaining.days > 1 ? "jours" : "jour",
+                  value: String(remaining.days),
+                },
+              ]
             : []),
           ...(remaining.days > 0 || remaining.hours > 0
             ? [{ label: "heures", value: pad2(remaining.hours) }]
@@ -129,24 +134,22 @@ export default function CountdownPage() {
         ];
 
   return (
-    <main className="relative min-h-dvh overflow-hidden event-gradient-bg flex flex-col items-center justify-center p-6">
-      {isOver ? (
-        config.features.confetti && <CelebrationConfetti />
-      ) : (
-        config.features.confetti && <ConfettiBackground />
-      )}
+    <main className="event-gradient-bg relative flex min-h-dvh flex-col items-center justify-center overflow-hidden p-6">
+      {isOver
+        ? config.features.confetti && <CelebrationConfetti />
+        : config.features.confetti && <ConfettiBackground />}
 
       {isOver ? (
         /* ------ Célébration ------ */
         <div className="relative z-10 flex flex-col items-center gap-10 text-center">
-          <h1 className="celebration-pop text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold text-white drop-shadow-[0_4px_24px_rgba(244,114,182,0.6)]">
+          <h1 className="celebration-pop text-5xl font-extrabold text-white drop-shadow-[0_4px_24px_rgba(244,114,182,0.6)] sm:text-7xl md:text-8xl lg:text-9xl">
             {config.celebrationText}
           </h1>
         </div>
       ) : (
         /* ------ Compte à rebours ------ */
-        <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-12 text-center">
-          <p className="text-purple-200 text-lg sm:text-2xl md:text-3xl tracking-widest uppercase">
+        <div className="relative z-10 flex flex-col items-center gap-8 text-center sm:gap-12">
+          <p className="text-lg tracking-widest text-purple-200 uppercase sm:text-2xl md:text-3xl">
             🎂 Le grand moment approche...
           </p>
 
@@ -154,12 +157,12 @@ export default function CountdownPage() {
             {units.map((unit) => (
               <div
                 key={unit.label}
-                className="flex min-w-20 sm:min-w-32 md:min-w-44 flex-col items-center gap-2 rounded-2xl bg-white/10 px-4 py-5 sm:px-7 sm:py-8 ring-1 ring-white/15 backdrop-blur-sm"
+                className="flex min-w-20 flex-col items-center gap-2 rounded-2xl bg-white/10 px-4 py-5 ring-1 ring-white/15 backdrop-blur-sm sm:min-w-32 sm:px-7 sm:py-8 md:min-w-44"
               >
-                <span className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold tabular-nums text-white drop-shadow-lg">
+                <span className="text-5xl font-extrabold text-white tabular-nums drop-shadow-lg sm:text-7xl md:text-8xl lg:text-9xl">
                   {unit.value}
                 </span>
-                <span className="text-xs sm:text-base md:text-lg uppercase tracking-widest text-purple-200">
+                <span className="text-xs tracking-widest text-purple-200 uppercase sm:text-base md:text-lg">
                   {unit.label}
                 </span>
               </div>

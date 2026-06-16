@@ -24,10 +24,7 @@ interface PollModalProps {
   screen: PollScreenId;
 }
 
-function msUntilResultsExpiry(
-  poll: Poll,
-  durationMs: number
-): number | null {
+function msUntilResultsExpiry(poll: Poll, durationMs: number): number | null {
   if (poll.status !== "closed") return null;
   const closedAt = poll.closedAt ?? poll.createdAt;
   return closedAt + durationMs - Date.now();
@@ -41,9 +38,7 @@ export function PollModal({ screen }: PollModalProps) {
   const [open, setOpen] = useState(false);
   const [voted, setVoted] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [resultsCountdown, setResultsCountdown] = useState<number | null>(
-    null
-  );
+  const [resultsCountdown, setResultsCountdown] = useState<number | null>(null);
   const lastPollId = useRef<string | null>(null);
   const expiryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -192,11 +187,7 @@ export function PollModal({ screen }: PollModalProps) {
     }
   }
 
-  const fabLabel = isClosed
-    ? "Résultats"
-    : voted
-      ? "Sondage ✓"
-      : "Sondage";
+  const fabLabel = isClosed ? "Résultats" : voted ? "Sondage ✓" : "Sondage";
 
   return (
     <>
@@ -205,9 +196,9 @@ export function PollModal({ screen }: PollModalProps) {
           type="button"
           onClick={handleOpen}
           aria-label="Ouvrir le sondage"
-          className={`fixed bottom-6 right-4 z-50 inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm font-bold shadow-2xl active:scale-95 transition-transform ${
+          className={`fixed right-4 bottom-6 z-50 inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm font-bold shadow-2xl transition-transform active:scale-95 ${
             isActive && !voted
-              ? "bg-linear-to-r from-pink-500 to-purple-500 text-white animate-pulse"
+              ? "animate-pulse bg-linear-to-r from-pink-500 to-purple-500 text-white"
               : "bg-black/60 text-white ring-1 ring-white/25 backdrop-blur-sm"
           }`}
         >
@@ -230,7 +221,7 @@ export function PollModal({ screen }: PollModalProps) {
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-pink-300">
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-pink-300 uppercase">
                   <BarChart3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   {isClosed
                     ? "Résultats"
@@ -238,7 +229,7 @@ export function PollModal({ screen }: PollModalProps) {
                       ? "Vote enregistré"
                       : "Sondage en cours"}
                 </p>
-                <h2 className="mt-1 text-lg font-bold leading-snug text-white">
+                <h2 className="mt-1 text-lg leading-snug font-bold text-white">
                   {poll.question}
                 </h2>
               </div>
@@ -246,7 +237,7 @@ export function PollModal({ screen }: PollModalProps) {
                 type="button"
                 onClick={handleMinimize}
                 aria-label="Réduire le sondage"
-                className="cursor-pointer shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-sm text-purple-100 ring-1 ring-white/20 active:scale-95 transition-transform"
+                className="shrink-0 cursor-pointer rounded-full bg-white/10 px-3 py-1.5 text-sm text-purple-100 ring-1 ring-white/20 transition-transform active:scale-95"
               >
                 ─
               </button>
@@ -271,7 +262,7 @@ export function PollModal({ screen }: PollModalProps) {
                     type="button"
                     onClick={() => handleVote(opt.id)}
                     disabled={busy}
-                    className="cursor-pointer rounded-xl bg-white/10 px-4 py-3 text-left font-semibold text-white ring-1 ring-white/20 active:scale-[0.98] transition-transform disabled:opacity-50"
+                    className="cursor-pointer rounded-xl bg-white/10 px-4 py-3 text-left font-semibold text-white ring-1 ring-white/20 transition-transform active:scale-[0.98] disabled:opacity-50"
                   >
                     {opt.label}
                   </button>
@@ -288,7 +279,6 @@ export function PollModal({ screen }: PollModalProps) {
                 </span>
               </p>
             )}
-
           </div>
         </div>
       )}

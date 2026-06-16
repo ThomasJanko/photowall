@@ -67,7 +67,7 @@ export function PhotoLightbox({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 md:p-12 ${
+      className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm md:p-12 ${
         animate ? "spotlight-pop-in" : ""
       }`}
     >
@@ -84,17 +84,17 @@ export function PhotoLightbox({
           <img
             src={resolveUrl(photo.url)}
             alt=""
-            className="max-w-full max-h-[82vh] rounded-2xl shadow-2xl ring-4 ring-white/30 object-contain"
+            className="max-h-[82vh] max-w-full rounded-2xl object-contain shadow-2xl ring-4 ring-white/30"
           />
           {features.reactions && (
-            <div className="absolute bottom-2 md:bottom-3 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:gap-2">
+            <div className="absolute bottom-2 left-1/2 flex w-max max-w-[90vw] -translate-x-1/2 flex-wrap justify-center gap-1.5 md:bottom-3 md:gap-2">
               {reactionEmojis.map((emoji) => (
                 <span
                   key={emoji}
-                  className="flex shrink-0 items-center gap-1 md:gap-1.5 rounded-full bg-black/60 px-2 py-1 md:px-3 md:py-1.5 text-white backdrop-blur-sm ring-1 ring-white/20"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-white ring-1 ring-white/20 backdrop-blur-sm md:gap-1.5 md:px-3 md:py-1.5"
                 >
                   <span className="text-base md:text-xl">{emoji}</span>
-                  <span className="text-xs md:text-base tabular-nums">
+                  <span className="text-xs tabular-nums md:text-base">
                     {photo.reactions?.[emoji] ?? 0}
                   </span>
                 </span>

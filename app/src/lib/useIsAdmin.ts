@@ -12,8 +12,7 @@ export function useIsAdmin(): boolean {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const check = () =>
-      setIsAdmin(!!localStorage.getItem(ADMIN_TOKEN_KEY));
+    const check = () => setIsAdmin(!!localStorage.getItem(ADMIN_TOKEN_KEY));
     check();
     window.addEventListener("storage", check);
     window.addEventListener("focus", check);

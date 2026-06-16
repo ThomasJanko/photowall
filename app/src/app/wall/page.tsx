@@ -10,7 +10,10 @@ import { PollModal } from "@/components/PollModal";
 import { ChallengeBadge } from "@/components/ChallengeBadge";
 import { PhotoLightbox, type Floater } from "@/components/PhotoLightbox";
 import { useEventConfig } from "@/components/EventThemeProvider";
-import { fetchActiveChallenges, type PublicChallenge } from "@/lib/challengesApi";
+import {
+  fetchActiveChallenges,
+  type PublicChallenge,
+} from "@/lib/challengesApi";
 import { QuickNav } from "@/components/QuickNav";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { buildNavLinks } from "@/lib/quickNavLinks";
@@ -146,9 +149,8 @@ export default function WallPage() {
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [cooldowns, setCooldowns] = useState<Set<string>>(new Set());
   const [myReactions, setMyReactions] = useState<Set<string>>(loadMyReactions);
-  const [myChallengeVotes, setMyChallengeVotes] = useState<Set<string>>(
-    loadMyChallengeVotes
-  );
+  const [myChallengeVotes, setMyChallengeVotes] =
+    useState<Set<string>>(loadMyChallengeVotes);
   const [connected, setConnected] = useState(true);
   const [announcement, setAnnouncement] = useState<AnnouncementEvent | null>(
     null
@@ -162,8 +164,12 @@ export default function WallPage() {
   const featuresRef = useRef(features);
   const floaterSeq = useRef(0);
   const spotlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const announcementHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announcementHideRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useEffect(() => {
     featuresRef.current = features;
@@ -286,9 +292,7 @@ export default function WallPage() {
     challengeVotes: { success: number; fail: number }
   ) {
     const update = (list: Photo[]) =>
-      list.map((p) =>
-        p.id === photoId ? { ...p, challengeVotes } : p
-      );
+      list.map((p) => (p.id === photoId ? { ...p, challengeVotes } : p));
     setPhotos(update);
     setQueue(update);
   }
@@ -296,17 +300,16 @@ export default function WallPage() {
   function persistMyChallengeVotes(next: Set<string>) {
     setMyChallengeVotes(next);
     try {
-      localStorage.setItem(
-        MY_CHALLENGE_VOTES_KEY,
-        JSON.stringify([...next])
-      );
+      localStorage.setItem(MY_CHALLENGE_VOTES_KEY, JSON.stringify([...next]));
     } catch {
       // Stockage plein/indisponible
     }
   }
 
   useEffect(() => {
-    fetchActiveChallenges().then(setChallenges).catch(() => setChallenges([]));
+    fetchActiveChallenges()
+      .then(setChallenges)
+      .catch(() => setChallenges([]));
   }, []);
 
   useEffect(() => {
@@ -352,11 +355,13 @@ export default function WallPage() {
       setQueue((prev) => prev.filter((p) => p.id !== id));
     });
 
-    const unsubReaction = service.onReaction(({ photoId, emoji, reactions, action }) => {
-      if (!featuresRef.current.reactions) return;
-      applyReactions(photoId, reactions);
-      if (action === "add") spawnFloater(photoId, emoji);
-    });
+    const unsubReaction = service.onReaction(
+      ({ photoId, emoji, reactions, action }) => {
+        if (!featuresRef.current.reactions) return;
+        applyReactions(photoId, reactions);
+        if (action === "add") spawnFloater(photoId, emoji);
+      }
+    );
 
     const unsubChallengeVote = service.onChallengeVote?.(
       ({ photoId, challengeVotes }) => {
@@ -478,10 +483,11 @@ export default function WallPage() {
         };
         if (hadThis) cv[vote] = Math.max(0, cv[vote] - 1);
         else {
-          if (hadOpposite) cv[vote === "success" ? "fail" : "success"] = Math.max(
-            0,
-            cv[vote === "success" ? "fail" : "success"] - 1
-          );
+          if (hadOpposite)
+            cv[vote === "success" ? "fail" : "success"] = Math.max(
+              0,
+              cv[vote === "success" ? "fail" : "success"] - 1
+            );
           cv[vote] += 1;
         }
         return { ...p, challengeVotes: cv };
@@ -531,10 +537,10 @@ export default function WallPage() {
           type="button"
           onClick={() => handleChallengeVote(photo.id, "success")}
           disabled={cooldowns.has(`${photo.id}:success`)}
-          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 transition-transform active:scale-90 disabled:opacity-40 ${
             mineSuccess
-              ? "bg-green-500/40 ring-green-300/60 text-white"
-              : "bg-white/10 ring-white/15 text-purple-100"
+              ? "bg-green-500/40 text-white ring-green-300/60"
+              : "bg-white/10 text-purple-100 ring-white/15"
           }`}
         >
           ✅ {success}
@@ -543,10 +549,10 @@ export default function WallPage() {
           type="button"
           onClick={() => handleChallengeVote(photo.id, "fail")}
           disabled={cooldowns.has(`${photo.id}:fail`)}
-          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
+          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs ring-1 transition-transform active:scale-90 disabled:opacity-40 ${
             mineFail
-              ? "bg-red-500/40 ring-red-300/60 text-white"
-              : "bg-white/10 ring-white/15 text-purple-100"
+              ? "bg-red-500/40 text-white ring-red-300/60"
+              : "bg-white/10 text-purple-100 ring-white/15"
           }`}
         >
           ❌ {fail}
@@ -556,7 +562,7 @@ export default function WallPage() {
   }
 
   return (
-    <main className="event-gradient-bg min-h-screen transition-all duration-2000 ease-in-out p-4 overflow-hidden">
+    <main className="event-gradient-bg min-h-screen overflow-hidden p-4 transition-all duration-2000 ease-in-out">
       {features.confetti && <ConfettiBackground accent={accent} />}
 
       {announcement && (
@@ -578,12 +584,12 @@ export default function WallPage() {
       )}
 
       <div className="relative z-10">
-        <h1 className="text-center text-white text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">
+        <h1 className="mb-6 text-center text-3xl font-bold text-white drop-shadow-lg md:text-5xl">
           {eventName}
         </h1>
 
         {photos.length === 0 && !spotlight ? (
-          <p className="text-center text-purple-200 text-xl mt-20">
+          <p className="mt-20 text-center text-xl text-purple-200">
             {welcomeMessage}
           </p>
         ) : (
@@ -594,72 +600,81 @@ export default function WallPage() {
                 {MAX_RENDERED_PHOTOS} plus récentes affichées
               </p>
             )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {displayedPhotos.map((photo) => {
-              const challengeInfo = photo.challengeId
-                ? resolveChallengeLabel(photo.challengeId)
-                : null;
-              return (
-              <div key={photo.id} className="photo-pop-in flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setViewerPhotoId(photo.id)}
-                  className="relative aspect-square rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/20 text-left active:scale-[0.98] transition-transform"
-                >
-                  <img
-                    src={resolveUrl(photo.url)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover pointer-events-none"
-                  />
-                  {challengeInfo && (
-                    <ChallengeBadge
-                      label={challengeInfo.label}
-                      emoji={challengeInfo.emoji}
-                    />
-                  )}
-                  {features.reactions && (
-                    <FloatersOverlay
-                      floaters={floaters.filter((f) => f.photoId === photo.id)}
-                    />
-                  )}
-                </button>
-                {features.reactions && (
-                  <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
-                    {reactionEmojis.map((emoji) => {
-                      const mine = myReactions.has(`${photo.id}:${emoji}`);
-                      return (
-                        <button
-                          key={emoji}
-                          onClick={() => handleReact(photo.id, emoji)}
-                          disabled={cooldowns.has(`${photo.id}:${emoji}`)}
-                          title={mine ? "Retirer ma réaction" : "Réagir"}
-                          className={`flex shrink-0 items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 ring-1 active:scale-90 transition-transform disabled:opacity-40 ${
-                            mine
-                              ? "bg-pink-500/40 ring-pink-300/60"
-                              : "bg-white/10 ring-white/15"
-                          }`}
-                        >
-                          <span className="text-xs sm:text-sm">{emoji}</span>
-                          <span
-                            className={`text-[10px] sm:text-xs tabular-nums ${
-                              mine
-                                ? "text-white font-semibold"
-                                : "text-purple-200"
-                            }`}
-                          >
-                            {photo.reactions?.[emoji] ?? 0}
-                          </span>
-                        </button>
-                      );
-                    })}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {displayedPhotos.map((photo) => {
+                const challengeInfo = photo.challengeId
+                  ? resolveChallengeLabel(photo.challengeId)
+                  : null;
+                return (
+                  <div
+                    key={photo.id}
+                    className="photo-pop-in flex flex-col gap-1.5"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setViewerPhotoId(photo.id)}
+                      className="relative aspect-square overflow-hidden rounded-xl text-left shadow-2xl ring-2 ring-white/20 transition-transform active:scale-[0.98]"
+                    >
+                      <img
+                        src={resolveUrl(photo.url)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="pointer-events-none h-full w-full object-cover"
+                      />
+                      {challengeInfo && (
+                        <ChallengeBadge
+                          label={challengeInfo.label}
+                          emoji={challengeInfo.emoji}
+                        />
+                      )}
+                      {features.reactions && (
+                        <FloatersOverlay
+                          floaters={floaters.filter(
+                            (f) => f.photoId === photo.id
+                          )}
+                        />
+                      )}
+                    </button>
+                    {features.reactions && (
+                      <div className="flex flex-wrap justify-center gap-x-1 gap-y-1">
+                        {reactionEmojis.map((emoji) => {
+                          const mine = myReactions.has(`${photo.id}:${emoji}`);
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={() => handleReact(photo.id, emoji)}
+                              disabled={cooldowns.has(`${photo.id}:${emoji}`)}
+                              title={mine ? "Retirer ma réaction" : "Réagir"}
+                              className={`flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 ring-1 transition-transform active:scale-90 disabled:opacity-40 sm:gap-1 sm:px-2 sm:py-1 ${
+                                mine
+                                  ? "bg-pink-500/40 ring-pink-300/60"
+                                  : "bg-white/10 ring-white/15"
+                              }`}
+                            >
+                              <span className="text-xs sm:text-sm">
+                                {emoji}
+                              </span>
+                              <span
+                                className={`text-[10px] tabular-nums sm:text-xs ${
+                                  mine
+                                    ? "font-semibold text-white"
+                                    : "text-purple-200"
+                                }`}
+                              >
+                                {photo.reactions?.[emoji] ?? 0}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {photo.challengeId && (
+                      <ChallengeVoteButtons photo={photo} />
+                    )}
                   </div>
-                )}
-                {photo.challengeId && <ChallengeVoteButtons photo={photo} />}
-              </div>
-            );
-            })}
+                );
+              })}
             </div>
           </>
         )}
@@ -667,7 +682,7 @@ export default function WallPage() {
 
       <Link
         href="/"
-        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-white/90 text-purple-900 font-semibold px-6 py-3 shadow-2xl active:scale-95 transition-transform"
+        className="fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-white/90 px-6 py-3 font-semibold text-purple-900 shadow-2xl transition-transform active:scale-95"
       >
         <Camera className="h-4 w-4 shrink-0" aria-hidden />
         Prendre une photo

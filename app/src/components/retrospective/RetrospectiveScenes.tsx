@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Photo } from "@/lib/types";
 import type { RetrospectiveStats } from "@/lib/retrospectiveStats";
-import {
-  formatPhotoTime,
-  photoReactionTotal,
-} from "@/lib/retrospectiveStats";
+import { formatPhotoTime, photoReactionTotal } from "@/lib/retrospectiveStats";
 import { CountUp } from "./CountUp";
 import { SLIDESHOW_INTERVAL_MS } from "@/lib/retrospectiveScenes";
 
@@ -41,28 +38,28 @@ interface SceneProps {
 export function IntroScene({ stats, eventTitle }: SceneProps) {
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-6 text-center">
-      <p className="text-2xl sm:text-4xl md:text-5xl font-bold text-pink-300 retrospective-glow-text">
+      <p className="retrospective-glow-text text-2xl font-bold text-pink-300 sm:text-4xl md:text-5xl">
         ✨ Rétrospective ✨
       </p>
-      <h1 className="text-4xl sm:text-6xl md:text-8xl font-extrabold text-white drop-shadow-2xl max-w-5xl leading-tight">
+      <h1 className="max-w-5xl text-4xl leading-tight font-extrabold text-white drop-shadow-2xl sm:text-6xl md:text-8xl">
         {eventTitle || "La soirée"}
       </h1>
       <div className="mt-4 flex flex-wrap justify-center gap-10 sm:gap-16">
         <div className="flex flex-col items-center">
           <CountUp
             target={stats.totalPhotos}
-            className="text-6xl sm:text-8xl md:text-9xl font-black text-white"
+            className="text-6xl font-black text-white sm:text-8xl md:text-9xl"
           />
-          <span className="mt-2 text-lg sm:text-2xl text-purple-200">
+          <span className="mt-2 text-lg text-purple-200 sm:text-2xl">
             photo{stats.totalPhotos !== 1 ? "s" : ""}
           </span>
         </div>
         <div className="flex flex-col items-center">
           <CountUp
             target={stats.totalReactions}
-            className="text-6xl sm:text-8xl md:text-9xl font-black text-amber-300"
+            className="text-6xl font-black text-amber-300 sm:text-8xl md:text-9xl"
           />
-          <span className="mt-2 text-lg sm:text-2xl text-purple-200">
+          <span className="mt-2 text-lg text-purple-200 sm:text-2xl">
             réaction{stats.totalReactions !== 1 ? "s" : ""}
           </span>
         </div>
@@ -73,8 +70,11 @@ export function IntroScene({ stats, eventTitle }: SceneProps) {
 
 export function StarReactionScene({ stats }: SceneProps) {
   return (
-    <div className="retrospective-scene-enter relative flex flex-col items-center justify-center gap-6 px-6 text-center overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="retrospective-scene-enter relative flex flex-col items-center justify-center gap-6 overflow-hidden px-6 text-center">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
         {EMOJI_RAIN_PIECES.map((p, i) => (
           <span
             key={i}
@@ -91,19 +91,19 @@ export function StarReactionScene({ stats }: SceneProps) {
           </span>
         ))}
       </div>
-      <p className="relative z-10 text-xl sm:text-3xl font-semibold text-purple-200">
+      <p className="relative z-10 text-xl font-semibold text-purple-200 sm:text-3xl">
         Réaction star de la soirée
       </p>
       <span
-        className="relative z-10 retrospective-star-emoji"
+        className="retrospective-star-emoji relative z-10"
         role="img"
         aria-label={stats.starEmoji}
       >
         {stats.starEmoji}
       </span>
-      <p className="relative z-10 text-4xl sm:text-6xl font-black text-white tabular-nums">
+      <p className="relative z-10 text-4xl font-black text-white tabular-nums sm:text-6xl">
         <CountUp target={stats.starEmojiCount} durationMs={1500} />
-        <span className="ml-3 text-2xl sm:text-4xl font-bold text-purple-200">
+        <span className="ml-3 text-2xl font-bold text-purple-200 sm:text-4xl">
           fois
         </span>
       </p>
@@ -121,27 +121,40 @@ function PodiumSlot({
   size: "lg" | "md" | "sm";
 }) {
   const medals = { 1: "🥇", 2: "🥈", 3: "🥉" } as const;
-  const heights = { lg: "h-48 sm:h-64 md:h-72", md: "h-36 sm:h-48", sm: "h-36 sm:h-48" };
-  const widths = { lg: "w-44 sm:w-56 md:w-64", md: "w-32 sm:w-40", sm: "w-32 sm:w-40" };
+  const heights = {
+    lg: "h-48 sm:h-64 md:h-72",
+    md: "h-36 sm:h-48",
+    sm: "h-36 sm:h-48",
+  };
+  const widths = {
+    lg: "w-44 sm:w-56 md:w-64",
+    md: "w-32 sm:w-40",
+    sm: "w-32 sm:w-40",
+  };
 
   if (!photo) {
     return (
-      <div className={`flex flex-col items-center opacity-0 ${widths[size]}`} aria-hidden />
+      <div
+        className={`flex flex-col items-center opacity-0 ${widths[size]}`}
+        aria-hidden
+      />
     );
   }
 
   return (
     <div
       className={`podium-reveal flex flex-col items-center gap-3 ${widths[size]}`}
-      style={{ animationDelay: rank === 1 ? "0.2s" : rank === 2 ? "0.45s" : "0.6s" }}
+      style={{
+        animationDelay: rank === 1 ? "0.2s" : rank === 2 ? "0.45s" : "0.6s",
+      }}
     >
       <span className="text-3xl sm:text-5xl">{medals[rank]}</span>
       <div
-        className={`podium-reveal-flash relative overflow-hidden rounded-2xl ring-4 ring-white/30 shadow-2xl ${heights[size]} w-full`}
+        className={`podium-reveal-flash relative overflow-hidden rounded-2xl shadow-2xl ring-4 ring-white/30 ${heights[size]} w-full`}
       >
         <img src={photo.url} alt="" className="h-full w-full object-cover" />
       </div>
-      <p className="text-lg sm:text-2xl font-bold text-amber-300 tabular-nums">
+      <p className="text-lg font-bold text-amber-300 tabular-nums sm:text-2xl">
         {photoReactionTotal(photo)} réactions
       </p>
     </div>
@@ -155,9 +168,15 @@ export function Top3Scene({ stats }: SceneProps) {
   if (!showPodium && first) {
     return (
       <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6">
-        <p className="text-2xl sm:text-4xl font-bold text-white">Photo la plus aimée</p>
-        <div className="podium-reveal-flash max-h-[60vh] max-w-2xl overflow-hidden rounded-3xl ring-4 ring-amber-400/60 shadow-2xl">
-          <img src={first.url} alt="" className="max-h-[60vh] w-full object-contain" />
+        <p className="text-2xl font-bold text-white sm:text-4xl">
+          Photo la plus aimée
+        </p>
+        <div className="podium-reveal-flash max-h-[60vh] max-w-2xl overflow-hidden rounded-3xl shadow-2xl ring-4 ring-amber-400/60">
+          <img
+            src={first.url}
+            alt=""
+            className="max-h-[60vh] w-full object-contain"
+          />
         </div>
         <p className="text-3xl font-black text-amber-300">
           {photoReactionTotal(first)} réactions
@@ -168,10 +187,10 @@ export function Top3Scene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-4">
-      <p className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white text-center">
+      <p className="text-center text-2xl font-extrabold text-white sm:text-4xl md:text-5xl">
         🏆 Top {Math.min(3, stats.top3Photos.length)} photos
       </p>
-      <div className="flex items-end justify-center gap-3 sm:gap-6 md:gap-10 w-full max-w-5xl">
+      <div className="flex w-full max-w-5xl items-end justify-center gap-3 sm:gap-6 md:gap-10">
         <PodiumSlot photo={second} rank={2} size="sm" />
         <PodiumSlot photo={first} rank={1} size="lg" />
         <PodiumSlot photo={third} rank={3} size="sm" />
@@ -188,17 +207,19 @@ export function FirstLastScene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-6">
-      <p className="text-2xl sm:text-4xl font-bold text-white text-center">
+      <p className="text-center text-2xl font-bold text-white sm:text-4xl">
         {same ? "La photo de la soirée" : "Première & dernière photo"}
       </p>
-      <div className={`flex flex-wrap justify-center gap-8 ${same ? "" : "max-w-6xl"}`}>
+      <div
+        className={`flex flex-wrap justify-center gap-8 ${same ? "" : "max-w-6xl"}`}
+      >
         <div className="flex flex-col items-center gap-3">
           {!same && (
-            <span className="text-lg sm:text-2xl text-pink-300 font-semibold">
+            <span className="text-lg font-semibold text-pink-300 sm:text-2xl">
               🌅 Première · {formatPhotoTime(firstPhoto.createdAt)}
             </span>
           )}
-          <div className="overflow-hidden rounded-2xl ring-2 ring-white/25 shadow-xl max-h-[45vh]">
+          <div className="max-h-[45vh] overflow-hidden rounded-2xl shadow-xl ring-2 ring-white/25">
             <img
               src={firstPhoto.url}
               alt=""
@@ -208,10 +229,10 @@ export function FirstLastScene({ stats }: SceneProps) {
         </div>
         {!same && lastPhoto && (
           <div className="flex flex-col items-center gap-3">
-            <span className="text-lg sm:text-2xl text-purple-300 font-semibold">
+            <span className="text-lg font-semibold text-purple-300 sm:text-2xl">
               🌙 Dernière · {formatPhotoTime(lastPhoto.createdAt)}
             </span>
-            <div className="overflow-hidden rounded-2xl ring-2 ring-white/25 shadow-xl max-h-[45vh]">
+            <div className="max-h-[45vh] overflow-hidden rounded-2xl shadow-xl ring-2 ring-white/25">
               <img
                 src={lastPhoto.url}
                 alt=""
@@ -229,24 +250,27 @@ export function RhythmScene({ stats }: SceneProps) {
   const max = Math.max(...stats.hourlyBuckets.map((b) => b.count), 1);
 
   return (
-    <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-10 px-6 w-full max-w-4xl mx-auto">
-      <p className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white text-center">
+    <div className="retrospective-scene-enter mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-10 px-6">
+      <p className="text-center text-2xl font-extrabold text-white sm:text-4xl md:text-5xl">
         📈 Le rythme de la soirée
       </p>
-      <div className="flex items-end justify-center gap-2 sm:gap-4 w-full h-48 sm:h-64">
+      <div className="flex h-48 w-full items-end justify-center gap-2 sm:h-64 sm:gap-4">
         {stats.hourlyBuckets.map((bucket) => (
           <div
             key={bucket.label}
-            className="flex flex-1 flex-col items-center gap-2 min-w-0"
+            className="flex min-w-0 flex-1 flex-col items-center gap-2"
           >
-            <span className="text-sm sm:text-lg font-bold text-amber-300 tabular-nums">
+            <span className="text-sm font-bold text-amber-300 tabular-nums sm:text-lg">
               {bucket.count}
             </span>
             <div
               className="retrospective-bar-grow w-full max-w-16 rounded-t-lg bg-linear-to-t from-pink-600 to-purple-400 ring-1 ring-white/20"
-              style={{ height: `${(bucket.count / max) * 100}%`, minHeight: "8%" }}
+              style={{
+                height: `${(bucket.count / max) * 100}%`,
+                minHeight: "8%",
+              }}
             />
-            <span className="text-xs sm:text-sm text-purple-300 truncate w-full text-center">
+            <span className="w-full truncate text-center text-xs text-purple-300 sm:text-sm">
               {bucket.label}
             </span>
           </div>
@@ -262,16 +286,16 @@ export function ChallengeMostAttemptedScene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="text-2xl sm:text-4xl font-bold text-white">
+      <p className="text-2xl font-bold text-white sm:text-4xl">
         🎯 Défi le plus relevé
       </p>
       <p className="text-4xl sm:text-6xl">{item.emoji ?? "🎯"}</p>
-      <p className="text-xl sm:text-3xl font-semibold text-pink-200 max-w-2xl">
+      <p className="max-w-2xl text-xl font-semibold text-pink-200 sm:text-3xl">
         {item.label}
       </p>
-      <p className="text-5xl sm:text-7xl font-black text-amber-300 tabular-nums">
+      <p className="text-5xl font-black text-amber-300 tabular-nums sm:text-7xl">
         <CountUp target={item.count} durationMs={1200} />
-        <span className="ml-2 text-2xl sm:text-3xl text-purple-200">
+        <span className="ml-2 text-2xl text-purple-200 sm:text-3xl">
           photo{item.count !== 1 ? "s" : ""}
         </span>
       </p>
@@ -285,21 +309,21 @@ export function ChallengeMostSuccessfulScene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6">
-      <p className="text-2xl sm:text-4xl font-bold text-white text-center">
+      <p className="text-center text-2xl font-bold text-white sm:text-4xl">
         🏆 Défi le plus réussi
       </p>
-      <p className="text-sm sm:text-lg text-purple-200 text-center">
+      <p className="text-center text-sm text-purple-200 sm:text-lg">
         {item.emoji && <span className="mr-1">{item.emoji}</span>}
         {item.label}
       </p>
-      <div className="podium-reveal-flash max-h-[50vh] max-w-xl overflow-hidden rounded-3xl ring-4 ring-green-400/50 shadow-2xl">
+      <div className="podium-reveal-flash max-h-[50vh] max-w-xl overflow-hidden rounded-3xl shadow-2xl ring-4 ring-green-400/50">
         <img
           src={item.photo.url}
           alt=""
           className="max-h-[50vh] w-full object-contain"
         />
       </div>
-      <p className="text-2xl sm:text-4xl font-black text-green-300">
+      <p className="text-2xl font-black text-green-300 sm:text-4xl">
         ✅ {item.success} · ❌ {item.fail}
       </p>
     </div>
@@ -312,20 +336,20 @@ export function ChallengeMostFailedScene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-6 px-6">
-      <p className="text-2xl sm:text-4xl font-bold text-white text-center">
+      <p className="text-center text-2xl font-bold text-white sm:text-4xl">
         😅 Défi le plus raté
       </p>
-      <p className="text-sm sm:text-lg text-purple-200 text-center max-w-lg">
+      <p className="max-w-lg text-center text-sm text-purple-200 sm:text-lg">
         On rigole bien — bravo pour le courage !
       </p>
-      <div className="max-h-[45vh] max-w-md overflow-hidden rounded-3xl ring-4 ring-orange-400/40 shadow-2xl">
+      <div className="max-h-[45vh] max-w-md overflow-hidden rounded-3xl shadow-2xl ring-4 ring-orange-400/40">
         <img
           src={item.photo.url}
           alt=""
           className="max-h-[45vh] w-full object-contain"
         />
       </div>
-      <p className="text-xl sm:text-2xl text-orange-200">
+      <p className="text-xl text-orange-200 sm:text-2xl">
         {item.emoji && <span className="mr-1">{item.emoji}</span>}
         {item.label}
       </p>
@@ -362,12 +386,12 @@ function AwardsPodiumSlot({
     >
       <span className="text-4xl sm:text-5xl">{medals[rank]}</span>
       <div
-        className={`flex w-full flex-col items-center justify-end rounded-t-2xl bg-linear-to-t from-amber-600/90 to-yellow-400/70 ring-2 ring-white/30 shadow-2xl ${heights[size]} px-2 pb-3`}
+        className={`flex w-full flex-col items-center justify-end rounded-t-2xl bg-linear-to-t from-amber-600/90 to-yellow-400/70 shadow-2xl ring-2 ring-white/30 ${heights[size]} px-2 pb-3`}
       >
-        <p className="truncate w-full text-center text-sm sm:text-base font-bold text-white">
+        <p className="w-full truncate text-center text-sm font-bold text-white sm:text-base">
           {entry.pseudo}
         </p>
-        <p className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+        <p className="text-2xl font-black text-white tabular-nums sm:text-3xl">
           {entry.points}
         </p>
       </div>
@@ -384,7 +408,7 @@ export function ChallengeLeaderboardScene({ stats }: SceneProps) {
   if (top.length === 1 && first) {
     return (
       <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-6">
-        <p className="text-2xl sm:text-5xl font-extrabold text-white text-center">
+        <p className="text-center text-2xl font-extrabold text-white sm:text-5xl">
           🏅 Champion des défis
         </p>
         <AwardsPodiumSlot entry={first} rank={1} size="lg" />
@@ -394,10 +418,10 @@ export function ChallengeLeaderboardScene({ stats }: SceneProps) {
 
   return (
     <div className="retrospective-scene-enter flex flex-col items-center justify-center gap-8 px-4">
-      <p className="text-2xl sm:text-5xl font-extrabold text-white text-center retrospective-glow-text">
+      <p className="retrospective-glow-text text-center text-2xl font-extrabold text-white sm:text-5xl">
         🏅 Podium des joueurs
       </p>
-      <div className="flex items-end justify-center gap-4 sm:gap-8 w-full max-w-3xl">
+      <div className="flex w-full max-w-3xl items-end justify-center gap-4 sm:gap-8">
         <AwardsPodiumSlot entry={second} rank={2} size="sm" />
         <AwardsPodiumSlot entry={first} rank={1} size="lg" />
         <AwardsPodiumSlot entry={third} rank={3} size="sm" />
@@ -433,7 +457,7 @@ export function SlideshowScene({ photos, paused }: SceneProps) {
   if (!current) return null;
 
   return (
-    <div className="absolute inset-0 event-gradient-bg">
+    <div className="event-gradient-bg absolute inset-0">
       {slotA && (
         <img
           src={slotA.url}
@@ -452,7 +476,7 @@ export function SlideshowScene({ photos, paused }: SceneProps) {
           }`}
         />
       )}
-      <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xl sm:text-2xl text-white/60 font-semibold">
+      <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xl font-semibold text-white/60 sm:text-2xl">
         Nos souvenirs 📸
       </p>
     </div>
@@ -461,8 +485,11 @@ export function SlideshowScene({ photos, paused }: SceneProps) {
 
 export function ClosingScene({ closingMessage }: SceneProps) {
   return (
-    <div className="retrospective-scene-enter relative flex flex-col items-center justify-center gap-8 px-6 text-center overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="retrospective-scene-enter relative flex flex-col items-center justify-center gap-8 overflow-hidden px-6 text-center">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
         {CLOSING_BURST_PIECES.map((p, i) => (
           <span
             key={i}
@@ -480,10 +507,10 @@ export function ClosingScene({ closingMessage }: SceneProps) {
           />
         ))}
       </div>
-      <p className="relative z-10 text-4xl sm:text-6xl md:text-8xl font-extrabold text-white closing-message-pop max-w-5xl leading-tight drop-shadow-2xl">
+      <p className="closing-message-pop relative z-10 max-w-5xl text-4xl leading-tight font-extrabold text-white drop-shadow-2xl sm:text-6xl md:text-8xl">
         {closingMessage}
       </p>
-      <p className="relative z-10 text-2xl sm:text-4xl animate-pulse">🎉✨🎂</p>
+      <p className="relative z-10 animate-pulse text-2xl sm:text-4xl">🎉✨🎂</p>
     </div>
   );
 }

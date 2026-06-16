@@ -19,7 +19,9 @@ export function parseTimelineText(raw: unknown): string | null {
   return trimmed.length >= 2 ? trimmed : null;
 }
 
-export function filenameFromUploadUrl(url: string | undefined): string | undefined {
+export function filenameFromUploadUrl(
+  url: string | undefined
+): string | undefined {
   if (!url) return undefined;
   const match = url.match(/\/uploads\/([^/?#]+)$/);
   return match?.[1];

@@ -27,11 +27,7 @@ export function UploadStatusBanner({
   if (!showSending && !showQueue && !successVisible) return null;
 
   return (
-    <div
-      className="w-full space-y-2"
-      role="status"
-      aria-live="polite"
-    >
+    <div className="w-full space-y-2" role="status" aria-live="polite">
       {showSending && (
         <p className="rounded-2xl bg-white/10 px-4 py-3 text-center text-sm font-medium text-purple-100 ring-1 ring-white/20 backdrop-blur-sm">
           <span className="inline-flex items-center justify-center gap-2">
@@ -45,8 +41,8 @@ export function UploadStatusBanner({
         <p className="rounded-2xl bg-white/10 px-4 py-3 text-center text-sm font-medium text-purple-200 ring-1 ring-pink-400/25 backdrop-blur-sm">
           <span className="inline-flex items-center justify-center gap-2">
             <RefreshCw className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-            En attente d&apos;envoi (réseau faible) —{" "}
-            {queueCount} photo{queueCount !== 1 ? "s" : ""} en attente
+            En attente d&apos;envoi (réseau faible) — {queueCount} photo
+            {queueCount !== 1 ? "s" : ""} en attente
           </span>
         </p>
       )}

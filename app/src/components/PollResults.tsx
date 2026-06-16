@@ -16,7 +16,7 @@ export function PollResults({ poll }: PollResultsProps) {
           <div key={opt.id}>
             <div className="mb-1 flex justify-between gap-2 text-sm">
               <span className="text-white/90">{opt.label}</span>
-              <span className="shrink-0 tabular-nums text-purple-200">
+              <span className="shrink-0 text-purple-200 tabular-nums">
                 {pct}% ({opt.votes})
               </span>
             </div>

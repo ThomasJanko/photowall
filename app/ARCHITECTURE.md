@@ -78,28 +78,28 @@ document.documentElement.style.setProperty("--event-gradient-from", "#…");
 
 ## Feature flags (défaut = tout activé sauf mention)
 
-| Flag | Usage actuel |
-|------|----------------|
-| `reactions` | Boutons emoji sur `/wall` |
-| `confetti` | ConfettiBackground sur `/`, `/wall`, `/countdown` |
-| `spotlight` | Plein écran 10s pour nouvelles photos |
-| `countdown` | Type prévu ; page `/countdown` existe |
-| `retrospective` | Type prévu ; page `/retrospective` existe |
-| `privateMessages` | Lien `/message` + onglet admin |
-| `qrPage` | Type prévu ; page `/qr` existe |
-| `timeBasedTheme` | Palette horaire sur le mur |
-| `adminBulkActions` | Sélection / export ZIP / suppression masse |
+| Flag               | Usage actuel                                      |
+| ------------------ | ------------------------------------------------- |
+| `reactions`        | Boutons emoji sur `/wall`                         |
+| `confetti`         | ConfettiBackground sur `/`, `/wall`, `/countdown` |
+| `spotlight`        | Plein écran 10s pour nouvelles photos             |
+| `countdown`        | Type prévu ; page `/countdown` existe             |
+| `retrospective`    | Type prévu ; page `/retrospective` existe         |
+| `privateMessages`  | Lien `/message` + onglet admin                    |
+| `qrPage`           | Type prévu ; page `/qr` existe                    |
+| `timeBasedTheme`   | Palette horaire sur le mur                        |
+| `adminBulkActions` | Sélection / export ZIP / suppression masse        |
 
 ## Fichiers sensibles — ne pas casser
 
-| Fichier | Pourquoi |
-|---------|----------|
-| `src/app/globals.css` | Keyframes existants : `photo-pop-in`, `spotlight-pop-in`, `reaction-float`, `confetti-fall`, `celebration-pop`, `celebration-pulse`, `pulse-soft` — **ne pas modifier**, seulement ajouter |
-| `server/db.ts` | `REACTION_EMOJIS` importé depuis `src/config/event.ts` ; migration `reactions` sur anciennes lignes JSON |
-| `data/event-config.json` | Config événement (surcharge `src/config/event.ts`) via `GET/PUT /api/config` |
-| `NEXT_PUBLIC_SERVER_URL` | URL du laptop Express ; les téléphones doivent joindre cette IP en soirée (pas `localhost`) |
-| `data/photos.json` + `data/uploads/` | Mur public uniquement |
-| `data/private-messages.json` + `data/private-uploads/` | Jamais exposés via `/uploads` ni `GET /api/photos` |
+| Fichier                                                | Pourquoi                                                                                                                                                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/app/globals.css`                                  | Keyframes existants : `photo-pop-in`, `spotlight-pop-in`, `reaction-float`, `confetti-fall`, `celebration-pop`, `celebration-pulse`, `pulse-soft` — **ne pas modifier**, seulement ajouter |
+| `server/db.ts`                                         | `REACTION_EMOJIS` importé depuis `src/config/event.ts` ; migration `reactions` sur anciennes lignes JSON                                                                                   |
+| `data/event-config.json`                               | Config événement (surcharge `src/config/event.ts`) via `GET/PUT /api/config`                                                                                                               |
+| `NEXT_PUBLIC_SERVER_URL`                               | URL du laptop Express ; les téléphones doivent joindre cette IP en soirée (pas `localhost`)                                                                                                |
+| `data/photos.json` + `data/uploads/`                   | Mur public uniquement                                                                                                                                                                      |
+| `data/private-messages.json` + `data/private-uploads/` | Jamais exposés via `/uploads` ni `GET /api/photos`                                                                                                                                         |
 
 ## Backend
 

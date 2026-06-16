@@ -48,8 +48,7 @@ router.put("/:id", requireAdmin, (req, res) => {
     patch.label = req.body.label;
   }
   if (req.body?.emoji !== undefined) {
-    patch.emoji =
-      typeof req.body.emoji === "string" ? req.body.emoji : "";
+    patch.emoji = typeof req.body.emoji === "string" ? req.body.emoji : "";
   }
   if (req.body?.active !== undefined) {
     patch.active = req.body.active === true;
