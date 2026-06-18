@@ -27,6 +27,8 @@ export interface FeatureFlags {
   leaderboard: boolean;
   /** Frise chronologique interactive (/timeline). */
   timeline: boolean;
+  /** Planning de la soirée (/planning). */
+  planning: boolean;
 }
 
 /** Écrans où la modal sondage peut apparaître. */
@@ -100,6 +102,7 @@ export const eventConfig: EventConfig = {
     livePolls: true,
     leaderboard: true,
     timeline: false,
+    planning: true,
   },
   pollScreens: {
     home: true,

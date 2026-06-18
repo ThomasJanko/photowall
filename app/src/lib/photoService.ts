@@ -8,6 +8,8 @@ import type {
   TimelineEntry,
   TimelinePageSettings,
   AddTimelineEntryInput,
+  PlanningEvent,
+  PlanningEventInput,
 } from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
@@ -72,6 +74,17 @@ export interface PhotoService {
   listPendingTimelineEntries(): Promise<TimelineEntry[]>;
   approveTimelineEntry(id: string): Promise<TimelineEntry>;
   onPendingTimelineEntry(callback: (entry: TimelineEntry) => void): () => void;
+
+  // ─── Planning ───────────────────────────────────────────────────────────────
+  listPlanningEvents(): Promise<PlanningEvent[]>;
+  createPlanningEvent(data: PlanningEventInput, photo?: File): Promise<PlanningEvent>;
+  updatePlanningEvent(id: string, data: Partial<PlanningEventInput>, photo?: File): Promise<PlanningEvent>;
+  deletePlanningEvent(id: string): Promise<void>;
+  reorderPlanningEvents(events: PlanningEvent[]): Promise<PlanningEvent[]>;
+  onPlanningNew(callback: (event: PlanningEvent) => void): () => void;
+  onPlanningUpdated(callback: (event: PlanningEvent) => void): () => void;
+  onPlanningRemoved(callback: (payload: { id: string }) => void): () => void;
+  onPlanningList(callback: (events: PlanningEvent[]) => void): () => void;
 }
 
 let instance: PhotoService | null = null;

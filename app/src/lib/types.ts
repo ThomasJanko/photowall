@@ -88,3 +88,39 @@ export interface AddTimelineEntryInput {
   eraId?: string | null;
   photo?: Blob;
 }
+
+// ─── Planning ────────────────────────────────────────────────────────────────
+
+/**
+ * Événement du planning soirée, géré par l'admin et visible par les invités
+ * sur /planning.
+ */
+export interface PlanningEvent {
+  id: string;
+  title: string;
+  /** ISO date string "YYYY-MM-DD" */
+  date: string;
+  /** "HH:MM" */
+  time: string;
+  /** Durée indicative (ex: "30 min", "1h") — optionnel */
+  duration?: string;
+  description?: string;
+  emoji?: string;
+  color?: string;
+  location?: string;
+  photoUrl?: string;
+  order: number;
+  createdAt: number;
+}
+
+export interface PlanningEventInput {
+  title: string;
+  date: string;
+  time: string;
+  duration?: string;
+  description?: string;
+  emoji?: string;
+  color?: string;
+  location?: string;
+  photoUrl?: string;
+}

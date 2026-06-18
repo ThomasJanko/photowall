@@ -14,6 +14,7 @@ import configRouter from "./routes/config";
 import announcementsRouter from "./routes/announcements";
 import pollsRouter from "./routes/polls";
 import timelineRouter from "./routes/timeline";
+import planningRouter from "./routes/planning";
 
 loadEnv({ path: path.join(__dirname, "..", ".env.local") });
 loadEnv({ path: path.join(__dirname, "..", ".env") });
@@ -60,6 +61,7 @@ app.use("/api/config", configRouter);
 app.use("/api/announcement", announcementsRouter);
 app.use("/api/polls", pollsRouter);
 app.use("/api/timeline", timelineRouter);
+app.use("/api/planning", planningRouter);
 
 io.on("connection", (socket) => {
   console.log(`[socket] client connecté: ${socket.id}`);

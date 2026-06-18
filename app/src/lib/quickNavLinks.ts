@@ -3,6 +3,7 @@
 import type { QuickNavLink } from "@/lib/quickNavLink";
 import type { FeatureFlags } from "@/config/event";
 import {
+  CalendarDays,
   Clapperboard,
   History,
   Home,
@@ -49,6 +50,9 @@ export function buildNavLinks(
   }
   if (features.timeline && pathname !== "/timeline") {
     links.push({ href: "/timeline", label: "Frise", icon: History });
+  }
+  if (features.planning && pathname !== "/planning") {
+    links.push({ href: "/planning", label: "Planning", icon: CalendarDays });
   }
   if (features.retrospective && isAdmin && pathname !== "/retrospective") {
     links.push({

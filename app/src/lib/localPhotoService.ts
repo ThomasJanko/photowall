@@ -9,6 +9,8 @@ import type {
   TimelineEntry,
   TimelinePageSettings,
   AddTimelineEntryInput,
+  PlanningEvent,
+  PlanningEventInput,
 } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
@@ -302,5 +304,81 @@ export class LocalPhotoService implements PhotoService {
   onPendingTimelineEntry(callback: (entry: TimelineEntry) => void): () => void {
     this.socket.on("timeline:pending", callback);
     return () => this.socket.off("timeline:pending", callback);
+  }
+
+  // ─── Planning ───────────────────────────────────────────────────────────────
+
+  async listPlanningEvents(): Promise<PlanningEvent[]> {
+    const res = await fetch(`${SERVER_URL}/api/planning`);
+    if (!res.ok) throw new Error(`Chargement planning échoué (${res.status})`);
+    return res.json();
+  }
+
+  private planningFormData(data: Partial<PlanningEventInput>, photo?: File): FormData {
+    const form = new FormData();
+    if (data.title !== undefined) form.append("title", data.title);
+    if (data.date !== undefined) form.append("date", data.date);
+    if (data.time !== undefined) form.append("time", data.time);
+    if (data.duration !== undefined) form.append("duration", data.duration ?? "");
+    if (data.description !== undefined) form.append("description", data.description ?? "");
+    if (data.emoji !== undefined) form.append("emoji", data.emoji ?? "");
+    if (data.color !== undefined) form.append("color", data.color ?? "");
+    if (data.location !== undefined) form.append("location", data.location ?? "");
+    if (photo) form.append("photo", photo, photo.name);
+    return form;
+  }
+
+  async createPlanningEvent(data: PlanningEventInput, photo?: File): Promise<PlanningEvent> {
+    const res = await adminFetch(`${SERVER_URL}/api/planning`, {
+      method: "POST",
+      body: this.planningFormData(data, photo),
+    });
+    if (!res.ok) throw new Error(`Création événement planning échouée (${res.status})`);
+    return res.json();
+  }
+
+  async updatePlanningEvent(id: string, data: Partial<PlanningEventInput>, photo?: File): Promise<PlanningEvent> {
+    const res = await adminFetch(`${SERVER_URL}/api/planning/${id}`, {
+      method: "PUT",
+      body: this.planningFormData(data, photo),
+    });
+    if (!res.ok) throw new Error(`Mise à jour planning échouée (${res.status})`);
+    return res.json();
+  }
+
+  async deletePlanningEvent(id: string): Promise<void> {
+    const res = await adminFetch(`${SERVER_URL}/api/planning/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`Suppression planning échouée (${res.status})`);
+  }
+
+  async reorderPlanningEvents(events: PlanningEvent[]): Promise<PlanningEvent[]> {
+    const res = await adminFetch(`${SERVER_URL}/api/planning/reorder`, {
+      method: "PUT",
+      body: JSON.stringify({ events }),
+    });
+    if (!res.ok) throw new Error(`Réordonnancement planning échoué (${res.status})`);
+    return res.json();
+  }
+
+  onPlanningNew(callback: (event: PlanningEvent) => void): () => void {
+    this.socket.on("planning:new", callback);
+    return () => this.socket.off("planning:new", callback);
+  }
+
+  onPlanningUpdated(callback: (event: PlanningEvent) => void): () => void {
+    this.socket.on("planning:updated", callback);
+    return () => this.socket.off("planning:updated", callback);
+  }
+
+  onPlanningRemoved(callback: (payload: { id: string }) => void): () => void {
+    this.socket.on("planning:removed", callback);
+    return () => this.socket.off("planning:removed", callback);
+  }
+
+  onPlanningList(callback: (events: PlanningEvent[]) => void): () => void {
+    this.socket.on("planning:list", callback);
+    return () => this.socket.off("planning:list", callback);
   }
 }

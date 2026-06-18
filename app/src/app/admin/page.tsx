@@ -17,6 +17,7 @@ import { AdminPollTab } from "@/components/AdminPollTab";
 import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { AdminChallengesTab } from "@/components/AdminChallengesTab";
 import { AdminTimelineTab } from "@/components/AdminTimelineTab";
+import { AdminPlanningTab } from "@/components/AdminPlanningTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
@@ -53,6 +54,7 @@ type AdminTab =
   | "poll"
   | "challenges"
   | "timeline"
+  | "planning"
   | "config"
   | "announce";
 
@@ -451,7 +453,9 @@ export default function AdminPage() {
                       ? "Défis photo invités"
                       : activeTab === "timeline"
                         ? "Frise chronologique"
-                        : activeTab === "announce"
+                        : activeTab === "planning"
+                          ? "Planning de la soirée"
+                          : activeTab === "announce"
                           ? "Annonce live sur le mur"
                           : "Configuration de l'événement"}
           </p>
@@ -532,6 +536,14 @@ export default function AdminPage() {
               </span>
             </AdminTabButton>
           )}
+          {config.features.planning && (
+            <AdminTabButton
+              active={activeTab === "planning"}
+              onClick={() => setActiveTab("planning")}
+            >
+              📅 Planning
+            </AdminTabButton>
+          )}
           <AdminTabButton
             active={activeTab === "config"}
             onClick={() => setActiveTab("config")}
@@ -562,6 +574,8 @@ export default function AdminPage() {
           onUnauthorized={handleUnauthorized}
           onPendingCountChange={setTimelinePendingCount}
         />
+      ) : activeTab === "planning" ? (
+        <AdminPlanningTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}
