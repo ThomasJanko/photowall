@@ -16,6 +16,7 @@ export interface PlanningEventRow {
   photo_filename?: string;
   order: number;
   created_at: number;
+  surprise?: boolean;
 }
 
 interface PlanningStore {

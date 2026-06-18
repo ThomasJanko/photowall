@@ -33,6 +33,7 @@ const FEATURE_LABELS: Record<keyof FeatureFlags, string> = {
   livePolls: "Sondages live (modal configurable)",
   leaderboard: "Classement des défis photo (/classement)",
   timeline: "Frise chronologique (/timeline)",
+  planning: "Planning de la soirée (/planning)",
 };
 
 type FormState = Omit<EventConfig, "reactionEmojis"> & {

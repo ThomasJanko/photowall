@@ -35,6 +35,7 @@ function blankForm(): PlanningEventInput {
     emoji: "🎉",
     color: PALETTE[0],
     location: "",
+    surprise: false,
   };
 }
 
@@ -85,6 +86,7 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
       color: ev.color ?? PALETTE[0],
       location: ev.location ?? "",
       photoUrl: ev.photoUrl,
+      surprise: ev.surprise ?? false,
     });
     setPhotoFile(null);
     setEditingId(ev.id);
@@ -162,6 +164,20 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
       if (onUnauthorized(err)) return;
       showToast("Réordonnancement échoué", "error");
       await load();
+    }
+  }
+
+  async function handleReveal(id: string) {
+    setBusyId(id);
+    try {
+      const revealed = await getPhotoService().revealPlanningEvent(id);
+      setEvents((prev) => prev.map((e) => (e.id === revealed.id ? revealed : e)));
+      showToast("Surprise révélée !", "success");
+    } catch (err) {
+      if (onUnauthorized(err)) return;
+      showToast("Révélation échouée", "error");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -268,6 +284,24 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
             />
           </label>
 
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white ring-1 ring-white/20">
+            <input
+              type="checkbox"
+              checked={form.surprise ?? false}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, surprise: e.target.checked }))
+              }
+              className="h-4 w-4 rounded accent-pink-500"
+            />
+            🎁 Surprise
+          </label>
+          {form.surprise && (
+            <p className="text-xs text-purple-300">
+              Les invités verront « Surprise ! » sans détails jusqu&apos;à la
+              révélation en direct.
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center gap-4">
             <div className="text-xs text-purple-200">
               Couleur
@@ -349,7 +383,14 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-2xl shrink-0">{ev.emoji ?? "📌"}</span>
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{ev.title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-white truncate">{ev.title}</p>
+                      {ev.surprise && (
+                        <span className="shrink-0 rounded-full bg-pink-500/25 px-2 py-0.5 text-[10px] font-bold text-pink-200 ring-1 ring-pink-400/40">
+                          🎁 Surprise
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-purple-300">
                       {ev.date} — {ev.time}
                       {ev.duration ? ` · ${ev.duration}` : ""}
@@ -363,7 +404,18 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {ev.surprise && (
+                    <button
+                      type="button"
+                      onClick={() => handleReveal(ev.id)}
+                      disabled={busyId === ev.id}
+                      className="rounded-full bg-linear-to-r from-pink-500 to-purple-500 px-3 py-1 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      Révéler maintenant
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => moveEvent(ev.id, -1)}
@@ -395,6 +447,7 @@ export function AdminPlanningTab({ onUnauthorized }: AdminPlanningTabProps) {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </div>
                 </div>
               </div>
             </div>

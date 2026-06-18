@@ -111,6 +111,8 @@ export interface PlanningEvent {
   photoUrl?: string;
   order: number;
   createdAt: number;
+  /** Masqué aux invités jusqu'à révélation admin en temps réel */
+  surprise?: boolean;
 }
 
 export interface PlanningEventInput {
@@ -123,4 +125,5 @@ export interface PlanningEventInput {
   color?: string;
   location?: string;
   photoUrl?: string;
+  surprise?: boolean;
 }

@@ -324,6 +324,9 @@ export class LocalPhotoService implements PhotoService {
     if (data.emoji !== undefined) form.append("emoji", data.emoji ?? "");
     if (data.color !== undefined) form.append("color", data.color ?? "");
     if (data.location !== undefined) form.append("location", data.location ?? "");
+    if (data.surprise !== undefined) {
+      form.append("surprise", data.surprise ? "true" : "false");
+    }
     if (photo) form.append("photo", photo, photo.name);
     return form;
   }
@@ -359,6 +362,14 @@ export class LocalPhotoService implements PhotoService {
       body: JSON.stringify({ events }),
     });
     if (!res.ok) throw new Error(`Réordonnancement planning échoué (${res.status})`);
+    return res.json();
+  }
+
+  async revealPlanningEvent(id: string): Promise<PlanningEvent> {
+    const res = await adminFetch(`${SERVER_URL}/api/planning/${id}/reveal`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`Révélation planning échouée (${res.status})`);
     return res.json();
   }
 

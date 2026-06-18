@@ -81,6 +81,7 @@ export interface PhotoService {
   updatePlanningEvent(id: string, data: Partial<PlanningEventInput>, photo?: File): Promise<PlanningEvent>;
   deletePlanningEvent(id: string): Promise<void>;
   reorderPlanningEvents(events: PlanningEvent[]): Promise<PlanningEvent[]>;
+  revealPlanningEvent(id: string): Promise<PlanningEvent>;
   onPlanningNew(callback: (event: PlanningEvent) => void): () => void;
   onPlanningUpdated(callback: (event: PlanningEvent) => void): () => void;
   onPlanningRemoved(callback: (payload: { id: string }) => void): () => void;

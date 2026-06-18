@@ -41,16 +41,30 @@ function formatTime(time: string): string {
   return time; // already "HH:MM"
 }
 
+function isGuestSurprise(
+  ev: PlanningEvent,
+  isAdmin: boolean,
+  allEvents: PlanningEvent[],
+  now = Date.now()
+): boolean {
+  if (isAdmin || ev.surprise !== true) return false;
+  if (isNow(ev, allEvents, now)) return false;
+  return true;
+}
+
 /** Retourne true si l'événement est passé (date+heure < maintenant). */
-function isPast(ev: PlanningEvent): boolean {
-  return new Date(`${ev.date}T${ev.time}`) < new Date();
+function isPast(ev: PlanningEvent, now = Date.now()): boolean {
+  return new Date(`${ev.date}T${ev.time}`).getTime() < now;
 }
 
 /** Retourne true si l'événement est "maintenant" (entre son heure de début et
  *  une heure après, ou jusqu'au prochain event). */
-function isNow(ev: PlanningEvent, allEvents: PlanningEvent[]): boolean {
-  const start = new Date(`${ev.date}T${ev.time}`);
-  const now = new Date();
+function isNow(
+  ev: PlanningEvent,
+  allEvents: PlanningEvent[],
+  now = Date.now()
+): boolean {
+  const start = new Date(`${ev.date}T${ev.time}`).getTime();
   if (now < start) return false;
 
   // Cherche le prochain event
@@ -62,8 +76,8 @@ function isNow(ev: PlanningEvent, allEvents: PlanningEvent[]): boolean {
   const idx = sorted.findIndex((e) => e.id === ev.id);
   const next = sorted[idx + 1];
   const end = next
-    ? new Date(`${next.date}T${next.time}`)
-    : new Date(start.getTime() + 60 * 60 * 1000);
+    ? new Date(`${next.date}T${next.time}`).getTime()
+    : start + 60 * 60 * 1000;
 
   return now >= start && now < end;
 }
@@ -93,8 +107,19 @@ function NowBadge() {
   );
 }
 
-function CountdownToNext({ next }: { next: PlanningEvent }) {
+function CountdownToNext({
+  next,
+  isAdmin,
+  allEvents,
+  now,
+}: {
+  next: PlanningEvent;
+  isAdmin: boolean;
+  allEvents: PlanningEvent[];
+  now: number;
+}) {
   const [diff, setDiff] = useState("");
+  const hidden = isGuestSurprise(next, isAdmin, allEvents, now);
 
   useEffect(() => {
     function update() {
@@ -118,11 +143,12 @@ function CountdownToNext({ next }: { next: PlanningEvent }) {
 
   return (
     <div className="mx-auto mb-8 max-w-sm rounded-2xl bg-white/5 px-5 py-4 text-center ring-1 ring-white/15">
-      <p className="text-xs text-purple-300 uppercase tracking-wider mb-1">
+      <p className="mb-1 text-xs tracking-wider text-purple-300 uppercase">
         Prochain événement
       </p>
       <p className="text-lg font-bold text-white">
-        {next.emoji ?? "📌"} {next.title}
+        {hidden ? "🎁" : (next.emoji ?? "📌")}{" "}
+        {hidden ? "Surprise !" : next.title}
       </p>
       <p className="mt-1 text-2xl font-extrabold text-pink-300 tabular-nums">
         {diff}
@@ -135,7 +161,7 @@ function DayDivider({ date }: { date: string }) {
   return (
     <div className="relative my-8 flex items-center gap-3">
       <div className="h-px flex-1 bg-white/15" />
-      <span className="shrink-0 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold text-purple-200 ring-1 ring-white/20 capitalize">
+      <span className="shrink-0 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold text-purple-200 capitalize ring-1 ring-white/20">
         {formatDate(date)}
       </span>
       <div className="h-px flex-1 bg-white/15" />
@@ -147,25 +173,38 @@ function PlanningCard({
   event,
   allEvents,
   isCurrentEvent,
+  isAdmin,
+  isRevealing,
+  now,
   cardRef,
 }: {
   event: PlanningEvent;
   allEvents: PlanningEvent[];
   isCurrentEvent: boolean;
+  isAdmin: boolean;
+  isRevealing?: boolean;
+  now: number;
   cardRef?: React.Ref<HTMLDivElement>;
 }) {
-  const past = isPast(event);
-  const color = event.color ?? "#f472b6";
+  const past = isPast(event, now);
+  const hidden = isGuestSurprise(event, isAdmin, allEvents, now);
+  const color = hidden ? "#e879f9" : (event.color ?? "#f472b6");
+  const displayEmoji = hidden ? "🎁" : (event.emoji ?? "📌");
+  const displayTitle = hidden ? "Surprise !" : event.title;
 
   return (
     <div
       ref={cardRef}
       className={`relative rounded-2xl p-4 ring-1 transition-all duration-500 ${
-        isCurrentEvent
-          ? "bg-white/10 ring-white/30 shadow-lg shadow-black/20"
-          : past
-            ? "bg-white/3 ring-white/8 opacity-60"
-            : "bg-white/5 ring-white/15"
+        isRevealing
+          ? "planning-reveal-pop bg-white/10 shadow-lg shadow-black/20 ring-white/30"
+          : hidden
+            ? "planning-surprise-card ring-pink-400/30"
+            : isCurrentEvent
+              ? "bg-white/10 shadow-lg shadow-black/20 ring-white/30"
+              : past
+                ? "bg-white/3 opacity-60 ring-white/8"
+                : "bg-white/5 ring-white/15"
       }`}
       style={{ borderLeftWidth: 4, borderLeftColor: color }}
     >
@@ -178,47 +217,55 @@ function PlanningCard({
 
       <div className="flex items-start gap-3">
         {/* Emoji + heure */}
-        <div className="flex flex-col items-center shrink-0 w-12">
-          <span className="text-3xl">{event.emoji ?? "📌"}</span>
+        <div className="flex w-12 shrink-0 flex-col items-center">
+          <span className={`text-3xl ${hidden ? "animate-pulse" : ""}`}>
+            {displayEmoji}
+          </span>
           <span
-            className="mt-1 text-xs font-mono font-bold tabular-nums"
+            className="mt-1 font-mono text-xs font-bold tabular-nums"
             style={{ color }}
           >
             {formatTime(event.time)}
           </span>
-          {event.duration && (
-            <span className="text-[10px] text-purple-400 mt-0.5">
+          {event.duration && !hidden && (
+            <span className="mt-0.5 text-[10px] text-purple-400">
               {event.duration}
             </span>
           )}
         </div>
 
         {/* Contenu */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <h3
-            className={`text-base font-bold ${past ? "text-purple-300" : "text-white"}`}
+            className={`text-base font-bold ${past && !hidden ? "text-purple-300" : "text-white"}`}
           >
-            {event.title}
+            {displayTitle}
           </h3>
 
-          {event.location && (
+          {hidden && (
+            <p className="mt-1 text-sm text-purple-300 italic">
+              Quelque chose de spécial t&apos;attend…
+            </p>
+          )}
+
+          {!hidden && event.location && (
             <p className="mt-0.5 flex items-center gap-1 text-xs text-purple-300">
               <MapPin className="h-3 w-3 shrink-0" />
               {event.location}
             </p>
           )}
 
-          {event.description && (
-            <p className="mt-1.5 text-sm text-purple-200 leading-relaxed">
+          {!hidden && event.description && (
+            <p className="mt-1.5 text-sm leading-relaxed text-purple-200">
               {event.description}
             </p>
           )}
 
-          {event.photoUrl && (
+          {!hidden && event.photoUrl && (
             <img
               src={resolveUrl(event.photoUrl)}
               alt={event.title}
-              className="mt-3 w-full max-h-52 rounded-xl object-cover ring-1 ring-white/15"
+              className="mt-3 max-h-52 w-full rounded-xl object-cover ring-1 ring-white/15"
             />
           )}
         </div>
@@ -247,7 +294,14 @@ export default function PlanningPage() {
 
   const [events, setEvents] = useState<PlanningEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [revealingIds, setRevealingIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [now, setNow] = useState(() => Date.now());
   const nowRef = useRef<HTMLDivElement>(null);
+  const eventsRef = useRef(events);
+  const guestSurpriseHiddenRef = useRef<Map<string, boolean>>(new Map());
+  eventsRef.current = events;
 
   const loadData = useCallback(async () => {
     try {
@@ -268,6 +322,12 @@ export default function PlanningPage() {
     deferCallback(() => void loadData());
   }, [enabled, loadData]);
 
+  useEffect(() => {
+    if (!enabled) return;
+    const id = setInterval(() => setNow(Date.now()), 1_000);
+    return () => clearInterval(id);
+  }, [enabled]);
+
   // Temps réel
   useEffect(() => {
     if (!enabled) return;
@@ -276,10 +336,25 @@ export default function PlanningPage() {
       setEvents((prev) =>
         prev.some((e) => e.id === ev.id)
           ? prev
-          : [...prev, ev].sort((a, b) => `${a.date}T${a.time}` < `${b.date}T${b.time}` ? -1 : 1)
+          : [...prev, ev].sort((a, b) =>
+              `${a.date}T${a.time}` < `${b.date}T${b.time}` ? -1 : 1
+            )
       );
     });
     const u2 = service.onPlanningUpdated?.((ev) => {
+      const old = eventsRef.current.find((e) => e.id === ev.id);
+      if (old?.surprise && !ev.surprise) {
+        deferCallback(() => {
+          setRevealingIds((ids) => new Set(ids).add(ev.id));
+          setTimeout(() => {
+            setRevealingIds((ids) => {
+              const next = new Set(ids);
+              next.delete(ev.id);
+              return next;
+            });
+          }, 700);
+        });
+      }
       setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)));
     });
     const u3 = service.onPlanningRemoved?.((payload) => {
@@ -314,22 +389,46 @@ export default function PlanningPage() {
   );
 
   const currentEventId = useMemo(
-    () => sorted.find((ev) => isNow(ev, sorted))?.id ?? null,
-    [sorted]
+    () => sorted.find((ev) => isNow(ev, sorted, now))?.id ?? null,
+    [sorted, now]
   );
 
   const nextEvent = useMemo(
-    () => sorted.find((ev) => new Date(`${ev.date}T${ev.time}`) > new Date()),
-    [sorted]
+    () =>
+      sorted.find((ev) => new Date(`${ev.date}T${ev.time}`).getTime() > now),
+    [sorted, now]
   );
 
   const byDate = useMemo(() => groupByDate(sorted), [sorted]);
+
+  useEffect(() => {
+    if (isAdmin) return;
+    for (const ev of sorted) {
+      const hidden = isGuestSurprise(ev, false, sorted, now);
+      const wasHidden = guestSurpriseHiddenRef.current.get(ev.id);
+      if (wasHidden === true && !hidden && ev.surprise) {
+        deferCallback(() => {
+          setRevealingIds((ids) => new Set(ids).add(ev.id));
+          setTimeout(() => {
+            setRevealingIds((ids) => {
+              const next = new Set(ids);
+              next.delete(ev.id);
+              return next;
+            });
+          }, 700);
+        });
+      }
+      guestSurpriseHiddenRef.current.set(ev.id, hidden);
+    }
+  }, [sorted, now, isAdmin]);
 
   if (!enabled) {
     return (
       <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
         <p className="text-4xl">📅</p>
-        <h1 className="text-2xl font-bold text-white">Planning non disponible</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Planning non disponible
+        </h1>
         <p className="max-w-sm text-purple-200">
           Cette page n&apos;est pas encore activée.
         </p>
@@ -354,16 +453,14 @@ export default function PlanningPage() {
           <h1 className="text-3xl font-extrabold text-white drop-shadow sm:text-4xl">
             Programme
           </h1>
-          <p className="mt-2 text-sm text-purple-200">
-            {config.eventName}
-          </p>
+          <p className="mt-2 text-sm text-purple-200">{config.eventName}</p>
         </header>
 
         {loading ? (
           <p className="text-center text-purple-200">Chargement…</p>
         ) : sorted.length === 0 ? (
-          <div className="text-center text-purple-300 py-16">
-            <p className="text-5xl mb-4">🎉</p>
+          <div className="py-16 text-center text-purple-300">
+            <p className="mb-4 text-5xl">🎉</p>
             <p className="text-lg font-semibold text-white">
               Le programme arrive bientôt…
             </p>
@@ -372,7 +469,12 @@ export default function PlanningPage() {
           <>
             {/* Countdown vers le prochain event */}
             {nextEvent && !currentEventId && (
-              <CountdownToNext next={nextEvent} />
+              <CountdownToNext
+                next={nextEvent}
+                isAdmin={isAdmin}
+                allEvents={sorted}
+                now={now}
+              />
             )}
 
             {/* Timeline par jour */}
@@ -396,6 +498,9 @@ export default function PlanningPage() {
                           event={ev}
                           allEvents={sorted}
                           isCurrentEvent={isCurrent}
+                          isAdmin={isAdmin}
+                          isRevealing={revealingIds.has(ev.id)}
+                          now={now}
                           cardRef={isCurrent ? nowRef : undefined}
                         />
                       );

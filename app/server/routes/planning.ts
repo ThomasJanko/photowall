@@ -13,6 +13,10 @@ import { requireAdmin } from "../middleware/requireAdmin";
 
 const router = Router();
 
+function parseSurprise(value: string | undefined): boolean {
+  return value === "true";
+}
+
 /** Convertit une row DB en objet public (remplace photo_filename par photoUrl). */
 function toPublic(row: PlanningEventRow) {
   const { photo_filename, ...rest } = row;
@@ -29,7 +33,7 @@ router.get("/", (_req, res) => {
 
 // ── POST /api/planning (admin) ────────────────────────────────────────────────
 router.post("/", requireAdmin, upload.single("photo"), (req, res) => {
-  const { title, date, time, duration, description, emoji, color, location } =
+  const { title, date, time, duration, description, emoji, color, location, surprise } =
     req.body as Record<string, string | undefined>;
 
   if (!title?.trim()) return res.status(400).json({ error: "Titre requis" });
@@ -52,6 +56,7 @@ router.post("/", requireAdmin, upload.single("photo"), (req, res) => {
     location: location?.trim() || undefined,
     photo_filename: req.file?.filename,
     order,
+    surprise: parseSurprise(surprise),
   });
 
   const pub = toPublic(row);
@@ -82,9 +87,19 @@ router.put("/reorder", requireAdmin, (req, res) => {
   res.json(saved);
 });
 
+// ── POST /api/planning/:id/reveal (admin) ─────────────────────────────────────
+router.post("/:id/reveal", requireAdmin, (req, res) => {
+  const row = updatePlanningEvent(req.params.id, { surprise: false });
+  if (!row) return res.status(404).json({ error: "Événement introuvable" });
+
+  const pub = toPublic(row);
+  getIo().emit("planning:updated", pub);
+  res.json(pub);
+});
+
 // ── PUT /api/planning/:id (admin) ─────────────────────────────────────────────
 router.put("/:id", requireAdmin, upload.single("photo"), (req, res) => {
-  const { title, date, time, duration, description, emoji, color, location } =
+  const { title, date, time, duration, description, emoji, color, location, surprise } =
     req.body as Record<string, string | undefined>;
 
   const patch: Parameters<typeof updatePlanningEvent>[1] = {};
@@ -97,6 +112,7 @@ router.put("/:id", requireAdmin, upload.single("photo"), (req, res) => {
   if (emoji !== undefined) patch.emoji = emoji.trim() || undefined;
   if (color !== undefined) patch.color = color.trim() || undefined;
   if (location !== undefined) patch.location = location.trim() || undefined;
+  if (surprise !== undefined) patch.surprise = parseSurprise(surprise);
   if (req.file) patch.photo_filename = req.file.filename;
 
   const row = updatePlanningEvent(req.params.id, patch);
