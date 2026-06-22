@@ -11,6 +11,8 @@ import type {
   AddTimelineEntryInput,
   PlanningEvent,
   PlanningEventInput,
+  ScreenCommand,
+  ScreenState,
 } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
@@ -391,5 +393,27 @@ export class LocalPhotoService implements PhotoService {
   onPlanningList(callback: (events: PlanningEvent[]) => void): () => void {
     this.socket.on("planning:list", callback);
     return () => this.socket.off("planning:list", callback);
+  }
+
+  // ─── Écran TV ───────────────────────────────────────────────────────────────
+
+  async getScreenState(): Promise<ScreenState> {
+    const res = await fetch(`${SERVER_URL}/api/screen/state`);
+    if (!res.ok) throw new Error(`État écran indisponible (${res.status})`);
+    const data = (await res.json()) as { state: ScreenState };
+    return data.state;
+  }
+
+  async sendScreenCommand(cmd: ScreenCommand): Promise<void> {
+    const res = await adminFetch(`${SERVER_URL}/api/screen/command`, {
+      method: "POST",
+      body: JSON.stringify(cmd),
+    });
+    if (!res.ok) throw new Error(`Commande écran échouée (${res.status})`);
+  }
+
+  onScreenCommand(callback: (cmd: ScreenCommand) => void): () => void {
+    this.socket.on("screen:command", callback);
+    return () => this.socket.off("screen:command", callback);
   }
 }

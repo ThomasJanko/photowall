@@ -10,6 +10,8 @@ import type {
   AddTimelineEntryInput,
   PlanningEvent,
   PlanningEventInput,
+  ScreenCommand,
+  ScreenState,
 } from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
@@ -86,6 +88,11 @@ export interface PhotoService {
   onPlanningUpdated(callback: (event: PlanningEvent) => void): () => void;
   onPlanningRemoved(callback: (payload: { id: string }) => void): () => void;
   onPlanningList(callback: (events: PlanningEvent[]) => void): () => void;
+
+  // ─── Écran TV ───────────────────────────────────────────────────────────────
+  getScreenState(): Promise<ScreenState>;
+  sendScreenCommand(cmd: ScreenCommand): Promise<void>;
+  onScreenCommand(callback: (cmd: ScreenCommand) => void): () => void;
 }
 
 let instance: PhotoService | null = null;

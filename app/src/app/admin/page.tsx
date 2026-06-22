@@ -18,6 +18,7 @@ import { AdminPendingTab } from "@/components/AdminPendingTab";
 import { AdminChallengesTab } from "@/components/AdminChallengesTab";
 import { AdminTimelineTab } from "@/components/AdminTimelineTab";
 import { AdminPlanningTab } from "@/components/AdminPlanningTab";
+import { AdminScreenTab } from "@/components/AdminScreenTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
@@ -55,6 +56,7 @@ type AdminTab =
   | "challenges"
   | "timeline"
   | "planning"
+  | "screen"
   | "config"
   | "announce";
 
@@ -455,7 +457,9 @@ export default function AdminPage() {
                         ? "Frise chronologique"
                         : activeTab === "planning"
                           ? "Planning de la soirée"
-                          : activeTab === "announce"
+                          : activeTab === "screen"
+                            ? "Télécommande écran TV"
+                            : activeTab === "announce"
                           ? "Annonce live sur le mur"
                           : "Configuration de l'événement"}
           </p>
@@ -545,6 +549,12 @@ export default function AdminPage() {
             </AdminTabButton>
           )}
           <AdminTabButton
+            active={activeTab === "screen"}
+            onClick={() => setActiveTab("screen")}
+          >
+            📺 Écran
+          </AdminTabButton>
+          <AdminTabButton
             active={activeTab === "config"}
             onClick={() => setActiveTab("config")}
           >
@@ -576,6 +586,8 @@ export default function AdminPage() {
         />
       ) : activeTab === "planning" ? (
         <AdminPlanningTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "screen" ? (
+        <AdminScreenTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}

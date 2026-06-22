@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Link2 } from "lucide-react";
 import type { QuickNavLink } from "@/lib/quickNavLink";
+import { useScreenMode } from "@/lib/screenMode";
 
 export type { QuickNavLink };
 
@@ -46,6 +47,7 @@ export function QuickNav({
   position = "bottom-left",
   variant = "light",
 }: QuickNavProps) {
+  const screenMode = useScreenMode();
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -72,7 +74,7 @@ export function QuickNav({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  if (links.length === 0) return null;
+  if (screenMode || links.length === 0) return null;
 
   const isBottom = position.startsWith("bottom");
   const isRight = position.endsWith("right");

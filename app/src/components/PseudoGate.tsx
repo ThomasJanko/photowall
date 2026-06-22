@@ -6,6 +6,7 @@ import {
   setGuestPseudo,
   validatePseudo,
 } from "@/lib/guestPseudo";
+import { useScreenMode } from "@/lib/screenMode";
 
 interface PseudoGateProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ function subscribePseudo() {
 
 /** Modale pseudo au premier visit (localStorage guest:pseudo). */
 export function PseudoGate({ children }: PseudoGateProps) {
+  const screenMode = useScreenMode();
   const hasStoredPseudo = useSyncExternalStore(
     subscribePseudo,
     () => !!getGuestPseudo(),
@@ -39,7 +41,8 @@ export function PseudoGate({ children }: PseudoGateProps) {
     setError(null);
   }
 
-  if (ready) return <>{children}</>;
+  // En mode écran TV : pas de modale, on affiche directement le contenu
+  if (screenMode || ready) return <>{children}</>;
 
   return (
     <>

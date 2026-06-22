@@ -17,6 +17,7 @@ import {
 import { QuickNav } from "@/components/QuickNav";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { buildNavLinks } from "@/lib/quickNavLinks";
+import { useScreenMode } from "@/lib/screenMode";
 import { usePathname } from "next/navigation";
 import type { AnnouncementEvent } from "@/lib/types";
 import { announcementRemainingMs } from "@/lib/announcementUtils";
@@ -134,6 +135,7 @@ export default function WallPage() {
   const pathname = usePathname();
   const { config, accent } = useEventConfig();
   const isAdmin = useIsAdmin();
+  const screenMode = useScreenMode();
   const {
     spotlightDurationMs,
     reactionCooldownMs,
@@ -680,13 +682,16 @@ export default function WallPage() {
         )}
       </div>
 
-      <Link
-        href="/"
-        className="fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-white/90 px-6 py-3 font-semibold text-purple-900 shadow-2xl transition-transform active:scale-95"
-      >
-        <Camera className="h-4 w-4 shrink-0" aria-hidden />
-        Prendre une photo
-      </Link>
+      {!screenMode && (
+        <Link
+          href="/"
+          className="fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-white/90 px-6 py-3 font-semibold text-purple-900 shadow-2xl transition-transform active:scale-95"
+        >
+          <Camera className="h-4 w-4 shrink-0" aria-hidden />
+          Prendre une photo
+        </Link>
+      )}
+
 
       <QuickNav links={navLinks} position="bottom-left" />
 

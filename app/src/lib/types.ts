@@ -127,3 +127,42 @@ export interface PlanningEventInput {
   photoUrl?: string;
   surprise?: boolean;
 }
+
+// ─── Écran TV (télécommande admin) ───────────────────────────────────────────
+
+export const SCREEN_PATHS = [
+  "/wall",
+  "/planning",
+  "/timeline",
+  "/countdown",
+  "/classement",
+  "/retrospective",
+] as const;
+
+export type ScreenPath = (typeof SCREEN_PATHS)[number];
+
+export type ScreenCommand =
+  | { type: "navigate"; path: ScreenPath }
+  | {
+      type: "scroll";
+      direction: "up" | "down" | "top" | "bottom";
+      amount?: number;
+    }
+  | { type: "volume"; value: number }
+  | { type: "zoom"; level: number }
+  | { type: "fullscreen" }
+  | {
+      type: "action";
+      name:
+        | "retrospective:start"
+        | "confetti:burst"
+        | "audio:play"
+        | "audio:stop"
+        | "audio:toggle";
+    };
+
+export interface ScreenState {
+  path: ScreenPath;
+  volume: number;
+  zoom: number;
+}

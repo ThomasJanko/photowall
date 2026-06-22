@@ -15,6 +15,7 @@ import { deferCallback } from "@/lib/deferCallback";
 import { RetrospectiveShow } from "@/components/retrospective/RetrospectiveShow";
 import { fetchActiveChallenges } from "@/lib/challengesApi";
 import { Play } from "lucide-react";
+import { useScreenMode } from "@/lib/screenMode";
 
 // ============================================================================
 const MUSIC_SRC = "/music/retrospective.mp3";
@@ -76,13 +77,14 @@ export default function RetrospectivePage() {
   const pathname = usePathname();
   const { config } = useEventConfig();
   const isAdmin = useIsAdmin();
+  const screenMode = useScreenMode();
   const [accessChecked, setAccessChecked] = useState(false);
   const navLinks = useMemo(
     () => buildNavLinks(pathname, config.features, isAdmin),
     [pathname, config.features, isAdmin]
   );
 
-  const allowed = config.features.retrospective && isAdmin;
+  const allowed = config.features.retrospective;
 
   useEffect(() => {
     deferCallback(() => setAccessChecked(true));
@@ -147,11 +149,41 @@ export default function RetrospectivePage() {
     const audio = audioRef.current;
     if (audio) {
       audio.volume = volume;
-      audio.muted = muted;
-      audio.play().catch((err) => console.warn("Musique indisponible:", err));
+      // En mode écran TV, l'audio est géré par /screen/page.tsx — on mute ici
+      audio.muted = screenMode ? true : muted;
+      if (!screenMode) {
+        audio.play().catch((err) => console.warn("Musique indisponible:", err));
+      }
     }
     setStarted(true);
   }
+
+  const autostartPendingRef = useRef(false);
+
+  useEffect(() => {
+    function onAutostart() {
+      if (photos !== null && photos.length > 0 && !started) {
+        handleStart();
+      } else {
+        autostartPendingRef.current = true;
+      }
+    }
+    window.addEventListener("retrospective:autostart", onAutostart);
+    return () =>
+      window.removeEventListener("retrospective:autostart", onAutostart);
+  }, [photos, started]);
+
+  useEffect(() => {
+    if (
+      autostartPendingRef.current &&
+      photos !== null &&
+      photos.length > 0 &&
+      !started
+    ) {
+      autostartPendingRef.current = false;
+      handleStart();
+    }
+  }, [photos, started]);
 
   const count = photos?.length ?? 0;
 
@@ -166,12 +198,12 @@ export default function RetrospectivePage() {
   if (!allowed) {
     return (
       <main className="event-gradient-bg flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-2xl font-bold text-white">
-          🔒 Réservé à l&apos;organisateur
-        </p>
+        <p className="text-4xl">🎬</p>
+        <h1 className="text-2xl font-bold text-white">
+          Rétrospective non disponible
+        </h1>
         <p className="max-w-sm text-purple-200">
-          La rétrospective n&apos;est accessible qu&apos;aux personnes
-          connectées à l&apos;administration.
+          Cette page n&apos;est pas encore activée.
         </p>
         <Link
           href="/wall"
