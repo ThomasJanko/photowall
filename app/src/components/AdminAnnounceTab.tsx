@@ -106,14 +106,12 @@ export function AdminAnnounceTab({ onUnauthorized }: AdminAnnounceTabProps) {
           <input
             type="number"
             min={MIN_DURATION_SEC}
-            max={MAX_DURATION_SEC}
+            // max={MAX_DURATION_SEC}
             value={durationSec}
             onChange={(e) => {
               const n = Number.parseInt(e.target.value, 10);
               if (Number.isNaN(n)) return;
-              setDurationSec(
-                Math.min(MAX_DURATION_SEC, Math.max(MIN_DURATION_SEC, n))
-              );
+              setDurationSec(Math.max(MIN_DURATION_SEC, n));
             }}
             className="w-24 rounded-xl bg-white/10 px-4 py-2 text-center text-white ring-1 ring-white/20"
           />
