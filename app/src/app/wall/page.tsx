@@ -6,7 +6,7 @@ import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { PollModal } from "@/components/PollModal";
+import { PollFab } from "@/components/PollFab";
 import { ChallengeBadge } from "@/components/ChallengeBadge";
 import { PhotoLightbox, type Floater } from "@/components/PhotoLightbox";
 import { useEventConfig } from "@/components/EventThemeProvider";
@@ -574,7 +574,7 @@ export default function WallPage() {
         />
       )}
 
-      <PollModal screen="wall" />
+      <PollFab />
 
       {!connected && (
         <div

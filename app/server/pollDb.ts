@@ -1,11 +1,13 @@
 import crypto from "crypto";
 import { createJsonStore } from "./jsonStore";
 
-/** Stockage JSON des sondages (data/polls.json). */
+/** Stockage JSON des sondages (data/poll-sessions.json). */
 
-const pollStore = createJsonStore<PollRow[]>("polls.json", []);
+const pollStore = createJsonStore<PollSessionRow[]>("poll-sessions.json", []);
 
-export type PollStatus = "draft" | "active" | "closed";
+export type PollMode = "quick" | "quiz";
+export type PollSessionStatus = "active" | "closed";
+export type QuestionPhase = "voting" | "results";
 
 export interface PollOptionRow {
   id: string;
@@ -13,65 +15,101 @@ export interface PollOptionRow {
   votes: number;
 }
 
-export interface PollRow {
+export interface PollQuestionRow {
   id: string;
   question: string;
   options: PollOptionRow[];
-  status: PollStatus;
+}
+
+export interface PollSessionRow {
+  id: string;
+  mode: PollMode;
+  title?: string;
+  questions: PollQuestionRow[];
+  currentIndex: number;
+  phase: QuestionPhase;
+  status: PollSessionStatus;
+  /** Si true, les invités voient les % en direct pendant le vote (pas d'attente de révélation). */
+  liveResults: boolean;
   createdAt: number;
-  /** Horodatage de clôture (résultats éphémères). */
   closedAt?: number;
 }
 
-function readAll(): PollRow[] {
+export interface QuestionInput {
+  question: string;
+  options: string[];
+}
+
+function readAll(): PollSessionRow[] {
   return pollStore.read();
 }
 
-function writeAll(rows: PollRow[]) {
+function writeAll(rows: PollSessionRow[]) {
   pollStore.write(rows);
 }
 
-/** Passe un sondage en clôturé avec horodatage. */
-function markClosed(poll: PollRow) {
-  poll.status = "closed";
-  poll.closedAt = Date.now();
-}
-
-/** Ferme tout sondage actif avant d'en créer un nouveau. */
-export function createPoll(question: string, optionLabels: string[]): PollRow {
-  const rows = readAll();
-  for (const p of rows) {
-    if (p.status === "active") markClosed(p);
-  }
-
-  const poll: PollRow = {
+function buildQuestion(input: QuestionInput): PollQuestionRow {
+  return {
     id: crypto.randomUUID(),
-    question: question.trim(),
-    options: optionLabels.map((label) => ({
+    question: input.question.trim(),
+    options: input.options.map((label) => ({
       id: crypto.randomUUID(),
       label: label.trim(),
       votes: 0,
     })),
+  };
+}
+
+/** Ferme toute session active (sécurité avant d'en créer une nouvelle). */
+function closeAllActive(rows: PollSessionRow[]) {
+  for (const s of rows) {
+    if (s.status === "active") {
+      s.status = "closed";
+      s.phase = "results";
+      s.closedAt = Date.now();
+    }
+  }
+}
+
+export function createSession(
+  mode: PollMode,
+  questions: QuestionInput[],
+  title?: string,
+  liveResults = false
+): PollSessionRow {
+  const rows = readAll();
+  closeAllActive(rows);
+
+  const session: PollSessionRow = {
+    id: crypto.randomUUID(),
+    mode,
+    title: title?.trim() || undefined,
+    questions: questions.map(buildQuestion),
+    currentIndex: 0,
+    phase: "voting",
     status: "active",
+    liveResults,
     createdAt: Date.now(),
   };
 
-  rows.push(poll);
+  rows.push(session);
   writeAll(rows);
-  return poll;
+  return session;
 }
 
-export function getActivePoll(): PollRow | null {
-  return readAll().find((p) => p.status === "active") ?? null;
+export function getActiveSession(): PollSessionRow | null {
+  return readAll().find((s) => s.status === "active") ?? null;
 }
 
-/** Sondage à afficher : actif, ou dernier clôturé encore dans la fenêtre résultats. */
-export function getDisplayPoll(resultsVisibleMs: number): PollRow | null {
-  const active = getActivePoll();
+/** Session à afficher : active, ou dernière clôturée encore dans la fenêtre résultats. */
+export function getDisplaySession(
+  resultsVisibleMs: number
+): PollSessionRow | null {
+  const active = getActiveSession();
   if (active) return active;
 
   const closed = readAll()
-    .filter((p) => p.status === "closed")
+    .filter((s) => s.status === "closed")
     .sort(
       (a, b) => (b.closedAt ?? b.createdAt) - (a.closedAt ?? a.createdAt)
     )[0];
@@ -82,32 +120,71 @@ export function getDisplayPoll(resultsVisibleMs: number): PollRow | null {
   return closed;
 }
 
-export function getPollById(id: string): PollRow | undefined {
-  return readAll().find((p) => p.id === id);
+export function getSessionById(id: string): PollSessionRow | undefined {
+  return readAll().find((s) => s.id === id);
 }
 
-export function votePoll(
-  pollId: string,
-  optionId: string
-): PollRow | undefined {
-  const rows = readAll();
-  const poll = rows.find((p) => p.id === pollId);
-  if (!poll || poll.status !== "active") return undefined;
+function currentQuestion(session: PollSessionRow): PollQuestionRow {
+  return session.questions[session.currentIndex];
+}
 
-  const option = poll.options.find((o) => o.id === optionId);
+export function voteOnCurrentQuestion(
+  sessionId: string,
+  questionId: string,
+  optionId: string
+): PollSessionRow | undefined {
+  const rows = readAll();
+  const session = rows.find((s) => s.id === sessionId);
+  if (!session || session.status !== "active" || session.phase !== "voting") {
+    return undefined;
+  }
+
+  const question = currentQuestion(session);
+  if (!question || question.id !== questionId) return undefined;
+
+  const option = question.options.find((o) => o.id === optionId);
   if (!option) return undefined;
 
   option.votes += 1;
   writeAll(rows);
-  return poll;
+  return session;
 }
 
-export function closePoll(pollId: string): PollRow | undefined {
+/** Révèle les résultats de la question courante (sans changer de question). */
+export function revealCurrentQuestion(
+  sessionId: string
+): PollSessionRow | undefined {
   const rows = readAll();
-  const poll = rows.find((p) => p.id === pollId);
-  if (!poll || poll.status !== "active") return undefined;
+  const session = rows.find((s) => s.id === sessionId);
+  if (!session || session.status !== "active") return undefined;
 
-  markClosed(poll);
+  session.phase = "results";
   writeAll(rows);
-  return poll;
+  return session;
+}
+
+/** Passe à la question suivante (quiz uniquement). */
+export function nextQuestion(sessionId: string): PollSessionRow | undefined {
+  const rows = readAll();
+  const session = rows.find((s) => s.id === sessionId);
+  if (!session || session.status !== "active") return undefined;
+  if (session.currentIndex + 1 >= session.questions.length) return undefined;
+
+  session.currentIndex += 1;
+  session.phase = "voting";
+  writeAll(rows);
+  return session;
+}
+
+/** Clôture la session (force la révélation de la question courante). */
+export function closeSession(sessionId: string): PollSessionRow | undefined {
+  const rows = readAll();
+  const session = rows.find((s) => s.id === sessionId);
+  if (!session || session.status !== "active") return undefined;
+
+  session.status = "closed";
+  session.phase = "results";
+  session.closedAt = Date.now();
+  writeAll(rows);
+  return session;
 }

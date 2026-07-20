@@ -26,9 +26,6 @@ function mergeConfig(
     features: partial.features
       ? { ...base.features, ...partial.features }
       : base.features,
-    pollScreens: partial.pollScreens
-      ? { ...base.pollScreens, ...partial.pollScreens }
-      : base.pollScreens,
     reactionEmojis:
       partial.reactionEmojis && partial.reactionEmojis.length > 0
         ? partial.reactionEmojis
@@ -126,13 +123,6 @@ export function validatePartialConfig(
     for (const [key, val] of Object.entries(partial.features)) {
       if (typeof val !== "boolean") {
         return `features.${key} doit être un booléen`;
-      }
-    }
-  }
-  if (partial.pollScreens) {
-    for (const [key, val] of Object.entries(partial.pollScreens)) {
-      if (typeof val !== "boolean") {
-        return `pollScreens.${key} doit être un booléen`;
       }
     }
   }

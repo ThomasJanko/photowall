@@ -21,7 +21,7 @@ export interface FeatureFlags {
   adminBulkActions: boolean;
   /** Si true, les uploads passent par /admin avant d'apparaître sur /wall. */
   moderationRequired: boolean;
-  /** Affiche les sondages live (modal sur les écrans configurés). */
+  /** Active la page /sondage + la pastille de notification live. */
   livePolls: boolean;
   /** Affiche la page classement des défis photo. */
   leaderboard: boolean;
@@ -29,12 +29,6 @@ export interface FeatureFlags {
   timeline: boolean;
   /** Planning de la soirée (/planning). */
   planning: boolean;
-}
-
-/** Écrans où la modal sondage peut apparaître. */
-export interface PollScreens {
-  home: boolean;
-  wall: boolean;
 }
 
 /** Défi photo proposé aux invités sur /. */
@@ -63,7 +57,6 @@ export interface EventConfig {
   reactionCooldownMs: number;
   theme: EventTheme;
   features: FeatureFlags;
-  pollScreens: PollScreens;
   /** Durée d'affichage des résultats après clôture (ms). */
   pollResultsDurationMs: number;
   photoChallenges: readonly Challenge[];
@@ -103,10 +96,6 @@ export const eventConfig: EventConfig = {
     leaderboard: true,
     timeline: false,
     planning: true,
-  },
-  pollScreens: {
-    home: true,
-    wall: true,
   },
   pollResultsDurationMs: 60_000,
   photoChallenges: [

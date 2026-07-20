@@ -8,7 +8,7 @@ import { compressImage } from "@/lib/compressImage";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
-import { PollModal } from "@/components/PollModal";
+import { PollFab } from "@/components/PollFab";
 import { ChallengePicker } from "@/components/ChallengePicker";
 import { PseudoGate } from "@/components/PseudoGate";
 import { UploadStatusBanner } from "@/components/UploadStatusBanner";
@@ -474,7 +474,7 @@ export default function UploadPage() {
         )}
 
         <QuickNav links={navLinks} position="bottom-left" />
-        <PollModal screen="home" />
+        <PollFab />
       </main>
     </PseudoGate>
   );

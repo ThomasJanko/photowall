@@ -3,6 +3,7 @@
 import type { QuickNavLink } from "@/lib/quickNavLink";
 import type { FeatureFlags } from "@/config/event";
 import {
+  BarChart3,
   CalendarDays,
   Clapperboard,
   History,
@@ -47,6 +48,9 @@ export function buildNavLinks(
   }
   if (features.leaderboard && pathname !== "/classement") {
     links.push({ href: "/classement", label: "Classement", icon: Trophy });
+  }
+  if (features.livePolls && pathname !== "/sondage") {
+    links.push({ href: "/sondage", label: "Sondage", icon: BarChart3 });
   }
   if (features.timeline && pathname !== "/timeline") {
     links.push({ href: "/timeline", label: "Frise", icon: History });
