@@ -73,7 +73,7 @@ RUN mkdir -p data/uploads && chmod +x scripts/start-prod.sh
 
 EXPOSE 3000 4000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://127.0.0.1:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD sh -c "curl -fsS http://127.0.0.1:3000/ >/dev/null && curl -fsS http://127.0.0.1:4000/health >/dev/null"
 
 CMD ["sh", "scripts/start-prod.sh"]

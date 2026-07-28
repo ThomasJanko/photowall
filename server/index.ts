@@ -53,6 +53,19 @@ setIo(io);
 
 app.use("/uploads", express.static(UPLOAD_DIR));
 
+/** Healthcheck Docker / reverse-proxy (ne pas utiliser / comme page web). */
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, service: "express" });
+});
+
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    message:
+      "API photo (Express). Le site est sur le port 3000 (Next.js), pas ici.",
+  });
+});
+
 app.use("/api/photos", photosRouter);
 app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/challenges", challengesRouter);

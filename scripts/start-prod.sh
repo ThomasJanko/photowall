@@ -10,14 +10,32 @@ export SERVER_PORT
 
 echo "[start-prod] Next.js → 0.0.0.0:${PORT} | Express → 0.0.0.0:${SERVER_PORT}"
 
-# Serveur Express + Socket.io
 npx tsx server/index.ts &
 SERVER_PID=$!
 
-# Next.js (build déjà fait)
 npx next start -H 0.0.0.0 -p "$PORT" &
 NEXT_PID=$!
 
-trap 'kill "$SERVER_PID" "$NEXT_PID" 2>/dev/null; exit' TERM INT
+shutdown() {
+  echo "[start-prod] arrêt…"
+  kill "$SERVER_PID" "$NEXT_PID" 2>/dev/null || true
+  wait "$SERVER_PID" "$NEXT_PID" 2>/dev/null || true
+  exit 0
+}
 
-wait "$SERVER_PID" "$NEXT_PID"
+trap shutdown TERM INT
+
+# Si l'un des deux process meurt, on arrête le conteneur (évite unhealthy silencieux)
+while true; do
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "[start-prod] Express est mort — exit 1"
+    kill "$NEXT_PID" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$NEXT_PID" 2>/dev/null; then
+    echo "[start-prod] Next.js est mort — exit 1"
+    kill "$SERVER_PID" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 2
+done

@@ -23,11 +23,18 @@ services:
       ADMIN_CODE: ${ADMIN_CODE:-change-moi}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/"]
+      # Next (site) + Express (API) doivent répondre
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -fsS http://127.0.0.1:3000/ >/dev/null && curl -fsS http://127.0.0.1:4000/health >/dev/null",
+        ]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
 
 volumes:
   app-data:
