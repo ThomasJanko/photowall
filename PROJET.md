@@ -52,7 +52,7 @@ Claude, ou à régénérer à partir de ce fichier).
 
 ### 4.1 Vue d'ensemble
 
-- **Frontend** : Next.js (App Router) + TypeScript + TailwindCSS, dans `app/`.
+- **Frontend** : Next.js (App Router) + TypeScript + TailwindCSS (racine du repo).
 - **Backend local** : serveur Express + Socket.io (`server/index.ts`), port `4000`.
   Stockage **fichiers JSON** (pas de SQLite/base de données — choix fait pour
   éviter les problèmes de compilation native sous Windows).
@@ -119,12 +119,11 @@ animation doit être ajoutée à la fin du fichier sous un nom différent.
 ## 5. Setup & lancement
 
 ```bash
-cd app
 npm install
 npm run dev:all   # lance Next.js (3000) + serveur Express/Socket.io (4000)
 ```
 
-- Config via `app/.env.local` (voir `.env.local.example`) :
+- Config via `.env.local` (voir `.env.local.example`) :
   `NEXT_PUBLIC_BACKEND` (`local`/`supabase`), `NEXT_PUBLIC_SERVER_URL`
   (override optionnel), variables Supabase si mode online.
 - QR code d'accès : `scripts/generate-qr.ts` (génère un QR vers l'IP locale du

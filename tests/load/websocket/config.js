@@ -31,7 +31,7 @@ const SCENARIOS = {
   stress: {
     name: "stress",
     listeners: 80,
-    duration: "30m",
+    duration: "5m",
     description: "Stress — 80 écrans, 30 minutes",
   },
   spike: {
@@ -62,7 +62,7 @@ if (__ENV.DURATION) {
 const SERVER_URL = (
   __ENV.SERVER_URL ||
   __ENV.NEXT_PUBLIC_SERVER_URL ||
-  "http://10.0.0.66:4000"
+  "http://127.0.0.1:4000"
 ).replace(/\/$/, "");
 
 const ENABLE_PUBLISHER = (__ENV.ENABLE_PUBLISHER || "true").toLowerCase() !== "false";

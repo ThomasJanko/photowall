@@ -6,7 +6,7 @@ Next.js (App Router) + Express/Socket.io + stockage JSON local.
 ## Structure du projet
 
 ```
-app/
+./
 ├── src/
 │   ├── app/              # Pages Next.js (routes)
 │   ├── components/       # UI partagée (ConfettiBackground, EventThemeProvider…)
@@ -29,7 +29,13 @@ app/
 │   ├── lib/              # Helpers (parsers, mappers publics)
 │   ├── db.ts             # Stockage photos public (JSON)
 │   └── messagesDb.ts     # Messages privés (JSON séparé)
-└── data/                 # Fichiers persistés (local)
+├── tests/
+│   └── load/websocket/   # Tests de charge k6 (Socket.io)
+├── scripts/
+├── public/
+├── data/                 # Fichiers persistés (local / volume Docker)
+├── Dockerfile
+└── docker-compose.yml
 ```
 
 ## Configuration événement

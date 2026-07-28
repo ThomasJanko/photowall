@@ -1,5 +1,6 @@
 # =============================================================================
-# Architecture : UN seul conteneur, deux process (Next.js + Express/Socket.io).
+# Architecture : UN seul conteneur, deux process (Next.js + Express/Socket.io)
+# + binaire k6 pour les tests de charge WebSocket depuis le conteneur.
 #
 # Pourquoi pas deux services Docker ?
 # - Le front et l'API partagent le même dossier data/ (JSON + uploads).
@@ -41,8 +42,16 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV SERVER_PORT=4000
 
-# Healthcheck + outils réseau légers
-RUN apk add --no-cache curl
+ARG K6_VERSION=v2.1.0
+
+# Healthcheck + outils réseau + k6 (tests de charge Socket.io)
+RUN apk add --no-cache curl ca-certificates \
+  && curl -fsSL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" \
+    | tar -xz -C /tmp \
+  && mv /tmp/k6-${K6_VERSION}-linux-amd64/k6 /usr/local/bin/k6 \
+  && rm -rf /tmp/k6-${K6_VERSION}-linux-amd64 \
+  && chmod +x /usr/local/bin/k6 \
+  && k6 version
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
 # tsx : exécution du serveur Express TypeScript en prod (100 % JS, pas de native)
@@ -52,6 +61,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/tests ./tests
 # tsx résout les imports server/ → ../src/... au runtime (configDb, challengesDb, adminToken)
 COPY --from=builder /app/src/config ./src/config
 COPY --from=builder /app/src/lib/adminToken.ts ./src/lib/adminToken.ts

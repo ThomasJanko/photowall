@@ -3,7 +3,7 @@
 App web : les invités envoient des photos depuis leur téléphone, elles
 s'affichent en temps réel sur un écran/projecteur.
 
-Voir `../PROJET.md` pour le contexte complet, l'architecture et le plan de dev.
+Voir `PROJET.md` pour le contexte complet, l'architecture et le plan de dev.
 
 ## Installation
 
@@ -88,3 +88,17 @@ docker compose up -d --build
 ```
 
 Guide complet : [DOCKER.md](./DOCKER.md)
+
+## Tests de charge WebSocket (k6)
+
+```bash
+# Local (k6 installé sur la machine)
+npm run test:load:websocket
+
+# Depuis le conteneur Docker (k6 embarqué dans l'image)
+docker compose up -d --build
+docker compose exec app npm run test:load:websocket
+docker compose exec app k6 run -e SCENARIO=stress -e SERVER_URL=http://127.0.0.1:4000 tests/load/websocket/websocket-test.js
+```
+
+Doc : [tests/load/websocket/README.md](./tests/load/websocket/README.md)

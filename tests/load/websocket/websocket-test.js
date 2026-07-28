@@ -2,7 +2,7 @@
  * Test de charge Socket.io — simulation d'écrans / murs photo.
  *
  * Protocole réel Engine.IO v4 + Socket.io v4 (transport websocket only),
- * contre le serveur Express du projet (app/server/index.ts).
+ * contre le serveur Express du projet (server/index.ts).
  *
  * Usage :
  *   k6 run -e SCENARIO=normal tests/load/websocket/websocket-test.js

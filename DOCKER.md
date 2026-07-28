@@ -120,12 +120,30 @@ Le volume `app-data` n'est **pas** touché par un rebuild.
 │  scripts/start-prod.sh              │
 │    ├─ next start      :3000         │
 │    └─ tsx server/...  :4000         │
+│  k6 embarqué (tests de charge)      │
 │  volume app-data → /app/data        │
 └─────────────────────────────────────┘
 ```
 
 Un seul conteneur plutôt que deux services : le front et l'API partagent
 nativement le dossier `data/`, sans configuration réseau inter-containers.
+
+## Tests de charge WebSocket (k6)
+
+k6 est installé dans l'image. Une fois le conteneur up :
+
+```bash
+# Scénario normal (50 VU)
+docker compose exec app npm run test:load:websocket
+
+# Stress / smoke / spike
+docker compose exec app k6 run -e SCENARIO=stress -e SERVER_URL=http://127.0.0.1:4000 tests/load/websocket/websocket-test.js
+docker compose exec app k6 run -e SCENARIO=smoke -e SERVER_URL=http://127.0.0.1:4000 tests/load/websocket/websocket-test.js
+```
+
+`SERVER_URL=http://127.0.0.1:4000` cible l'Express du **même** conteneur.
+
+Doc détaillée : `tests/load/websocket/README.md`.
 
 ## Dépannage
 

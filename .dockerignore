@@ -16,6 +16,8 @@ data
 .gitignore
 .cursor
 .vscode
+
+# Docs (sauf guide Docker utile dans le contexte)
 *.md
 !DOCKER.md
 
@@ -24,6 +26,8 @@ npm-debug.log*
 *.tsbuildinfo
 .DS_Store
 qrcode-acces.png
-
-# Dev only
+summary-websocket.json
+prompt-projet-app-anniversaire.md
+next-env.d.ts
 terminals
+deploy
