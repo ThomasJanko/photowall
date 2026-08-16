@@ -13,6 +13,8 @@ import type {
   PlanningEventInput,
   ScreenCommand,
   ScreenState,
+  TimerCommand,
+  TimerState,
 } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
@@ -415,5 +417,27 @@ export class LocalPhotoService implements PhotoService {
   onScreenCommand(callback: (cmd: ScreenCommand) => void): () => void {
     this.socket.on("screen:command", callback);
     return () => this.socket.off("screen:command", callback);
+  }
+
+  // ─── Chrono / minuteur ──────────────────────────────────────────────────────
+
+  async getTimerState(): Promise<TimerState> {
+    const res = await fetch(`${SERVER_URL}/api/timer/state`);
+    if (!res.ok) throw new Error(`État chrono indisponible (${res.status})`);
+    const data = (await res.json()) as { state: TimerState };
+    return data.state;
+  }
+
+  async sendTimerCommand(cmd: TimerCommand): Promise<void> {
+    const res = await adminFetch(`${SERVER_URL}/api/timer/command`, {
+      method: "POST",
+      body: JSON.stringify(cmd),
+    });
+    if (!res.ok) throw new Error(`Commande chrono échouée (${res.status})`);
+  }
+
+  onTimerState(callback: (state: TimerState) => void): () => void {
+    this.socket.on("timer:state", callback);
+    return () => this.socket.off("timer:state", callback);
   }
 }

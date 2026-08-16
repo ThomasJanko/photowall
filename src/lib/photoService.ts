@@ -12,6 +12,8 @@ import type {
   PlanningEventInput,
   ScreenCommand,
   ScreenState,
+  TimerCommand,
+  TimerState,
 } from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
@@ -93,6 +95,11 @@ export interface PhotoService {
   getScreenState(): Promise<ScreenState>;
   sendScreenCommand(cmd: ScreenCommand): Promise<void>;
   onScreenCommand(callback: (cmd: ScreenCommand) => void): () => void;
+
+  // ─── Chrono / minuteur ──────────────────────────────────────────────────────
+  getTimerState(): Promise<TimerState>;
+  sendTimerCommand(cmd: TimerCommand): Promise<void>;
+  onTimerState(callback: (state: TimerState) => void): () => void;
 }
 
 let instance: PhotoService | null = null;

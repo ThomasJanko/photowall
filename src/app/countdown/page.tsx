@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { useEventConfig } from "@/components/EventThemeProvider";
 import { QuickNav } from "@/components/QuickNav";
 import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { usePathname } from "next/navigation";
+import { getPhotoService } from "@/lib/photoService";
+import type { TimerState } from "@/lib/types";
+import { effectiveElapsedMs, formatDuration } from "@/lib/timerFormat";
+import { playTimerTick, playTimerEnd } from "@/lib/timerSound";
 
 const TARGET_FALLBACK = "2026-07-18T00:00:00";
+/** Nombre de secondes restantes à partir desquelles le minuteur passe en rouge + bip. */
+const TIMER_ALERT_SEC = 5;
 
 interface Remaining {
   days: number;
@@ -84,6 +90,69 @@ function CelebrationConfetti() {
   );
 }
 
+/** Vue "Chrono" (stopwatch) : compte le temps écoulé depuis le lancement. */
+function StopwatchView({ state, now }: { state: TimerState; now: number }) {
+  const elapsedMs = effectiveElapsedMs(state, now);
+  return (
+    <div className="relative z-10 flex flex-col items-center gap-8 text-center sm:gap-12">
+      <p className="text-lg tracking-widest text-purple-200 uppercase sm:text-2xl md:text-3xl">
+        ⏱️ Chrono
+      </p>
+      <div className="rounded-2xl bg-white/10 px-8 py-10 ring-1 ring-white/15 backdrop-blur-sm sm:px-16 sm:py-14">
+        <span className="text-6xl font-extrabold text-white tabular-nums drop-shadow-lg sm:text-8xl md:text-9xl">
+          {formatDuration(elapsedMs, "floor")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Vue "Minuteur" : décompte depuis durationMs, dernières secondes en rouge. */
+function TimerView({
+  state,
+  now,
+  alert,
+}: {
+  state: TimerState;
+  now: number;
+  alert: boolean;
+}) {
+  const remainingMs = Math.max(
+    0,
+    state.durationMs - effectiveElapsedMs(state, now)
+  );
+  const done = remainingMs <= 0;
+  const highlight = alert || done;
+
+  return (
+    <div className="relative z-10 flex flex-col items-center gap-8 text-center sm:gap-12">
+      <p className="text-lg tracking-widest text-purple-200 uppercase sm:text-2xl md:text-3xl">
+        ⏳ Minuteur
+      </p>
+      <div
+        className={`rounded-2xl px-8 py-10 ring-1 backdrop-blur-sm transition-colors duration-300 sm:px-16 sm:py-14 ${
+          highlight
+            ? "timer-alert-panel bg-red-500/15 ring-red-400/50"
+            : "bg-white/10 ring-white/15"
+        }`}
+      >
+        <span
+          className={`text-6xl font-extrabold tabular-nums drop-shadow-lg sm:text-8xl md:text-9xl ${
+            highlight ? "timer-alert-digits text-red-400" : "text-white"
+          }`}
+        >
+          {formatDuration(remainingMs, "ceil")}
+        </span>
+      </div>
+      {done && (
+        <p className="text-xl font-bold text-red-300 sm:text-3xl">
+          ⏰ Temps écoulé !
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function CountdownPage() {
   const pathname = usePathname();
   const { config } = useEventConfig();
@@ -91,11 +160,6 @@ export default function CountdownPage() {
   const navLinks = useMemo(
     () => buildNavLinks(pathname, config.features, isAdmin),
     [pathname, config.features, isAdmin]
-  );
-  const targetDate = new Date(
-    process.env.NEXT_PUBLIC_TARGET_DATE ??
-      config.countdownTarget ??
-      TARGET_FALLBACK
   );
   const [now, setNow] = useState<number | null>(null);
 
@@ -105,6 +169,65 @@ export default function CountdownPage() {
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // ─── Chrono / minuteur pilotés par l'admin (onglet "Chrono") ────────────────
+  const [timerState, setTimerState] = useState<TimerState | null>(null);
+  const [timerNow, setTimerNow] = useState(() => Date.now());
+  const lastTickSecondRef = useRef<number | null>(null);
+  const endPlayedRef = useRef(false);
+
+  // Date du countdown final, réglée en direct depuis l'onglet admin "Chrono"
+  // (plus de dépendance à la config statique ni au .env).
+  const targetDate = new Date(timerState?.finalTargetAt ?? TARGET_FALLBACK);
+
+  useEffect(() => {
+    const service = getPhotoService();
+    service.getTimerState().then(setTimerState).catch(() => {});
+    const unsub = service.onTimerState(setTimerState);
+    return unsub;
+  }, []);
+
+  // Un minuteur remis à zéro (reset / nouvelle durée / nouveau mode) doit
+  // pouvoir rejouer ses sons depuis le début.
+  useEffect(() => {
+    if (!timerState) return;
+    if (!timerState.running && timerState.elapsedMs === 0) {
+      lastTickSecondRef.current = null;
+      endPlayedRef.current = false;
+    }
+  }, [timerState]);
+
+  // Rafraîchit l'affichage pendant que le chrono/minuteur tourne et déclenche
+  // les sons du minuteur (bip des 5 dernières secondes, buzzer à 0).
+  useEffect(() => {
+    if (!timerState || !timerState.running) return;
+    const interval = setInterval(() => {
+      const nowMs = Date.now();
+      setTimerNow(nowMs);
+
+      if (timerState.mode !== "timer") return;
+      const remainingMs = Math.max(
+        0,
+        timerState.durationMs - effectiveElapsedMs(timerState, nowMs)
+      );
+      if (remainingMs <= 0) {
+        if (!endPlayedRef.current) {
+          endPlayedRef.current = true;
+          playTimerEnd();
+        }
+        return;
+      }
+      const remainingSec = Math.ceil(remainingMs / 1000);
+      if (
+        remainingSec <= TIMER_ALERT_SEC &&
+        lastTickSecondRef.current !== remainingSec
+      ) {
+        lastTickSecondRef.current = remainingSec;
+        playTimerTick();
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [timerState]);
 
   const remaining = now === null ? null : getRemaining(targetDate, now);
   const isOver = remaining !== null && remaining.total <= 0;
@@ -132,6 +255,33 @@ export default function CountdownPage() {
           { label: "minutes", value: pad2(remaining.minutes) },
           { label: "secondes", value: pad2(remaining.seconds) },
         ];
+
+  // ─── Chrono ou minuteur actif : prend le pas sur le countdown final ────────
+  if (timerState && timerState.mode !== "off") {
+    const timerRemainingMs =
+      timerState.mode === "timer"
+        ? Math.max(
+            0,
+            timerState.durationMs - effectiveElapsedMs(timerState, timerNow)
+          )
+        : 0;
+    const alert =
+      timerState.mode === "timer" &&
+      timerRemainingMs > 0 &&
+      timerRemainingMs <= TIMER_ALERT_SEC * 1000;
+
+    return (
+      <main className="event-gradient-bg relative flex min-h-dvh flex-col items-center justify-center overflow-hidden p-6">
+        {config.features.confetti && <ConfettiBackground />}
+        {timerState.mode === "stopwatch" ? (
+          <StopwatchView state={timerState} now={timerNow} />
+        ) : (
+          <TimerView state={timerState} now={timerNow} alert={alert} />
+        )}
+        <QuickNav links={navLinks} position="bottom-left" />
+      </main>
+    );
+  }
 
   return (
     <main className="event-gradient-bg relative flex min-h-dvh flex-col items-center justify-center overflow-hidden p-6">

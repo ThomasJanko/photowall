@@ -166,3 +166,38 @@ export interface ScreenState {
   volume: number;
   zoom: number;
 }
+
+// ─── Chrono / minuteur (page /countdown) ─────────────────────────────────────
+
+/**
+ * "off"       → aucun chrono/minuteur actif, /countdown affiche le compte à
+ *               rebours final vers la date de la soirée (comportement historique).
+ * "stopwatch" → chrono qui compte le temps écoulé (ex: chronométrer un jeu).
+ * "timer"     → minuteur qui décompte depuis `durationMs` (dernières
+ *               secondes en rouge + son sur /countdown).
+ */
+export type TimerMode = "off" | "stopwatch" | "timer";
+
+export interface TimerState {
+  mode: TimerMode;
+  running: boolean;
+  /** Durée totale du minuteur (ms), utilisée uniquement en mode "timer". */
+  durationMs: number;
+  /** Horodatage serveur du début du segment de course courant (null si en pause/arrêté). */
+  startedAt: number | null;
+  /** Temps déjà écoulé (ms) avant le segment de course courant. */
+  elapsedMs: number;
+  /**
+   * Date/heure cible du compte à rebours final (mode "off"), au format local
+   * "YYYY-MM-DDTHH:mm:ss". Réglée en direct depuis l'onglet admin "Chrono".
+   */
+  finalTargetAt: string;
+}
+
+export type TimerCommand =
+  | { type: "setMode"; mode: TimerMode }
+  | { type: "setDuration"; durationMs: number }
+  | { type: "start" }
+  | { type: "pause" }
+  | { type: "reset" }
+  | { type: "setFinalTarget"; targetAt: string };

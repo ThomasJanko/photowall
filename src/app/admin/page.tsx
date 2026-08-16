@@ -19,6 +19,7 @@ import { AdminChallengesTab } from "@/components/AdminChallengesTab";
 import { AdminTimelineTab } from "@/components/AdminTimelineTab";
 import { AdminPlanningTab } from "@/components/AdminPlanningTab";
 import { AdminScreenTab } from "@/components/AdminScreenTab";
+import { AdminTimerTab } from "@/components/AdminTimerTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
@@ -35,6 +36,7 @@ import {
   Megaphone,
   Settings,
   Target,
+  Timer,
   Trash2,
   X,
 } from "lucide-react";
@@ -57,6 +59,7 @@ type AdminTab =
   | "timeline"
   | "planning"
   | "screen"
+  | "timer"
   | "config"
   | "announce";
 
@@ -459,7 +462,9 @@ export default function AdminPage() {
                           ? "Planning de la soirée"
                           : activeTab === "screen"
                             ? "Télécommande écran TV"
-                            : activeTab === "announce"
+                            : activeTab === "timer"
+                              ? "Chrono & minuteur (/countdown)"
+                              : activeTab === "announce"
                           ? "Annonce live sur le mur"
                           : "Configuration de l'événement"}
           </p>
@@ -555,6 +560,15 @@ export default function AdminPage() {
             📺 Écran
           </AdminTabButton>
           <AdminTabButton
+            active={activeTab === "timer"}
+            onClick={() => setActiveTab("timer")}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Timer className="h-4 w-4 shrink-0" aria-hidden />
+              Chrono
+            </span>
+          </AdminTabButton>
+          <AdminTabButton
             active={activeTab === "config"}
             onClick={() => setActiveTab("config")}
           >
@@ -588,6 +602,8 @@ export default function AdminPage() {
         <AdminPlanningTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "screen" ? (
         <AdminScreenTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "timer" ? (
+        <AdminTimerTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}
