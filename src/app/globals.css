@@ -319,6 +319,85 @@ body {
   animation: none;
 }
 
+/* Annonce plein écran centrée (phase "center" avant de se ranger en haut) */
+@keyframes announcement-center-backdrop-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes announcement-center-backdrop-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes announcement-center-panel-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateY(30px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Se réduit et remonte vers le haut de l'écran (vers le bandeau compact). */
+@keyframes announcement-center-panel-to-top {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-46vh);
+  }
+}
+
+.announcement-center-backdrop {
+  background: rgba(10, 6, 20, 0.62);
+  backdrop-filter: blur(6px);
+  animation: announcement-center-backdrop-in 0.35s ease-out both;
+}
+
+.announcement-center-backdrop-out {
+  animation: announcement-center-backdrop-out 0.45s ease-in forwards;
+}
+
+.announcement-center-panel {
+  animation: announcement-center-panel-in 0.5s cubic-bezier(0.34, 1.35, 0.64, 1)
+    both;
+}
+
+.announcement-center-panel-out {
+  animation: announcement-center-panel-to-top 0.45s
+    cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+.announcement-center-panel:not(.announcement-center-panel-out)
+  .announcement-text {
+  animation: announcement-text-pop 0.65s cubic-bezier(0.34, 1.45, 0.64, 1) 0.15s
+    both;
+}
+
+.announcement-center-panel:not(.announcement-center-panel-out)
+  .announcement-emoji {
+  animation:
+    announcement-emoji-pop 0.55s cubic-bezier(0.34, 1.55, 0.64, 1) 0.08s both,
+    announcement-emoji-wiggle 1.8s ease-in-out 0.7s infinite;
+}
+
 /* --- Rétrospective show (nouvelles animations) --- */
 
 @keyframes retrospective-scene-enter {

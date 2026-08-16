@@ -5,7 +5,11 @@ import Link from "next/link";
 import { getPhotoService } from "@/lib/photoService";
 import type { Photo } from "@/lib/types";
 import { ConfettiBackground } from "@/components/ConfettiBackground";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import {
+  AnnouncementBanner,
+  type AnnouncementPhase,
+} from "@/components/AnnouncementBanner";
+import { playAnnouncementSound } from "@/lib/announcementSound";
 import { PollFab } from "@/components/PollFab";
 import { ChallengeBadge } from "@/components/ChallengeBadge";
 import { PhotoLightbox, type Floater } from "@/components/PhotoLightbox";
@@ -34,6 +38,10 @@ const MY_CHALLENGE_VOTES_KEY = "wall:my-challenge-votes";
 const FLOATER_LIFETIME_MS = 1700;
 /** Durée de l'animation de sortie du bandeau d'annonce (ms). */
 const ANNOUNCEMENT_EXIT_MS = 400;
+/** Durée de l'affichage plein écran centré avant de se ranger en haut (ms). */
+const ANNOUNCEMENT_CENTER_MS = 6000;
+/** Durée de la transition centre → haut (ms). */
+const ANNOUNCEMENT_CENTER_EXIT_MS = 450;
 /** Nombre max de cartes photo rendues dans la grille (state `photos` reste complet). */
 const MAX_RENDERED_PHOTOS = 60;
 /** Marge avant l'ouverture du mur pour le skew d'horloge (spotlight initial). */
@@ -158,6 +166,8 @@ export default function WallPage() {
     null
   );
   const [announcementLeaving, setAnnouncementLeaving] = useState(false);
+  const [announcementPhase, setAnnouncementPhase] =
+    useState<AnnouncementPhase>("center");
 
   const knownIds = useRef(new Set<string>());
   const socketPhotoIdsRef = useRef(new Set<string>());
@@ -172,6 +182,12 @@ export default function WallPage() {
   const announcementExitRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const announcementCenterRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const announcementCenterExitRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   useEffect(() => {
     featuresRef.current = features;
@@ -245,6 +261,14 @@ export default function WallPage() {
       clearTimeout(announcementExitRef.current);
       announcementExitRef.current = null;
     }
+    if (announcementCenterRef.current) {
+      clearTimeout(announcementCenterRef.current);
+      announcementCenterRef.current = null;
+    }
+    if (announcementCenterExitRef.current) {
+      clearTimeout(announcementCenterExitRef.current);
+      announcementCenterExitRef.current = null;
+    }
   }
 
   const showAnnouncement = useCallback((payload: AnnouncementEvent) => {
@@ -255,11 +279,40 @@ export default function WallPage() {
     setAnnouncementLeaving(false);
     setAnnouncement(payload);
 
+    // Temps restant de phase "centre" pour CE client (aligné sur startedAt
+    // serveur : un invité qui charge /wall en retard saute directement au
+    // bandeau compact plutôt que de rejouer l'entrée plein écran).
+    const elapsedMs =
+      payload.startedAt != null
+        ? Math.max(0, Date.now() - payload.startedAt)
+        : 0;
+    const centerTimeLeft = ANNOUNCEMENT_CENTER_MS - elapsedMs;
+
+    if (centerTimeLeft > 0) {
+      setAnnouncementPhase("center");
+      playAnnouncementSound();
+
+      if (remainingMs > centerTimeLeft) {
+        // Assez de temps restant après la phase centrée → transition vers le bandeau.
+        announcementCenterRef.current = setTimeout(() => {
+          setAnnouncementPhase("center-out");
+          announcementCenterExitRef.current = setTimeout(() => {
+            setAnnouncementPhase("top");
+          }, ANNOUNCEMENT_CENTER_EXIT_MS);
+        }, centerTimeLeft);
+      }
+      // Sinon : l'annonce se termine pendant la phase centrée, pas de transition.
+    } else {
+      // Phase centrée déjà passée (invité arrivé en retard) : bandeau direct, sans son.
+      setAnnouncementPhase("top");
+    }
+
     announcementHideRef.current = setTimeout(() => {
       setAnnouncementLeaving(true);
       announcementExitRef.current = setTimeout(() => {
         setAnnouncement(null);
         setAnnouncementLeaving(false);
+        setAnnouncementPhase("center");
       }, ANNOUNCEMENT_EXIT_MS);
     }, remainingMs);
   }, []);
@@ -570,6 +623,7 @@ export default function WallPage() {
       {announcement && (
         <AnnouncementBanner
           announcement={announcement}
+          phase={announcementPhase}
           leaving={announcementLeaving}
         />
       )}
