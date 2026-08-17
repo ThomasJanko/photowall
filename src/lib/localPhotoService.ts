@@ -15,6 +15,9 @@ import type {
   ScreenState,
   TimerCommand,
   TimerState,
+  RaffleCommand,
+  RaffleState,
+  RaffleDrawEvent,
 } from "./types";
 import type { PhotoService } from "./photoService";
 import { adminFetch } from "./adminAuth";
@@ -439,5 +442,35 @@ export class LocalPhotoService implements PhotoService {
   onTimerState(callback: (state: TimerState) => void): () => void {
     this.socket.on("timer:state", callback);
     return () => this.socket.off("timer:state", callback);
+  }
+
+  // ─── Tirage au sort ─────────────────────────────────────────────────────────
+
+  async getRaffleState(): Promise<RaffleState> {
+    const res = await fetch(`${SERVER_URL}/api/raffle/state`);
+    if (!res.ok) throw new Error(`État tirage indisponible (${res.status})`);
+    const data = (await res.json()) as { state: RaffleState };
+    return data.state;
+  }
+
+  async sendRaffleCommand(cmd: RaffleCommand): Promise<void> {
+    const res = await adminFetch(`${SERVER_URL}/api/raffle/command`, {
+      method: "POST",
+      body: JSON.stringify(cmd),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error ?? `Commande tirage échouée (${res.status})`);
+    }
+  }
+
+  onRaffleState(callback: (state: RaffleState) => void): () => void {
+    this.socket.on("raffle:state", callback);
+    return () => this.socket.off("raffle:state", callback);
+  }
+
+  onRaffleDraw(callback: (event: RaffleDrawEvent) => void): () => void {
+    this.socket.on("raffle:draw", callback);
+    return () => this.socket.off("raffle:draw", callback);
   }
 }

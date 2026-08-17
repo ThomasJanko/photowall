@@ -427,6 +427,26 @@ body {
   animation: timer-alert-glow 1s ease-in-out infinite;
 }
 
+/* Tirage au sort (/wall) : pop du nom à la révélation */
+@keyframes raffle-name-pop {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.raffle-reveal-pop {
+  animation: raffle-name-pop 0.45s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+
 /* --- Rétrospective show (nouvelles animations) --- */
 
 @keyframes retrospective-scene-enter {

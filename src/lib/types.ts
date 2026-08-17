@@ -201,3 +201,35 @@ export type TimerCommand =
   | { type: "pause" }
   | { type: "reset" }
   | { type: "setFinalTarget"; targetAt: string };
+
+// ─── Tirage au sort ───────────────────────────────────────────────────────────
+
+export interface RaffleDraw {
+  name: string;
+  drawnAt: number;
+}
+
+export interface RaffleState {
+  /** Personnes encore en jeu (pas encore tirées). */
+  pool: string[];
+  /** Historique des tirages, dans l'ordre (plus ancien en premier). */
+  drawnNames: string[];
+  /** Dernier tirage (pour la révélation live sur /wall), ou null. */
+  currentDraw: RaffleDraw | null;
+}
+
+export type RaffleCommand =
+  | { type: "setPool"; names: string[] }
+  | { type: "addNames"; names: string[] }
+  | { type: "removeFromPool"; name: string }
+  | { type: "draw" }
+  | { type: "restoreAll" }
+  | { type: "clear" };
+
+/** Événement de révélation live (socket "raffle:draw"). */
+export interface RaffleDrawEvent extends RaffleDraw {
+  /** Personnes encore en jeu juste avant ce tirage (pour l'animation de "roulement"). */
+  candidatePool: string[];
+  remainingCount: number;
+  totalCount: number;
+}

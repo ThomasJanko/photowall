@@ -23,8 +23,10 @@ import { useIsAdmin } from "@/lib/useIsAdmin";
 import { buildNavLinks } from "@/lib/quickNavLinks";
 import { useScreenMode } from "@/lib/screenMode";
 import { usePathname } from "next/navigation";
-import type { AnnouncementEvent } from "@/lib/types";
+import type { AnnouncementEvent, RaffleDrawEvent } from "@/lib/types";
 import { announcementRemainingMs } from "@/lib/announcementUtils";
+import { RaffleReveal } from "@/components/RaffleReveal";
+import { raffleRemainingMs, RAFFLE_TOTAL_DISPLAY_MS } from "@/lib/raffleUtils";
 import { Camera } from "lucide-react";
 
 const SERVER_URL =
@@ -42,6 +44,8 @@ const ANNOUNCEMENT_EXIT_MS = 400;
 const ANNOUNCEMENT_CENTER_MS = 6000;
 /** Durée de la transition centre → haut (ms). */
 const ANNOUNCEMENT_CENTER_EXIT_MS = 450;
+/** Durée de l'animation de sortie de la révélation du tirage au sort (ms). */
+const RAFFLE_EXIT_MS = 400;
 /** Nombre max de cartes photo rendues dans la grille (state `photos` reste complet). */
 const MAX_RENDERED_PHOTOS = 60;
 /** Marge avant l'ouverture du mur pour le skew d'horloge (spotlight initial). */
@@ -168,6 +172,8 @@ export default function WallPage() {
   const [announcementLeaving, setAnnouncementLeaving] = useState(false);
   const [announcementPhase, setAnnouncementPhase] =
     useState<AnnouncementPhase>("center");
+  const [raffleDraw, setRaffleDraw] = useState<RaffleDrawEvent | null>(null);
+  const [raffleLeaving, setRaffleLeaving] = useState(false);
 
   const knownIds = useRef(new Set<string>());
   const socketPhotoIdsRef = useRef(new Set<string>());
@@ -188,6 +194,8 @@ export default function WallPage() {
   const announcementCenterExitRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const raffleHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const raffleExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     featuresRef.current = features;
@@ -317,6 +325,37 @@ export default function WallPage() {
     }, remainingMs);
   }, []);
 
+  function clearRaffleTimers() {
+    if (raffleHideRef.current) {
+      clearTimeout(raffleHideRef.current);
+      raffleHideRef.current = null;
+    }
+    if (raffleExitRef.current) {
+      clearTimeout(raffleExitRef.current);
+      raffleExitRef.current = null;
+    }
+  }
+
+  const showRaffleDraw = useCallback(
+    (event: RaffleDrawEvent, remainingMsOverride?: number) => {
+      const remainingMs = remainingMsOverride ?? RAFFLE_TOTAL_DISPLAY_MS;
+      if (remainingMs <= 0) return;
+
+      clearRaffleTimers();
+      setRaffleLeaving(false);
+      setRaffleDraw(event);
+
+      raffleHideRef.current = setTimeout(() => {
+        setRaffleLeaving(true);
+        raffleExitRef.current = setTimeout(() => {
+          setRaffleDraw(null);
+          setRaffleLeaving(false);
+        }, RAFFLE_EXIT_MS);
+      }, remainingMs);
+    },
+    []
+  );
+
   function applyReactions(photoId: string, reactions: Record<string, number>) {
     const update = (list: Photo[]) =>
       list.map((p) => (p.id === photoId ? { ...p, reactions } : p));
@@ -427,6 +466,9 @@ export default function WallPage() {
     const unsubConnection = service.onConnectionChange?.(setConnected);
 
     const unsubAnnouncement = service.onAnnouncement(showAnnouncement);
+    const unsubRaffleDraw = service.onRaffleDraw((event) =>
+      showRaffleDraw(event)
+    );
 
     return () => {
       unsubNew();
@@ -436,8 +478,10 @@ export default function WallPage() {
       unsubConnection?.();
       unsubAnnouncement();
       clearAnnouncementTimers();
+      unsubRaffleDraw();
+      clearRaffleTimers();
     };
-  }, [showAnnouncement]);
+  }, [showAnnouncement, showRaffleDraw]);
 
   useEffect(() => {
     void getPhotoService()
@@ -446,6 +490,27 @@ export default function WallPage() {
         if (current) showAnnouncement(current);
       });
   }, [showAnnouncement]);
+
+  // Invité qui charge /wall juste après un tirage : rejoue la révélation
+  // (sans le "roulement", juste le nom déjà figé) pour le temps restant.
+  useEffect(() => {
+    void getPhotoService()
+      .getRaffleState()
+      .then((state) => {
+        if (!state.currentDraw) return;
+        const remainingMs = raffleRemainingMs(state.currentDraw);
+        if (remainingMs <= 0) return;
+        showRaffleDraw(
+          {
+            ...state.currentDraw,
+            candidatePool: [],
+            remainingCount: state.pool.length,
+            totalCount: state.pool.length + state.drawnNames.length,
+          },
+          remainingMs
+        );
+      });
+  }, [showRaffleDraw]);
 
   useEffect(() => {
     if (!spotlight) return;
@@ -626,6 +691,10 @@ export default function WallPage() {
           phase={announcementPhase}
           leaving={announcementLeaving}
         />
+      )}
+
+      {raffleDraw && (
+        <RaffleReveal draw={raffleDraw} leaving={raffleLeaving} />
       )}
 
       <PollFab />

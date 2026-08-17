@@ -20,6 +20,7 @@ import { AdminTimelineTab } from "@/components/AdminTimelineTab";
 import { AdminPlanningTab } from "@/components/AdminPlanningTab";
 import { AdminScreenTab } from "@/components/AdminScreenTab";
 import { AdminTimerTab } from "@/components/AdminTimerTab";
+import { AdminRaffleTab } from "@/components/AdminRaffleTab";
 import { QuickNav } from "@/components/QuickNav";
 import { useToast } from "@/components/ToastProvider";
 import { emitToast } from "@/lib/toastBus";
@@ -30,6 +31,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Clock,
+  Dices,
   Download,
   EyeOff,
   History,
@@ -60,6 +62,7 @@ type AdminTab =
   | "planning"
   | "screen"
   | "timer"
+  | "raffle"
   | "config"
   | "announce";
 
@@ -464,7 +467,9 @@ export default function AdminPage() {
                             ? "Télécommande écran TV"
                             : activeTab === "timer"
                               ? "Chrono & minuteur (/countdown)"
-                              : activeTab === "announce"
+                              : activeTab === "raffle"
+                                ? "Tirage au sort live (/wall)"
+                                : activeTab === "announce"
                           ? "Annonce live sur le mur"
                           : "Configuration de l'événement"}
           </p>
@@ -569,6 +574,15 @@ export default function AdminPage() {
             </span>
           </AdminTabButton>
           <AdminTabButton
+            active={activeTab === "raffle"}
+            onClick={() => setActiveTab("raffle")}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Dices className="h-4 w-4 shrink-0" aria-hidden />
+              Tirage
+            </span>
+          </AdminTabButton>
+          <AdminTabButton
             active={activeTab === "config"}
             onClick={() => setActiveTab("config")}
           >
@@ -604,6 +618,8 @@ export default function AdminPage() {
         <AdminScreenTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "timer" ? (
         <AdminTimerTab onUnauthorized={handleUnauthorized} />
+      ) : activeTab === "raffle" ? (
+        <AdminRaffleTab onUnauthorized={handleUnauthorized} />
       ) : activeTab === "pending" ? (
         <AdminPendingTab
           onUnauthorized={handleUnauthorized}

@@ -14,6 +14,9 @@ import type {
   ScreenState,
   TimerCommand,
   TimerState,
+  RaffleCommand,
+  RaffleState,
+  RaffleDrawEvent,
 } from "./types";
 import { LocalPhotoService } from "./localPhotoService";
 
@@ -100,6 +103,12 @@ export interface PhotoService {
   getTimerState(): Promise<TimerState>;
   sendTimerCommand(cmd: TimerCommand): Promise<void>;
   onTimerState(callback: (state: TimerState) => void): () => void;
+
+  // ─── Tirage au sort ─────────────────────────────────────────────────────────
+  getRaffleState(): Promise<RaffleState>;
+  sendRaffleCommand(cmd: RaffleCommand): Promise<void>;
+  onRaffleState(callback: (state: RaffleState) => void): () => void;
+  onRaffleDraw(callback: (event: RaffleDrawEvent) => void): () => void;
 }
 
 let instance: PhotoService | null = null;
